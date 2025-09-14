@@ -22,7 +22,7 @@ BlackScholesModel& BlackScholesModel::operator=(const BlackScholesModel & model)
 
 	return *this;
 }
-
+// testing
 
 double BlackScholesModel::drift(double time, double assetPrice) const
 {
