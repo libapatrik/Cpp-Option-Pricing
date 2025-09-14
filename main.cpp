@@ -1,16 +1,31 @@
-#include <iostream>
+#include "Model.hpp"
 
-// TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
-int main() {
-    // TIP Press <shortcut actionId="RenameElement"/> when your caret is at the <b>lang</b> variable name to see how CLion can help you rename it.
-    auto lang = "C++";
-    std::cout << "Hello and welcome to " << lang << "!\n";
 
-    for (int i = 1; i <= 5; i++) {
-        // TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-        std::cout << "i = " << i << std::endl;
-    }
+// void will be like a procedure -> set of instructions
+int main()
+{
+    //BlackScholesModel model;
+    BlackScholesModel bs1(100., 0.03, 0.2);  // constructor with parms
 
-    return 0;
-    // TIP See CLion help at <a href="https://www.jetbrains.com/help/clion/">jetbrains.com/help/clion/</a>. Also, you can try interactive lessons for CLion by selecting 'Help | Learn IDE Features' from the main menu.
+    BlackScholesModel bs2(bs1); // The object bs2 does not exist yet
+
+    BlackScholesModel bs3(200., 0.05, 0.1);
+    bs3 = bs1;                 // The object bs3 was already constructed -> returns bs3.operator=(bs1)
+
+    BlackScholesModel bs4 = bs1; // Either it calls default constructor -> assigment operator
+    // either it calls just the copy constructor
+
+    double a = 5.2;
+    double b = -2.7;
+
+
+    Model* modelPtr = new BlackScholesModel(100., 0.05, 0.2);
+    double drift = modelPtr->drift(0.5, 120.);
+    //double drift = (*modelPtr).drift(0.5, 120.);
+
+    // Question is : which drift method is called : the base class one or the derived class one?
+    // Virtuality
+    // If base class method is declared virtual -> derived class
+    // If base class method is not declared virtual -> base class
+
 }

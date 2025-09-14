@@ -3,4 +3,7 @@ project(CppFM)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(CppFM main.cpp)
+add_executable(CppFM main.cpp
+        Model.cpp
+        Model.hpp
+)
