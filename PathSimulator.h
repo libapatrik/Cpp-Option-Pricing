@@ -22,13 +22,9 @@ vector<vector<double>> GBM_pathSimulator(const double& S0, const double& r, cons
     // Antithetic samples
     int numTotal = 2 * numPaths;
     // vector<vector<double>> paths(numTotal, vector<double>(numSteps + 1));
-    vector<vector<double>> S(numTotal, vector<double>(numSteps + 1, S0)); // removes the for loop below
 
-    // // Initialise all paths with S0
-    // // Want to do: np.zeros([numSteps, numPaths])
-    // for (int i = 0; i < numTotal; i++) {
-    //     S[i][0] = S0;
-    // } // We can do better right?
+    // Want to do: np.zeros()
+    vector<vector<double>> S(numTotal, vector<double>(numSteps + 1, S0));
 
 
     // Simulate paths
