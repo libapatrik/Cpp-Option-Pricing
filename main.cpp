@@ -1,3 +1,4 @@
+#include <iostream>
 #include "Model.hpp"
 
 
@@ -5,6 +6,7 @@
 int main()
 {
     //BlackScholesModel model;
+    // WANT TO TEST: if a copy assignment operator copies correct the data members from one BSM object to another
     BlackScholesModel bs1(100., 0.03, 0.2);  // constructor with parms
 
     BlackScholesModel bs2(bs1); // The object bs2 does not exist yet
@@ -15,17 +17,26 @@ int main()
     BlackScholesModel bs4 = bs1; // Either it calls default constructor -> assigment operator
     // either it calls just the copy constructor
 
-    double a = 5.2;
-    double b = -2.7;
 
-
+    // Create new object of type BlackScholesModel object on the heap with params
+    // and stores its address in the pointer of type Model*. BSM is derived class of Model
     Model* modelPtr = new BlackScholesModel(100., 0.05, 0.2);
+    // Call drift method on the object pointed to by modelPtr, pass params, store result in drift variable.
+    // Drift is virtual in Model, so the BSM will be called [otherwise, call Base class method]
     double drift = modelPtr->drift(0.5, 120.);
+    double volatility = modelPtr->diffusion(0.5, 120.);
     //double drift = (*modelPtr).drift(0.5, 120.);
+    std::cout << "Drift: " << drift << std::endl; // 0.05 * 120 = 6
+    std::cout << "Volatility: " << volatility << std::endl; // 0.2 * 120 = 2
+
+    delete modelPtr; // delete the memory allocated on the heap when used `new`
+    return 0;
+
 
     // Question is : which drift method is called : the base class one or the derived class one?
     // Virtuality
     // If base class method is declared virtual -> derived class
     // If base class method is not declared virtual -> base class
+
 
 }

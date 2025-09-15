@@ -4,6 +4,7 @@
 #define MODEL_HPP
 
 #include <cmath>
+#include <vector>
 
 
 // Abstraction
@@ -26,6 +27,9 @@ public:
 	virtual double drift(double time, double assetPrice) const = 0; // Virtual Pure method
 	virtual double diffusion(double time, double assetPrice) const = 0; // Virtual Pure method
 
+	virtual Model* clone() const = 0; // Virtual Pure method
+
+
 //private:
 protected:
 	double _initValue;
@@ -39,11 +43,13 @@ class BlackScholesModel : public Model  // "Is a" relationship
 {
 public:
 	// Default constructor
-	BlackScholesModel() = default;
+	BlackScholesModel() = delete;
 	// Constructor with parameters
 	BlackScholesModel(double spot, double mu, double sigma);
 	// Copy constructor
 	BlackScholesModel(const BlackScholesModel& model);
+	// Clone method
+	BlackScholesModel* clone() const override;
 
 	// Copy Assignment Operator
 	BlackScholesModel& operator=(const BlackScholesModel& model);
@@ -61,6 +67,35 @@ private: // default constructor will call the default constructor for each data 
 	double _drift;
 	double _volatility;
 };
+
+
+class PathSimulator
+{
+public:
+	// Constructor
+	PathSimulator(const double& initValue,
+					const std::vector<double>& timePoints,
+					const Model& model);
+
+	// Destructor
+	virtual ~PathSimulator();
+
+protected:
+	double _initValue;
+	std::vector<double> _timePoints;
+	const Model* _model; // Create Pure Virtual method inside base class Model
+
+};
+
+// We need to delete the pointer to the _model to avoid memory leak
+inline PathSimulator::~PathSimulator() {
+	delete _model;
+
+	// Calls Destructor methond of Model to destroy *_model
+	// Model's destructor is virtual -> Calls the derived class destructor if needed
+	// Make sure that the right Model Derived class destructor is called
+
+}
 
 
 #endif
