@@ -1,10 +1,5 @@
-//
-// Created by Patrik  Liba on 15/09/2025.
-//
-
 #ifndef CPPFM_PATHSIMULATOR_H
 #define CPPFM_PATHSIMULATOR_H
-
 
 #include <cmath>
 #include <vector>
@@ -13,6 +8,7 @@
 using namespace std;
 
 // GBM
+//TODO: Make it into one for loop - requires some vectorisation
 vector<vector<double>> GBM_pathSimulator(const double& S0, const double& r, const double& sigma, const double& T, int numSteps, int numPaths) {
     // Seed
     default_random_engine generator(1);
