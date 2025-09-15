@@ -36,7 +36,7 @@ vector<vector<double>> GBM_pathSimulator(const double& S0, const double& r, cons
             S[i][j] = S[i][j] * exp(drift + vol_sqrt_dt * Z); // is there +?
 
             // Paths second half - antithetic
-            S[i + numPaths][i + 1] = S[i + numPaths][j] * exp(drift + vol_sqrt_dt * Z);
+            S[i + numPaths][i + 1] = S[i + numPaths][j] * exp(drift + vol_sqrt_dt * (-Z));
         }
     }
     return S;
