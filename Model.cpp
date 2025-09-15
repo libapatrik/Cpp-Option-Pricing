@@ -1,5 +1,6 @@
 #include "Model.hpp"
-
+#include "Utils.h"
+#include <cmath>
 
 // Model
 Model::Model(double initValue)
@@ -80,3 +81,22 @@ PathSimulator::PathSimulator(const double &initValue, const std::vector<double> 
 	: _initValue(initValue), _timePoints(timePoints), _model(model.clone())
 {
 }
+
+
+// BlackScholesFormula
+// TODO: declare optType, assetPrice etc, as private members of a class Model? Or BlackScholesModel? Access them via getters
+double BlackScholesFormula(double& drift, double& volatility, double& spot, double& time, double& assetPrice, double& strike, std::string& optType)
+{
+	// Implement the Black-Scholes formula here
+	double tmp = volatility * sqrt(time);
+	double d1 = (log(spot/strike) + (drift + 0.5 * pow(volatility, 2)) * time) / tmp;
+	double d2 = d1 - tmp;
+	return spot * Utils::stdNormCdf(d1) - strike * exp(-drift * time) * Utils::stdNormCdf(d2);
+}
+
+/*
+Under each model - i.e. BSM, Dupire, Heston etc.
+Have different option classes: Class EuropeanOption, Class AmericanOption, Class AsianOption, Class BarrierOption, etc.?
+Puts and calls.
+Then for these options we could have different pricing methods: BlackScholesFormula, MonteCarloSimulation, FiniteDifferenceMethod, etc.?
+*/

@@ -6,4 +6,6 @@ set(CMAKE_CXX_STANDARD 20)
 add_executable(CppFM main.cpp
         Model.cpp
         Model.hpp
+        Utils.h
+        Utils.cpp
 )
