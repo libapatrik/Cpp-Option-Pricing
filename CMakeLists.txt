@@ -9,4 +9,5 @@ add_executable(CppFM main.cpp
         Utils.h
         Utils.cpp
         PathSimulator.h
+        PathSimulator.cpp
 )
