@@ -6,6 +6,21 @@
 #include <cmath>
 #include <vector>
 
+/* NOTES:
+Base Class Model
+	Derived Class BlackScholesModel
+Base Class Option
+	Derived Class EuropeanOption
+Base Class PricingMethod
+	Derived Class MonteCarloPricing
+
+Base Class PathSimulator
+	Derived Class GBMPathSimulator
+	Derived Class Euler-Maruyama PathSimulator
+
+
+*/
+
 
 // Abstraction
 // What is a model?
@@ -91,7 +106,7 @@ protected:
 inline PathSimulator::~PathSimulator() {
 	delete _model;
 
-	// Calls Destructor methond of Model to destroy *_model
+	// Calls Destructor method of Model to destroy *_model
 	// Model's destructor is virtual -> Calls the derived class destructor if needed
 	// Make sure that the right Model Derived class destructor is called
 

@@ -3,7 +3,6 @@
 
 #include <iostream>
 
-
 // void will be like a procedure -> set of instructions
 int main()
 {
@@ -34,19 +33,19 @@ int main()
     delete modelPtr; // delete the memory allocated on the heap when used `new`
 
     double S0 = 100.0, r = 0.05, sigma = 0.2, T = 1.0;
-    int numSteps = 200, numPaths = 500;
+    int numSteps = 200;
+    int numPaths = 500;
     auto paths = GBM_pathSimulator(S0, r, sigma, T, numSteps, numPaths);
 
-    // Print 5 of these paths:
-    for (int i = 0; i < 5; i++) {
+    // Print all paths and all time steps - print the whole matrix S of paths from GBM_pathSimulator
+    for (int i = 0; i < paths.size(); ++i) {
         std::cout << "Path " << i + 1 << ": ";
-        for (int j = 0; j < 5; j++) { // print first 5 time steps
-            std::cout << paths[i][j] << " ";
+        for (int j = 0; j < paths[i].size(); ++j) {
+            std::cout << paths[i][j];
+            if (j != paths[i].size() - 1) std::cout << ", ";
         }
-        std::cout << "..." <<  std::endl;
+        std::cout << std::endl;
     }
-
-
 
     return 0;
 

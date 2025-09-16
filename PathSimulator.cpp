@@ -22,17 +22,15 @@ vector<vector<double>> GBM_pathSimulator(const double& S0, const double& r, cons
     // Want to do: np.zeros()
     vector<vector<double>> S(numTotal, vector<double>(numSteps + 1, S0));
 
-
     // Simulate paths
-    for (int i = 0; i < numTotal; i++) {
-        for (int j = 0; j <= numSteps; j++) {
+    for (int i = 0; i < numPaths; ++i) {
+        for (int j = 0; j <= numSteps; ++j) {
             double Z = distribution(generator);
 
             // Paths first half
-            S[i][j] = S[i][j] * exp(drift + vol_sqrt_dt * Z); // is there +?
-
+            S[i][j + 1] = S[i][j] * exp(drift + vol_sqrt_dt * Z);
             // Paths second half - antithetic
-            S[i + numPaths][i + 1] = S[i + numPaths][j] * exp(drift + vol_sqrt_dt * (-Z));
+            S[i + numPaths][j + 1] = S[i + numPaths][j] * exp(drift + vol_sqrt_dt * (-Z));
         }
     }
     return S;
