@@ -9,14 +9,26 @@
 /* NOTES:
 Base Class Model
 	Derived Class BlackScholesModel
-Base Class Option
-	Derived Class EuropeanOption
+	Derived Class DupireModel
+	Derived Class HestonModel
+
+Base Class Financial Instrument
+	Derived BASE Class Option
+		Derived Class EuropeanOption
+		Derived Class AmericanOption
+		Derived Class AsianOption
+
+	Derive Class Other Instruments
+
 Base Class PricingMethod
 	Derived Class MonteCarloPricing
+	Derived Class FiniteDifferencePricing
+	Derived Class COSMethodPricing
 
 Base Class PathSimulator
-	Derived Class GBMPathSimulator
-	Derived Class Euler-Maruyama PathSimulator
+	Derived Class Euler-Maruyana PathSimulator
+	Derived Class Milstein PathSimulator
+	Derived Class Broadie-Kaya PathSimulator scheme
 
 
 */
@@ -42,8 +54,16 @@ public:
 	virtual double drift(double time, double assetPrice) const = 0; // Virtual Pure method
 	virtual double diffusion(double time, double assetPrice) const = 0; // Virtual Pure method
 
+	// RULE: If a pointer of this class is used as a data member of another class [here PathSimulator]
+	// then we need to delegate the copy construction and pointing to another method
+	// This method is: clone()
+
 	virtual Model* clone() const = 0; // Virtual Pure method
 
+	// Getters here
+	inline double initValue() const { // do not modify any data member
+		return _initValue;
+	}
 
 //private:
 protected:
@@ -84,33 +104,6 @@ private: // default constructor will call the default constructor for each data 
 };
 
 
-class PathSimulator
-{
-public:
-	// Constructor
-	PathSimulator(const double& initValue,
-					const std::vector<double>& timePoints,
-					const Model& model);
-
-	// Destructor
-	virtual ~PathSimulator();
-
-protected:
-	double _initValue;
-	std::vector<double> _timePoints;
-	const Model* _model; // Create Pure Virtual method inside base class Model
-
-};
-
-// We need to delete the pointer to the _model to avoid memory leak
-inline PathSimulator::~PathSimulator() {
-	delete _model;
-
-	// Calls Destructor method of Model to destroy *_model
-	// Model's destructor is virtual -> Calls the derived class destructor if needed
-	// Make sure that the right Model Derived class destructor is called
-
-}
 
 
 #endif

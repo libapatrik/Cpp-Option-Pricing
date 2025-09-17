@@ -37,6 +37,7 @@ BlackScholesModel::BlackScholesModel(const BlackScholesModel& model)
 BlackScholesModel * BlackScholesModel::clone() const
 {
 	return new BlackScholesModel(*this);
+	// create new pointer copy construct of current object -> returns a copy of this method
 }
 
 
@@ -64,23 +65,6 @@ double BlackScholesModel::diffusion(double time, double assetPrice) const
 }
 
 
-/*double Model::drift(double time, double assetPrice) const
-{
-	return 0.0;
-}
-
-double Model::diffusion(double time, double assetPrice) const
-{
-	return 0.0;
-}*/
-
-
-
-// PathSimulator
-PathSimulator::PathSimulator(const double &initValue, const std::vector<double> &timePoints, const Model &model)
-	: _initValue(initValue), _timePoints(timePoints), _model(model.clone())
-{
-}
 
 
 // BlackScholesFormula
@@ -93,10 +77,3 @@ double BlackScholesFormula(double& drift, double& volatility, double& spot, doub
 	double d2 = d1 - tmp;
 	return spot * Utils::stdNormCdf(d1) - strike * exp(-drift * time) * Utils::stdNormCdf(d2);
 }
-
-/*
-Under each model - i.e. BSM, Dupire, Heston etc.
-Have different option classes: Class EuropeanOption, Class AmericanOption, Class AsianOption, Class BarrierOption, etc.?
-Puts and calls.
-Then for these options we could have different pricing methods: BlackScholesFormula, MonteCarloSimulation, FiniteDifferenceMethod, etc.?
-*/
