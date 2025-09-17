@@ -1,3 +1,82 @@
 ## UML Class Diagram
 
-![UML Diagram](XLRBRjim4BppAtZhIN_G5ccI1YuAmmLy37gWgRL5X285SfN0HJw-j4N9uegqTB9tPrypIr4F7eN3ljKCRSVHyeD5j2slbGE9oXhctvJfX1Cjrye0dZlWrc5Z6Vl2lrqUlhKrQBvHu8IJpNcmCd7mw8H4BhNmVW2nuVUZ5l9jBnkhmS_jptqNoWxfUBHjmACr0uej0dbLVNwFkPFewpDppj8idM6I5-iay7TmgAJGFB0YmzmdVhGkpdTojkzOhFhQgBe6yxUs7wRAp9DfD0sPDPiqJc39z2FVBye88rLeyvS97FSj65oZVugvXL38hhlgFVpvsJlRWJ29yKSBBj13Z5uHomuRSBSwdh5CTVxriwh6ccK_JPNsDOWOawJTfQvRZvFqqRMYVQwpOHDo7gBUdUaeaiuv3f72Y2gKZ1HCrABq4F1CnMdH_eI02n5R2EUzNbknY1x0R3pr1k59E6sZbqthg12UrV483eo4rFkqsmzPHZDRv9aVuhHm8NKEIklmSjQLDKd0SK5I6-5xISnoH19IugmuS1g-97MIMM33zwhjjS0movhC0Js1fxU51hSLhZ-BLkG0MwKzWZ8vtwEpebRmMvn9A2kdZH8by6oDkQ09kbGrZrwJFyaGvK_xfGUvIDYzeSaEPKdDqq1lh2Bdur9ih5F_mafUHkt4TQ4EW1y0XZTnGHJuk2BaxdBgr62LlNFklWjZN7fmUEaWZUYq_mSmTVYS-Gy0)
+![UML Diagram]
+
+```plantuml
+@startuml
+top to bottom direction
+skinparam linetype ortho
+
+' ===== Model Hierarchy =====
+abstract class Model
+class BlackScholesModel
+class DupireModel  
+class HestonModel
+
+BlackScholesModel --|> Model
+DupireModel       --|> Model
+HestonModel       --|> Model
+
+' Force vertical stacking for Model group
+Model -[hidden]down- BlackScholesModel
+BlackScholesModel -[hidden]down- DupireModel
+DupireModel -[hidden]down- HestonModel
+
+' ===== Financial Instrument Hierarchy =====
+abstract class FinancialInstrument
+abstract class Option
+class EuropeanOption
+class AmericanOption
+class AsianOption
+class OtherInstruments
+
+FinancialInstrument <|-- Option
+FinancialInstrument <|-- OtherInstruments
+EuropeanOption --|> Option
+AmericanOption --|> Option
+AsianOption    --|> Option
+
+' Force vertical stacking for FinancialInstrument group
+FinancialInstrument -[hidden]down- Option
+FinancialInstrument -[hidden]down- OtherInstruments
+Option -[hidden]down- EuropeanOption
+EuropeanOption -[hidden]down- AmericanOption
+AmericanOption -[hidden]down- AsianOption
+
+' ===== Pricing Method Hierarchy =====
+abstract class PricingMethod
+class MonteCarloPricing
+class FiniteDifferencePricing
+class COSMethodPricing
+
+MonteCarloPricing       --|> PricingMethod
+FiniteDifferencePricing --|> PricingMethod
+COSMethodPricing        --|> PricingMethod
+
+' Force vertical stacking for PricingMethod group
+PricingMethod -[hidden]down- MonteCarloPricing
+MonteCarloPricing -[hidden]down- FiniteDifferencePricing
+FiniteDifferencePricing -[hidden]down- COSMethodPricing
+
+' ===== Path Simulator Hierarchy =====
+abstract class PathSimulator
+class EulerMaruyamaPathSimulator
+class MilsteinPathSimulator
+class BroadieKayaPathSimulator
+
+EulerMaruyamaPathSimulator --|> PathSimulator
+MilsteinPathSimulator      --|> PathSimulator
+BroadieKayaPathSimulator   --|> PathSimulator
+
+' Force vertical stacking for PathSimulator group
+PathSimulator -[hidden]down- EulerMaruyamaPathSimulator
+EulerMaruyamaPathSimulator -[hidden]down- MilsteinPathSimulator
+MilsteinPathSimulator -[hidden]down- BroadieKayaPathSimulator
+
+' ===== Horizontal spacing between hierarchies =====
+Model -[hidden]right- FinancialInstrument
+FinancialInstrument -[hidden]right- PricingMethod  
+PricingMethod -[hidden]right- PathSimulator
+
+@enduml
+```
