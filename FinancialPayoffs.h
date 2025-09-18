@@ -14,16 +14,16 @@ class Option : public FinancialPayoff
 {
 public:
     // Default constructor
-    Option() = delete;
+    Option() = default;
     // Constructor with parameters
-    Option(double spot, double mu, double sigma);
+    // Option();
     // Copy constructor
-    Option(const Option& model);
+    // Option();
     // Clone method
-    Option* clone() const override;
+    // Option* clone() const override;
 
     // Copy Assignment Operator
-    Option& operator=(const Option& model);
+    // Option& operator=();
 
     // Destructor
     ~Option() override = default; // ALWAYS DECLARE BASE CLASS DESTRUCTOR VIRTUAL -> Avoid memory leak
@@ -42,6 +42,7 @@ protected:
     Type _type;
 
 };
+
 
 class EuropeanOptionPayoff : public Option
 {
