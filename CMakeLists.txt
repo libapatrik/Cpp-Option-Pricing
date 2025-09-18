@@ -12,4 +12,5 @@ add_executable(CppFM main.cpp
         PathSimulator.cpp
         MonteCarloPricer.h
         FinancialPayoffs.h
+        FinancialPayoffs.cpp
 )

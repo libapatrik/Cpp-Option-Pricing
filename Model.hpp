@@ -6,33 +6,6 @@
 #include <cmath>
 #include <vector>
 
-/* NOTES:
-Base Class Model
-	Derived Class BlackScholesModel
-	Derived Class DupireModel
-	Derived Class HestonModel
-
-Base Class Financial Instrument
-	Derived BASE Class Option
-		Derived Class EuropeanOption
-		Derived Class AmericanOption
-		Derived Class AsianOption
-
-	Derive Class Other Instruments
-
-Base Class PricingMethod
-	Derived Class MonteCarloPricing
-	Derived Class FiniteDifferencePricing
-	Derived Class COSMethodPricing
-
-Base Class PathSimulator
-	Derived Class Euler-Maruyana PathSimulator
-	Derived Class Milstein PathSimulator
-	Derived Class Broadie-Kaya PathSimulator scheme
-
-
-*/
-
 
 // Abstraction
 // What is a model?
@@ -61,7 +34,8 @@ public:
 	virtual Model* clone() const = 0; // Virtual Pure method
 
 	// Getters here
-	inline double initValue() const { // do not modify any data member
+	inline double initValue() const // do not modify any data member
+	{
 		return _initValue;
 	}
 
