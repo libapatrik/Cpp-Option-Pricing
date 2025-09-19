@@ -5,12 +5,13 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_executable(CppFM main.cpp
         Model.cpp
-        Model.hpp
+        Model.h
         Utils.h
         Utils.cpp
         PathSimulator.h
         PathSimulator.cpp
-        MonteCarloPricer.h
-        FinancialPayoffs.h
-        FinancialPayoffs.cpp
+        FinancialInstrument.h
+        FinancialInstrument.cpp
+        Pricer.cpp
+        Pricer.h
 )
