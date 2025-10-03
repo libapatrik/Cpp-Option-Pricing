@@ -3,8 +3,19 @@
 #include "FinancialInstrument.h"
 
 
+Option::Option(Option::Type type)
+    : _type(type)
+{
+}
+
+
 EuropeanOptionPayoff::EuropeanOptionPayoff(Type type)
     : Option(type) // call base constructor
+{
+}
+
+EuropeanOptionPayoff::EuropeanOptionPayoff(Type type, double strike, double maturity)
+    : Option(type), _strike(strike), _maturity(maturity)
 {
 }
 

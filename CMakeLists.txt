@@ -14,4 +14,6 @@ add_executable(CppFM main.cpp
         FinancialInstrument.cpp
         Pricer.cpp
         Pricer.h
+        DiscountCurve.h
+        DiscountCurve.cpp
 )

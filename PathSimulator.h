@@ -4,10 +4,9 @@
 #include "Model.h"
 #include <random>
 #include <vector>
+
 using namespace std;
 
-// 2D vector storing the GBM paths
-// vector<vector<double>> GBM_pathSimulator(const double& S0, const double& r, const double& sigma, const double& T, int numSteps, int numPaths);
 class PathSimulator
 {
 public:
@@ -16,21 +15,41 @@ public:
     virtual ~PathSimulator();
     // PathSimulator owns the memory pointed to by _modelPtr - it was allocated with new
 
-    vector<double> path() const; // return the path simulated
+    std::vector<double> path() const; // return the path simulated
     virtual double nextStep(size_t timeIndex, double assetPrice) const = 0; // VPM - because I don't know what it does
     // We delegate the implementation of nextStep to the derived classes
+    
+    // Getter
+    inline const vector<double>& timeSteps() const 
+    { 
+        return _timeSteps; 
+    }
 
 protected:
     bool timeStepsSanityCheck() const;
 
     vector<double> _timeSteps; // information for discretisation; not necessarily equally spaced! {t_0, t_1, ..., t_n}
     const Model* _modelPtr; // Pointer to base class Model pure virtual cannot instantiate - take const pointer
-    default_random_engine _randomEngine;
+    mutable default_random_engine _randomEngine; // had to change to mutable because of the const method path()
 };
 
 class EulerPathSimulator : public PathSimulator
 {
 public:
+    EulerPathSimulator(const vector<double>& timeSteps, const Model& model, size_t randomSeed) // constructor with parameters
+        : PathSimulator(timeSteps, model, randomSeed) 
+        {
+        }
+    double nextStep(size_t timeIndex, double assetPrice) const override;
+};
+
+class MilsteinPathSimulator : public PathSimulator
+{
+public:
+    MilsteinPathSimulator(const vector<double>& timeSteps, const Model& model, size_t randomSeed)
+        : PathSimulator(timeSteps, model, randomSeed)
+        {
+        }
     double nextStep(size_t timeIndex, double assetPrice) const override;
 };
 

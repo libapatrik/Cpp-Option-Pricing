@@ -4,81 +4,178 @@ skinparam linetype ortho
 
 ' ===== Model Hierarchy =====
 abstract class Model {
-    +double drift(double time, double assetPrice) const = 0;
-    +double diffusion(double time, double assetPrice) const = 0;
-    +double initValue() // getter
+    +Model(double initValue)
+    +Model(const Model& model)
+    +Model& operator=(const Model& model)
+    +virtual bool operator==(const Model& model) const = 0
+    +virtual ~Model() = default
+    +virtual double drift(double time, double assetPrice) const = 0
+    +virtual double diffusion(double time, double assetPrice) const = 0
+    +virtual Model* clone() const = 0
+    +double initValue() const
     #double _initValue
 }
-class BlackScholesModel
-class DupireModel
-class HestonModel
+
+class BlackScholesModel {
+    +BlackScholesModel(double spot, double mu, double sigma)
+    +BlackScholesModel(const BlackScholesModel& model)
+    +BlackScholesModel* clone() const override
+    +BlackScholesModel& operator=(const BlackScholesModel& model)
+    +bool operator==(const Model& model) const override
+    +double drift(double time, double assetPrice) const override
+    +double diffusion(double time, double assetPrice) const override
+    +double riskFreeRate() const
+    +double volatility() const
+    -double _drift
+    -double _volatility
+}
+
+class HullWhiteModel {
+    ' For stochastic interest rate models
+    ' TODO: Implementation pending
+}
 
 BlackScholesModel --|> Model
-DupireModel       --|> Model
-HestonModel       --|> Model
+HullWhiteModel --|> Model
 
 ' Force vertical stacking for Model group
 Model -[hidden]down- BlackScholesModel
-BlackScholesModel -[hidden]down- DupireModel
-DupireModel -[hidden]down- HestonModel
+BlackScholesModel -[hidden]down- HullWhiteModel
 
 ' ===== Financial Instrument Hierarchy =====
-abstract class FinancialInstrument
-abstract class Option
-class EuropeanOption
-class AmericanOption
-class AsianOption
-class OtherInstruments
+abstract class FinancialInstrument {
+    +virtual FinancialInstrument* clone() const = 0
+    +virtual ~FinancialInstrument() = default
+}
+
+abstract class Option {
+    +enum class Type { Call, Put }
+    +explicit Option(Option::Type type)
+    +Option() = default
+    +virtual Type getType() const = 0
+    +virtual Option* clone() const override = 0
+    #Type _type
+}
+
+class EuropeanOptionPayoff {
+    +EuropeanOptionPayoff(Type type)
+    +EuropeanOptionPayoff(Type type, double strike, double maturity)
+    +Option::Type getType() const override
+    +EuropeanOptionPayoff* clone() const override
+    +double strike() const
+    +double maturity() const
+    -double _strike
+    -double _maturity
+}
 
 FinancialInstrument <|-- Option
-FinancialInstrument <|-- OtherInstruments
-EuropeanOption --|> Option
-AmericanOption --|> Option
-AsianOption    --|> Option
+Option <|-- EuropeanOptionPayoff
 
 ' Force vertical stacking for FinancialInstrument group
 FinancialInstrument -[hidden]down- Option
-FinancialInstrument -[hidden]down- OtherInstruments
-Option -[hidden]down- EuropeanOption
-EuropeanOption -[hidden]down- AmericanOption
-AmericanOption -[hidden]down- AsianOption
+Option -[hidden]down- EuropeanOptionPayoff
+
+' ===== Discount Curve Hierarchy =====
+abstract class DiscountCurve {
+    +virtual double discount(double time) const = 0
+    +virtual DiscountCurve* clone() const = 0
+    +virtual ~DiscountCurve() = default
+}
+
+class FlatDiscountCurve {
+    +FlatDiscountCurve(double rate)
+    +double discount(double time) const override
+    +double rate() const
+    +FlatDiscountCurve* clone() const override
+    -double _rate
+}
+
+FlatDiscountCurve --|> DiscountCurve
 
 ' ===== Pricing Method Hierarchy =====
-abstract class PricingMethod
-class MonteCarloPricing
-class FiniteDifferencePricing
-class COSMethodPricing
+abstract class Pricer {
+    +Pricer() = default
+    +Pricer(const Model& model, const DiscountCurve& discountCurve)
+    +virtual Pricer* clone() const = 0
+    +virtual ~Pricer()
+    +virtual double price(const EuropeanOptionPayoff& option) const = 0
+    #const Model* _modelPtr
+    #const DiscountCurve* _discountCurvePtr
+}
 
-MonteCarloPricing       --|> PricingMethod
-FiniteDifferencePricing --|> PricingMethod
-COSMethodPricing        --|> PricingMethod
+class BlackScholesPricer {
+    +BlackScholesPricer()
+    +BlackScholesPricer(const BlackScholesModel& model, const DiscountCurve& discountCurve)
+    +BlackScholesPricer* clone() const override
+    +double price(const EuropeanOptionPayoff& option) const override
+    +static double d1(double spot, double strike, double r, double sigma, double T)
+    +static double d2(double d1, double sigma, double T)
+    #const BlackScholesModel* _bsModelPtr
+}
 
-' Force vertical stacking for PricingMethod group
-PricingMethod -[hidden]down- MonteCarloPricing
-MonteCarloPricing -[hidden]down- FiniteDifferencePricing
-FiniteDifferencePricing -[hidden]down- COSMethodPricing
+class MonteCarloPricer {
+    +MonteCarloPricer() = default
+    +MonteCarloPricer(const Model& model, const DiscountCurve& discountCurve, const PathSimulator& simulator, size_t numPaths)
+    +MonteCarloPricer* clone() const override
+    +double price(const EuropeanOptionPayoff& option) const override
+    #size_t _numPaths
+    #const PathSimulator* _simulatorPtr
+}
+
+BlackScholesPricer --|> Pricer
+MonteCarloPricer --|> Pricer
+
+' Force vertical stacking for Pricer group
+Pricer -[hidden]down- BlackScholesPricer
+BlackScholesPricer -[hidden]down- MonteCarloPricer
 
 ' ===== Path Simulator Hierarchy =====
-abstract class PathSimulator {
-    +double nextStep(size_t timeIndex, double assetPrice) const = 0;
-    #default_random_engine _randomEngine;
+class PathSimulator {
+    +PathSimulator(const vector<double>& timeSteps, const Model& model, size_t randomSeed)
+    +virtual ~PathSimulator()
+    +vector<double> path() const
+    +virtual double nextStep(size_t timeIndex, double assetPrice) const = 0
+    +const vector<double>& timeSteps() const
+    #bool timeStepsSanityCheck() const
+    #vector<double> _timeSteps
+    #const Model* _modelPtr
+    #mutable default_random_engine _randomEngine
 }
-class EulerMaruyamaPathSimulator
-class MilsteinPathSimulator
-class BroadieKayaPathSimulator
 
-EulerMaruyamaPathSimulator --|> PathSimulator
-MilsteinPathSimulator      --|> PathSimulator
-BroadieKayaPathSimulator   --|> PathSimulator
+class EulerPathSimulator {
+    +EulerPathSimulator(const vector<double>& timeSteps, const Model& model, size_t randomSeed)
+    +double nextStep(size_t timeIndex, double assetPrice) const override
+}
+
+class MilsteinPathSimulator {
+    +MilsteinPathSimulator(const vector<double>& timeSteps, const Model& model, size_t randomSeed)
+    +double nextStep(size_t timeIndex, double assetPrice) const override
+}
+
+EulerPathSimulator --|> PathSimulator
+MilsteinPathSimulator --|> PathSimulator
 
 ' Force vertical stacking for PathSimulator group
-PathSimulator -[hidden]down- EulerMaruyamaPathSimulator
-EulerMaruyamaPathSimulator -[hidden]down- MilsteinPathSimulator
-MilsteinPathSimulator -[hidden]down- BroadieKayaPathSimulator
+PathSimulator -[hidden]down- EulerPathSimulator
+EulerPathSimulator -[hidden]down- MilsteinPathSimulator
+
+' ===== Utils Class =====
+class Utils {
+    +static double stdNormCdf(double x)
+}
+
+' ===== Relationships between hierarchies =====
+Pricer --> Model : uses
+Pricer --> DiscountCurve : uses
+MonteCarloPricer --> PathSimulator : uses
+PathSimulator --> Model : uses
+BlackScholesPricer --> Utils : uses
 
 ' ===== Horizontal spacing between hierarchies =====
 Model -[hidden]right- FinancialInstrument
-FinancialInstrument -[hidden]right- PricingMethod
-PricingMethod -[hidden]right- PathSimulator
+FinancialInstrument -[hidden]right- DiscountCurve
+DiscountCurve -[hidden]right- Pricer
+Pricer -[hidden]right- PathSimulator
+PathSimulator -[hidden]right- Utils
 
 @enduml

@@ -68,7 +68,6 @@ double BlackScholesModel::diffusion(double time, double assetPrice) const
 
 
 // BlackScholesFormula
-// TODO: declare optType, assetPrice etc, as private members of a class Model? Or BlackScholesModel? Access them via getters
 double BlackScholesFormula(double& drift, double& volatility, double& spot, double& time, double& assetPrice, double& strike, std::string& optType)
 {
 	// Implement the Black-Scholes formula here

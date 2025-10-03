@@ -18,7 +18,7 @@ public:
 class Option : public FinancialInstrument // Abstract class - base class for Option
 {
 public:
-    enum class Type {Call, Put}; // place first!
+    enum class Type { Call, Put }; // place first!
 
     explicit Option(Option::Type type); // Constructor with parameter
     Option() = default;                 // Default constructor
@@ -46,6 +46,7 @@ class EuropeanOptionPayoff : public Option
 {
 public:
     EuropeanOptionPayoff(Type type);               // Constructor with parameter - sets to either put or call when creating object
+    EuropeanOptionPayoff(Type type, double strike, double maturity);  // Constructor with parameter - sets to either put or call when creating object
     EuropeanOptionPayoff(const EuropeanOptionPayoff&) = default;
     EuropeanOptionPayoff& operator=(const EuropeanOptionPayoff&) = default;
     ~EuropeanOptionPayoff() override = default;
@@ -53,8 +54,14 @@ public:
     Option::Type getType() const override; // C/P provided by Option class; EUOption overrides and provides its own implementation
     EuropeanOptionPayoff* clone() const override;
 
+    // Parameters
+    inline double strike() const { return _strike; }
+    inline double maturity() const { return _maturity; }
+
 private:
-    // Type _type;
+    // Option is specified by strike and maturity
+    double _strike {0.0};
+    double _maturity {0.0};
 };
 
 
