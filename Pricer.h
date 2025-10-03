@@ -25,8 +25,6 @@ public:
 
     virtual ~Pricer(); // ALWAYS DECLARE BASE CLASS DESTRUCTOR VIRTUAL -> Avoid memory leak
 
-    // Common interface for all pricers
-    // TODO: What are the other params which I can point to instead?
     virtual double price(const EuropeanOptionPayoff& option) const = 0; // Virtual Pure method
 
 protected:
