@@ -1,6 +1,7 @@
 #include "DiscountCurve.h"
 #include <cmath>
 
+
 FlatDiscountCurve::FlatDiscountCurve(double rate)
     : _rate(rate)
 {
