@@ -9,7 +9,7 @@
 // void will be like a procedure -> set of instructions
 int main()
 {
-    // Simple pricing demo with analytic Black-Scholes pricer
+    // Analytic Black-Scholes pricer
     BlackScholesModel modelForPricing(100.0, 0.05, 0.2);
     FlatDiscountCurve flatCurve(0.05);
     BlackScholesPricer pricer(modelForPricing, flatCurve);
