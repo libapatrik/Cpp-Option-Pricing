@@ -25,7 +25,7 @@ BlackScholesPricer::BlackScholesPricer() = default;
 BlackScholesPricer::BlackScholesPricer(const BlackScholesModel &model, const DiscountCurve &discountCurve)
     : Pricer(model, discountCurve)
 {
-    _bsModelPtr = static_cast<const BlackScholesModel*>(_modelPtr); // set it once
+    _bsModelPtr = dynamic_cast<const BlackScholesModel*>(_modelPtr); // set it once
 }
 
 BlackScholesPricer::~BlackScholesPricer() = default;
@@ -82,7 +82,6 @@ MonteCarloPricer::MonteCarloPricer(const Model& model, const DiscountCurve& disc
 {
 }
 
-// Removed PathSimulator-taking ctor; MC pricer will be wired later with a simulator instance
 
 MonteCarloPricer * MonteCarloPricer::clone() const
 {

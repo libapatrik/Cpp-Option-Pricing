@@ -114,7 +114,7 @@ double MilsteinPathSimulator::nextStep(size_t timeIndex, double assetPrice) cons
     double sigma = _modelPtr->diffusion(t, assetPrice);
 
     // Derivative of diffusion wrt S by central difference
-    const double eps = 1e-6 * (1.0 + fabs(assetPrice));
+    const double eps = 1e-6 * (1.0 + fabs(assetPrice)); // small perturbation; avoid division by zero
     double sigma_plus = _modelPtr->diffusion(t, assetPrice + eps);
     double sigma_minus = _modelPtr->diffusion(t, assetPrice - eps);
     double sigma_prime = (sigma_plus - sigma_minus) / (2.0 * eps);

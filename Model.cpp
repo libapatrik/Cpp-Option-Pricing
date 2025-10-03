@@ -67,6 +67,7 @@ double BlackScholesModel::diffusion(double time, double assetPrice) const
 
 
 
+
 // BlackScholesFormula
 double BlackScholesFormula(double& drift, double& volatility, double& spot, double& time, double& assetPrice, double& strike, std::string& optType)
 {
