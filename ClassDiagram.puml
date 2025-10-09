@@ -17,17 +17,30 @@ abstract class Model {
 }
 
 class BlackScholesModel {
-    +BlackScholesModel(double spot, double mu, double sigma)
+    +BlackScholesModel(double spot, const DiscountCurve& discountCurve, double sigma)
     +BlackScholesModel(const BlackScholesModel& model)
     +BlackScholesModel* clone() const override
     +BlackScholesModel& operator=(const BlackScholesModel& model)
     +bool operator==(const Model& model) const override
     +double drift(double time, double assetPrice) const override
     +double diffusion(double time, double assetPrice) const override
-    +double riskFreeRate() const
-    +double volatility() const
+    +double getDrift() const
+    +double getVolatility() const
     -double _drift
     -double _volatility
+}
+
+class DupireModel {
+    +DupireModel(double spot, const VolatilitySurface& volSurface)
+    +DupireModel(const DupireModel& model)
+    +DupireModel* clone() const override
+    +DupireModel& operator=(const DupireModel& model)
+    +bool operator==(const Model& model) const override
+    +double drift(double time, double assetPrice) const override
+    +double diffusion(double time, double assetPrice) const override
+    +const VolatilitySurface& getVolatilitySurface() const
+    +double getLocalVolatility(double spot, double time) const
+    -const VolatilitySurface* _volSurfacePtr
 }
 
 class HullWhiteModel {
@@ -36,11 +49,13 @@ class HullWhiteModel {
 }
 
 BlackScholesModel --|> Model
+DupireModel --|> Model
 HullWhiteModel --|> Model
 
 ' Force vertical stacking for Model group
 Model -[hidden]down- BlackScholesModel
-BlackScholesModel -[hidden]down- HullWhiteModel
+BlackScholesModel -[hidden]down- DupireModel
+DupireModel -[hidden]down- HullWhiteModel
 
 ' ===== Financial Instrument Hierarchy =====
 abstract class FinancialInstrument {
@@ -62,18 +77,25 @@ class EuropeanOptionPayoff {
     +EuropeanOptionPayoff(Type type, double strike, double maturity)
     +Option::Type getType() const override
     +EuropeanOptionPayoff* clone() const override
-    +double strike() const
-    +double maturity() const
+    +virtual double strike() const
+    +virtual double maturity() const
     -double _strike
     -double _maturity
 }
 
+class AmericanOption {
+    ' TODO: Implementation pending
+    ' Will use finite difference methods
+}
+
 FinancialInstrument <|-- Option
 Option <|-- EuropeanOptionPayoff
+Option <|-- AmericanOption
 
 ' Force vertical stacking for FinancialInstrument group
 FinancialInstrument -[hidden]down- Option
 Option -[hidden]down- EuropeanOptionPayoff
+EuropeanOptionPayoff -[hidden]down- AmericanOption
 
 ' ===== Discount Curve Hierarchy =====
 abstract class DiscountCurve {
@@ -91,6 +113,110 @@ class FlatDiscountCurve {
 }
 
 FlatDiscountCurve --|> DiscountCurve
+
+' ===== Interpolation Schemes Hierarchy =====
+abstract class InterpolationSchemes {
+    +virtual ~InterpolationSchemes() = default
+    +virtual double interpolate(double x) const = 0
+    +virtual InterpolationSchemes* clone() const = 0
+    +virtual pair<double, double> getRange() const = 0
+    +virtual double extrapolate(double x) const = 0
+}
+
+class LinearInterpolation {
+    +LinearInterpolation(const vector<double>& xData, const vector<double>& yData)
+    +double interpolate(double x) const override
+    +InterpolationSchemes* clone() const override
+    +pair<double, double> getRange() const override
+    +double extrapolate(double x) const override
+    -vector<double> _xData, _yData
+    -double _xMin, _xMax
+    -size_t findInterval(double x) const
+}
+
+class CubicSplineInterpolation {
+    +enum class BoundaryType { Natural, Clamped, Periodic }
+    +CubicSplineInterpolation(const vector<double>& xData, const vector<double>& yData, BoundaryType boundaryType)
+    +double interpolate(double x) const override
+    +InterpolationSchemes* clone() const override
+    +pair<double, double> getRange() const override
+    +double extrapolate(double x) const override
+    +double derivative(double x) const
+    +double secondDerivative(double x) const
+    -vector<double> _xData, _yData
+    -double _xMin, _xMax
+    -BoundaryType _boundaryType
+    -vector<double> _alpha, _beta, _gamma, _delta
+    -void computeSplineCoefficients()
+    -void solveThomasAlgorithm()
+    -size_t findInterval(double x) const
+}
+
+LinearInterpolation --|> InterpolationSchemes
+CubicSplineInterpolation --|> InterpolationSchemes
+
+' Force vertical stacking for InterpolationSchemes group
+InterpolationSchemes -[hidden]down- LinearInterpolation
+LinearInterpolation -[hidden]down- CubicSplineInterpolation
+
+' ===== Volatility Surface Classes =====
+class VolatilitySurface {
+    +enum class InterpolationType { Linear, CubicSpline }
+    +VolatilitySurface(const vector<double>& strikes, const vector<double>& maturities, const vector<vector<double>>& volatilities, const DiscountCurve& discountCurve, InterpolationType interpolationType)
+    +double getImpliedVolatility(double strike, double maturity) const
+    +double getImpliedVolatilityForwardMoneyness(double strike, double maturity, double spot) const
+    +double getLocalVolatility(double spot, double time) const
+    +vector<double> getVolatilitySmile(double maturity, const vector<double>& strikes) const
+    +vector<double> getVolatilityTermStructure(double strike, const vector<double>& maturities) const
+    +pair<pair<double, double>, pair<double, double>> getBounds() const
+    +double getBlackScholesCall(double spot, double strike, double time, double volatility) const
+    +double getBlackScholesPut(double spot, double strike, double time, double volatility) const
+    +double getBlackScholesVega(double spot, double strike, double time, double volatility) const
+    +double getBlackScholesGamma(double spot, double strike, double time, double volatility) const
+    +double getBlackScholesTheta(double spot, double strike, double time, double volatility) const
+    +double getImpliedVolatilityTimeDerivative(double strike, double maturity) const
+    +double getImpliedVolatilityStrikeDerivative(double strike, double maturity) const
+    +double getImpliedVolatilitySecondStrikeDerivative(double strike, double maturity) const
+    +VolatilitySurface* clone() const
+    +bool operator==(const VolatilitySurface& other) const
+    +const vector<double>& getStrikes() const
+    +const vector<double>& getMaturities() const
+    +const vector<vector<double>>& getVolatilities() const
+    +const DiscountCurve& getDiscountCurve() const
+    -vector<double> _strikes
+    -vector<double> _maturities
+    -vector<vector<double>> _volatilities
+    -InterpolationType _interpolationType
+    -unique_ptr<DiscountCurve> _discountCurve
+    -vector<unique_ptr<InterpolationSchemes>> _smileInterpolators
+    -vector<unique_ptr<InterpolationSchemes>> _termStructureInterpolators
+    -void initializeInterpolators()
+    -double computeDupireLocalVolatility(double spot, double time) const
+    -double blackScholesCall(double spot, double strike, double time, double volatility) const
+    -double blackScholesPut(double spot, double strike, double time, double volatility) const
+    -double blackScholesVega(double spot, double strike, double time, double volatility) const
+    -double blackScholesGamma(double spot, double strike, double time, double volatility) const
+    -double blackScholesTheta(double spot, double strike, double time, double volatility) const
+    -double getImpliedVolatilityDerivativeTime(double strike, double maturity) const
+    -double getImpliedVolatilityDerivativeStrike(double strike, double maturity) const
+    -double getImpliedVolatilitySecondDerivativeStrike(double strike, double maturity) const
+}
+
+class VolatilitySurfaceBuilder {
+    +VolatilitySurfaceBuilder& addStrike(double strike)
+    +VolatilitySurfaceBuilder& addMaturity(double maturity)
+    +VolatilitySurfaceBuilder& setVolatility(double strike, double maturity, double volatility)
+    +VolatilitySurfaceBuilder& setInterpolationType(VolatilitySurface::InterpolationType type)
+    +VolatilitySurfaceBuilder& setDiscountCurve(const DiscountCurve& discountCurve)
+    +unique_ptr<VolatilitySurface> build()
+    -vector<double> _strikes
+    -vector<double> _maturities
+    -vector<vector<double>> _volatilities
+    -VolatilitySurface::InterpolationType _interpolationType
+    -unique_ptr<DiscountCurve> _discountCurve
+    -void sortAndDeduplicate()
+    -void buildVolatilityMatrix()
+}
 
 ' ===== Pricing Method Hierarchy =====
 abstract class Pricer {
@@ -170,11 +296,18 @@ Pricer --> DiscountCurve : uses
 MonteCarloPricer --> PathSimulator : uses
 PathSimulator --> Model : uses
 BlackScholesPricer --> Utils : uses
+DupireModel --> VolatilitySurface : uses
+VolatilitySurface --> DiscountCurve : uses
+VolatilitySurface --> InterpolationSchemes : uses
+VolatilitySurfaceBuilder --> DiscountCurve : uses
+VolatilitySurfaceBuilder ..> VolatilitySurface : creates
 
 ' ===== Horizontal spacing between hierarchies =====
 Model -[hidden]right- FinancialInstrument
 FinancialInstrument -[hidden]right- DiscountCurve
-DiscountCurve -[hidden]right- Pricer
+DiscountCurve -[hidden]right- InterpolationSchemes
+InterpolationSchemes -[hidden]right- VolatilitySurface
+VolatilitySurface -[hidden]right- Pricer
 Pricer -[hidden]right- PathSimulator
 PathSimulator -[hidden]right- Utils
 

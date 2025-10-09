@@ -8,6 +8,7 @@ class DiscountCurve // for modelling with deterministic rates
 public:
     virtual double discount(double time) const = 0;
     virtual DiscountCurve* clone() const = 0;
+    virtual double rate() const = 0;  // Virtual getter for rate information
     virtual ~DiscountCurve() = default;
 };
 
@@ -18,8 +19,8 @@ public:
 
     double discount(double time) const override;
 
-    double rate() const;
-
+    double rate() const override;
+    
     FlatDiscountCurve* clone() const override;
 
 private:

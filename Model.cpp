@@ -1,5 +1,6 @@
 #include "Model.h"
 #include "Utils.h"
+#include "VolatilitySurface.h"
 #include <cmath>
 
 // Model
@@ -22,9 +23,11 @@ Model& Model::operator=(const Model& model)
 	return *this;
 }
 
-// BlackScholesModel
-BlackScholesModel::BlackScholesModel(double spot, double mu, double sigma)
-	: Model(spot), _drift(mu), _volatility(sigma)
+// ============================================================================
+// BlackScholesModel Implementation
+// ============================================================================
+BlackScholesModel::BlackScholesModel(double spot, const DiscountCurve& discountCurve, double sigma)
+	: Model(spot), _drift(discountCurve.rate()), _volatility(sigma)
 	// Actually it calls the copy constructor of each data member
 {
 }
@@ -66,14 +69,86 @@ double BlackScholesModel::diffusion(double time, double assetPrice) const
 
 
 
-
-
-// BlackScholesFormula
-double BlackScholesFormula(double& drift, double& volatility, double& spot, double& time, double& assetPrice, double& strike, std::string& optType)
+// ============================================================================
+// DupireModel Implementation
+// ============================================================================
+DupireModel::DupireModel(double spot, const VolatilitySurface& volSurface)
+	: Model(spot), _volSurfacePtr(volSurface.clone())
 {
-	// Implement the Black-Scholes formula here
-	double tmp = volatility * sqrt(time);
-	double d1 = (log(spot/strike) + (drift + 0.5 * pow(volatility, 2)) * time) / tmp;
-	double d2 = d1 - tmp;
-	return spot * Utils::stdNormCdf(d1) - strike * exp(-drift * time) * Utils::stdNormCdf(d2);
+/* DupireModel volSurface.clone() makes independent copy of the VolatilitySurface
+ * DupireModel has its own VolatilitySurface copy, independent of the original VolatilitySurface
+ * Risk-free rate is extracted from the VolatilitySurface's DiscountCurve
+ */
+}
+
+DupireModel::DupireModel(const DupireModel& model)
+	: Model(model), _volSurfacePtr(model._volSurfacePtr->clone())
+{
+}
+
+DupireModel* DupireModel::clone() const
+{
+	return new DupireModel(*this);
+}
+
+DupireModel& DupireModel::operator=(const DupireModel& model)
+{
+	if (this != &model)
+	{
+		Model::operator=(model);
+		// Exception-safe assignment: create new object first
+		VolatilitySurface* newVolSurface = model._volSurfacePtr->clone();
+		
+		// Only delete old pointer if new one was created successfully
+		if (_volSurfacePtr) {
+			delete _volSurfacePtr;
+		}
+		_volSurfacePtr = newVolSurface;
+	}
+	return *this;
+}
+
+bool DupireModel::operator==(const Model& model) const
+{
+	const auto* dupireModel = dynamic_cast<const DupireModel*>(&model);
+	if (!dupireModel)
+		return false;
+	
+	return (_initValue == dupireModel->_initValue) && 
+		   (*_volSurfacePtr == *dupireModel->_volSurfacePtr);
+}
+
+double DupireModel::drift(double time, double assetPrice) const
+{
+	// LECTURE NOTES CORRECTION: Use DiscountCurve properly for time-dependent rates
+	// For time-dependent rates, we need the instantaneous rate r(t) at time t
+	// This is computed as: r(t) = -d/dt[log(B(t))] where B(t) is the discount factor
+	// For numerical approximation: r(t) ≈ -[log(B(t+ε)) - log(B(t))]/ε
+	const double eps = 1e-6;
+	const DiscountCurve& discountCurve = _volSurfacePtr->getDiscountCurve();
+	double discount_t = discountCurve.discount(time);
+	double discount_t_plus = discountCurve.discount(time + eps);
+	double riskFreeRate = -std::log(discount_t_plus / discount_t) / eps;
+	
+	return riskFreeRate * assetPrice; // under risk-neutral measure -> dS/S = r(t)dt + σ(S,t)dW
+}
+
+double DupireModel::diffusion(double time, double assetPrice) const
+{
+	// Local volatility from Dupire formula
+	double localVol = getLocalVolatility(assetPrice, time);
+	return localVol * assetPrice;
+}
+
+
+
+double DupireModel::getLocalVolatility(double spot, double time) const
+{
+	// Delegate the VolatilitySurface's implementation of the Dupire formula.
+	return _volSurfacePtr->getLocalVolatility(spot, time);
+/* 
+ * Market Data: VolatilitySurface contains market implied volatilities
+ * Local Volatility: Dupire formula converts implied to local volatility
+ * Pricing: Local volatility used in SDE for path simulation
+ */
 }

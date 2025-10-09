@@ -5,6 +5,16 @@
 #ifndef CPPFM_FINANCIALPAYOFFS_H
 #define CPPFM_FINANCIALPAYOFFS_H
 
+/* TODO:
+    Options:
+        American Option -> Pricing via finite difference (Crank-Nicholson)
+            Can try implement PDEs in general -> implicit, explicit, CN -> do generic formula and then per method add the correct weights
+        Asian Option -> path dependent
+    Other asset classes:
+        Variance swaps
+*/
+
+
 class FinancialInstrument // Abstract class - base class
 {
 public:
@@ -38,7 +48,7 @@ public:
 
 protected:
     Type _type;
-
+    
 };
 
 
@@ -54,9 +64,9 @@ public:
     Option::Type getType() const override; // C/P provided by Option class; EUOption overrides and provides its own implementation
     EuropeanOptionPayoff* clone() const override;
 
-    // Parameters
-    inline double strike() const { return _strike; }
-    inline double maturity() const { return _maturity; }
+    // Virtual getters for polymorphic access
+    virtual double strike() const { return _strike; }
+    virtual double maturity() const { return _maturity; }
 
 private:
     // Option is specified by strike and maturity
@@ -65,6 +75,11 @@ private:
 };
 
 
+class AmericanOption : public Option
+{
+public:
+
+};
 
 
 #endif //CPPFM_FINANCIALPAYOFFS_H

@@ -1,15 +1,46 @@
 // #pragma once
 
-#ifndef MODEL_HPP
-#define MODEL_HPP
+#ifndef MODEL_H
+#define MODEL_H
 
 #include <cmath>
 #include <vector>
 
-/* Notes
-TO DO:
-1. override specifier in BlackScholesModel::operator==
-The base class expects a reference to Model, while the derived class uses a reference to BlackScholesModel.
+// Forward declaration
+class DiscountCurve;
+
+/*
+	TODO:
+		DupireModel
+		VolatilitySurface -> Greeks -> Calibration [+interpolation methods] = Study of Volatility
+		Pricing under DupireModel
+
+		VolSurface = implied from market data/prices
+		Give me prices/data I will reconstruct the VolSurf which is being priced in by the traders
+
+		yield-curve and VolSurface = backbone of the market data
+		IVolSurf is viewed as initial vol for the SVM
+		DiscountCurve is viewed as initial rate for StochasticIntRates
+
+		We assume we got data and so we can calibrate - we just design the class/blueprints
+		Most important: How we will represent the data; list of tenors, strikes and ImpVols matrix [raw data]
+		Model needs to have continuous -> ex/interpolations schemes! Determines the robustness of the model
+
+		HOMEWORK:
+			1. See the notes: interpolation cubic spline - along strikes for 1 tenor, then do Thomas algo per
+			VolSurface - give me a value I need to interpolate, then go to InterpScheme and get it done.
+			InterpolationSchemes.hpp/cpp with multiple methods
+		Careful: Cubic spline only works when we interpolate the strikes, interpolating along the tenor we will need information set of curves and interpolate in between the curves.
+
+		Market data is for market data team
+		Pricing lib must have proper yield-curve, IV-surface, then interpolate and get the model, then becomes the input for my calibration.
+		What is market data, modelling assumption + interpolations!
+
+		Stochastic Interest Rates
+
+		HestonModel
+
+		Generalise the BlackScholesModel for non-constant rates
 */
 
 // Abstract class = class that have at least 1 virtual pure method
@@ -25,6 +56,9 @@ public:
 
 	virtual double drift(double time, double assetPrice) const = 0; // Virtual Pure method
 	virtual double diffusion(double time, double assetPrice) const = 0; // Virtual Pure method
+	
+	// Note: Risk-free rates are accessed through DiscountCurve objects
+	// No virtual methods needed for risk-free rate or volatility so don't need this ?
 
 	// RULE: If a pointer of this class is used as a data member of another class [here PathSimulator]
 	// then we need to delegate the copy construction and pointing to another method
@@ -53,7 +87,7 @@ public:
 	// Default constructor
 	BlackScholesModel() = delete;
 	// Constructor with parameters
-	BlackScholesModel(double spot, double mu, double sigma);
+	BlackScholesModel(double spot, const DiscountCurve& discountCurve, double sigma);
 	// Copy constructor
 	BlackScholesModel(const BlackScholesModel& model);
 	// Clone method
@@ -87,16 +121,10 @@ public:
 	double drift(double time, double assetPrice) const override;
 	double diffusion(double time, double assetPrice) const override;
 
-	// Getters 
-	inline double riskFreeRate() const 
-	{ 
-		return _drift; 
-	}
-	
-	inline double volatility() const 
-	{ 
-		return _volatility; 
-	}
+	// Getters for model parameters; used 'get' to avoid overloading notation
+	double getDrift() const { return _drift; }
+	double getVolatility() const { return _volatility; }
+
 
 private: // default constructor will call the default constructor for each data member
 	//double _initValue;
@@ -116,17 +144,52 @@ protected:
 
 };
 
+// Forward declaration
+class VolatilitySurface;
+/* 
+ * Dupire Local Volatility Model
+ * SDE: dS = rS dt + sigma(S, t) S dW
+ */
+class DupireModel : public Model
+{
+public:
+	~DupireModel() override = default; // Destructor
+	/**
+	 * Constructor with volatility surface
+	 * @param spot Initial spot price
+	 * @param volSurface Volatility surface for local volatility
+	 */
+	DupireModel(double spot, const VolatilitySurface& volSurface);
 
-/* TODO:
-	DupireModel
+	DupireModel(const DupireModel& model); // Copy constructor
+	DupireModel* clone() const override; // Clone method
+	DupireModel& operator=(const DupireModel& model); // Copy assignment operator
+	bool operator==(const Model& model) const override; // == operator
+	
+	// Virtual methods from base class
+	double drift(double time, double assetPrice) const override;
+	double diffusion(double time, double assetPrice) const override;
+	// double drift() const;
+	// double volatility() const; // Volatility is accessed through the VolatilitySurface
+	
+	// Getters
+	const VolatilitySurface& getVolatilitySurface() const 
+	{ 
+		return *_volSurfacePtr; // pointer to the VolatilitySurface
+	}
+	
+	/**
+	 * Get local volatility at given spot and time
+	 * @param spot Current asset price
+	 * @param time Current time
+	 * @return Local volatility
+	 */
+	double getLocalVolatility(double spot, double time) const;
+
+private:
+	const VolatilitySurface* _volSurfacePtr;
+};
 
 
-	HestonModel - time grid, RNG
-		COS method - to invert the ch.f.
-		Broadie-Kaya exact simulation
-		CIR Integrated Variance process
 
-	Stochastic Interest rate
-*/
-
-#endif
+#endif //MODEL_H

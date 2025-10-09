@@ -19,8 +19,8 @@ public:
     virtual double nextStep(size_t timeIndex, double assetPrice) const = 0; // VPM - because I don't know what it does
     // We delegate the implementation of nextStep to the derived classes
     
-    // Getter
-    inline const vector<double>& timeSteps() const 
+    // Virtual getter for polymorphic access
+    virtual const vector<double>& timeSteps() const 
     { 
         return _timeSteps; 
     }

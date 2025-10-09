@@ -29,7 +29,7 @@ public:
 
 protected:
     const Model* _modelPtr; // Pointer to base class Model pure virtual cannot instantiate - take const pointer
-    const DiscountCurve* _discountCurvePtr;
+    const DiscountCurve* _discountCurvePtr; // Pointer to base class DiscountCurve
     // later multifactor pricing
 };
 
@@ -61,12 +61,9 @@ public:
     MonteCarloPricer() = default; // default constructor
     MonteCarloPricer(const Model &model, const DiscountCurve& discountCurve, const PathSimulator& simulator, size_t numPaths);
     // always keep the base class arguments first, then extras
+    MonteCarloPricer * clone() const override; // Clone method
 
-    // Clone method
-    MonteCarloPricer * clone() const override;
-
-    // Destructor
-    ~MonteCarloPricer() override;
+    ~MonteCarloPricer() override; // Destructor
 
     double price(const EuropeanOptionPayoff& option) const override;
 

@@ -15,9 +15,15 @@ Pricer::Pricer(const Model &model, const DiscountCurve &discountCurve)
 }
 
 Pricer::~Pricer()
-{           // delete the memory allocated with close
-    delete _modelPtr; // the 'new' called pointer in Pricer is deleted here - when the Pricer object is destroyed
-    delete _discountCurvePtr;
+{   // delete the memory allocated with close
+    if (_modelPtr) {  // Check if Null before deleting pointer
+        delete _modelPtr;
+        _modelPtr = nullptr;  // Prevent double deletion 
+    }
+    if (_discountCurvePtr) {  // Check if Null before deleting pointer
+        delete _discountCurvePtr;
+        _discountCurvePtr = nullptr;  // Prevent double deletion
+    }
 }
 
 BlackScholesPricer::BlackScholesPricer() = default;
@@ -56,12 +62,13 @@ double BlackScholesPricer::price(const EuropeanOptionPayoff &option) const
 
     double S0 = _bsModelPtr->initValue();
     double T = option.maturity();
-    double r = -log(_discountCurvePtr->discount(T)) / max(T, 1e-12); // infer the rate from the discount curve
-    double sigma = _bsModelPtr->volatility();
+    // discount = e^(-r*T)  =>  r = -ln(P(0,T))/T
+    double r = -log(_discountCurvePtr->discount(T)) / T; // infer the rate from the discount curve
+    double sigma = _bsModelPtr->getVolatility();
     double K = option.strike();
 
     if (T <= 0.0)
-        return max( (option.getType() == Option::Type::Call ? S0 - K : K - S0), 0.0 );
+        return max( (option.getType() == Option::Type::Call ? S0 - K : K - S0), 0.0 ); // condition ? value_if_true : value_if_false
 
     double d1Val = d1(S0, K, r, sigma, T);
     double d2Val = d2(d1Val, sigma, T);
@@ -79,9 +86,8 @@ double BlackScholesPricer::price(const EuropeanOptionPayoff &option) const
 
 MonteCarloPricer::MonteCarloPricer(const Model& model, const DiscountCurve& discountCurve, const PathSimulator& simulator, size_t numPaths) // with params
     : Pricer(model, discountCurve),  _numPaths(numPaths), _simulatorPtr(&simulator) // explicitly passing the model to base class constructor
-{
+{  // NOTE: PathSimulator may need clone method for safety
 }
-
 
 MonteCarloPricer * MonteCarloPricer::clone() const
 {
@@ -94,7 +100,7 @@ double MonteCarloPricer::price(const EuropeanOptionPayoff &option) const
 {
     // Simulate paths, sum the payoffs, take average, discount
     double T = option.maturity();
-    double r = -log(_discountCurvePtr->discount(T)) / max(T, 1e-12);
+    double r = -log(_discountCurvePtr->discount(T)) / T;
     // if rate is stochastic, then switch to pathwise exp(int_0^T r(t) dt); Model.h - HullWhiteModel
 
     size_t numPaths = _numPaths > 0 ? _numPaths : 10000;

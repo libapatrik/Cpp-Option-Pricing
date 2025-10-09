@@ -3,15 +3,19 @@
 #include "Pricer.h"
 #include "FinancialInstrument.h"
 #include "DiscountCurve.h"
+#include "InterpolationSchemes.h"
+#include "VolatilitySurface.h"
 
 #include <iostream>
+#include <vector>
+#include <iomanip>
 
 // void will be like a procedure -> set of instructions
 int main()
 {
     // Analytic Black-Scholes pricer
-    BlackScholesModel modelForPricing(100.0, 0.05, 0.2);
     FlatDiscountCurve flatCurve(0.05);
+    BlackScholesModel modelForPricing(100.0, flatCurve, 0.2);
     BlackScholesPricer pricer(modelForPricing, flatCurve);
     EuropeanOptionPayoff callPayoff(Option::Type::Call, 100.0, 1.0);
     double callPrice = pricer.price(callPayoff);
@@ -32,12 +36,10 @@ int main()
     double mcMilPrice = mcMil.price(callPayoff);
     std::cout << "Call Price under MC (Milstein):     " << mcMilPrice << std::endl;
 
-
     return 0;
     // Question is : which drift method is called : the base class one or the derived class one?
     // Virtuality
     // If base class method is declared virtual -> derived class
     // If base class method is not declared virtual -> base class
-
 
 }

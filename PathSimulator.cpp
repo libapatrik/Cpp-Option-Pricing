@@ -56,7 +56,11 @@ PathSimulator::PathSimulator(const vector<double> &timeSteps, const Model &model
 
 PathSimulator::~PathSimulator()
 {
-    delete _modelPtr; // the 'new' called pointer in BSM is deleted here - when the PathSimulator object is destroyed
+    // delete _modelPtr; // the 'new' called pointer in BSM is deleted here - when the PathSimulator object is destroyed
+    if (_modelPtr) {  // Check if Null before deleting pointer
+        delete _modelPtr;
+        _modelPtr = nullptr;  // Prevent double deletion
+    }
 }
 
 
@@ -113,14 +117,15 @@ double MilsteinPathSimulator::nextStep(size_t timeIndex, double assetPrice) cons
     double mu = _modelPtr->drift(t, assetPrice);
     double sigma = _modelPtr->diffusion(t, assetPrice);
 
-    // Derivative of diffusion wrt S by central difference
+    // Derivative of diffusion(t, S) wrt S by central difference
+    // TODO: Create pure virtual method for diffusion(t,S)/dS
     const double eps = 1e-6 * (1.0 + fabs(assetPrice)); // small perturbation; avoid division by zero
     double sigma_plus = _modelPtr->diffusion(t, assetPrice + eps);
     double sigma_minus = _modelPtr->diffusion(t, assetPrice - eps);
     double sigma_prime = (sigma_plus - sigma_minus) / (2.0 * eps);
 
     double dW = sqrt(deltaT) * Z;
-    // X_n+1 = Xn + mu * Xn * deltaT + sigma * Xn * dW + 0.5 * sigma * sigma_prime * (dW^2 - deltaT); - Xn is already in sigma & mu
+    // CORRECTED Milstein scheme: X_{n+1} = X_n + μ(X_n)Δt + σ(X_n)ΔW + 0.5 * σ(X_n) * σ'(X_n) * (ΔW² - Δt)
     double next = assetPrice + mu * deltaT + sigma * dW + 0.5 * sigma * sigma_prime * (pow(dW, 2) - deltaT);
     return next;
 }
