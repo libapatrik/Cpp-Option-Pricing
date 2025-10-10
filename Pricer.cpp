@@ -18,7 +18,7 @@ Pricer::~Pricer()
 {   // delete the memory allocated with close
     if (_modelPtr) {  // Check if Null before deleting pointer
         delete _modelPtr;
-        _modelPtr = nullptr;  // Prevent double deletion 
+        _modelPtr = nullptr;  // Prevent double deletion; ensuring that the pointer does not point to deallocated memobery location
     }
     if (_discountCurvePtr) {  // Check if Null before deleting pointer
         delete _discountCurvePtr;

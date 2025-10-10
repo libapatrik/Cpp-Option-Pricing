@@ -122,7 +122,7 @@ private:
     std::vector<std::unique_ptr<InterpolationSchemes>> _smileInterpolators;
     std::vector<std::unique_ptr<InterpolationSchemes>> _termStructureInterpolators;
     
-    void initializeInterpolators();
+    void initializeInterpolators(); // to create interpolators for strikes and matiruties
     double computeDupireLocalVolatility(double spot, double time) const;
     
     // Black-Scholes pricing for Dupire formula (using DiscountCurve)

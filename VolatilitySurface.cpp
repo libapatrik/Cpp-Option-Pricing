@@ -54,16 +54,19 @@ VolatilitySurface::VolatilitySurface(const std::vector<double>& strikes,
     
     initializeInterpolators();
 }
-
+/**
+ *   Smile Interpolation: For each maturity, interpolate volatility across strikes (the volatility smile)
+ *   Term Structure Interpolation: For each strike, interpolate volatility across maturities (how volatility changes over time)
+ */
 void VolatilitySurface::initializeInterpolators()
 {
     // Initialize 1D interpolators for each maturity (smile interpolation)
     // cubic spline interpolation along strikes
-    _smileInterpolators.reserve(_maturities.size());
-    for (size_t i = 0; i < _maturities.size(); ++i) {
-        if (_interpolationType == InterpolationType::CubicSpline) {
+    _smileInterpolators.reserve(_maturities.size());              // reserve space for maturities in _smileInterpolators vector
+    for (size_t i = 0; i < _maturities.size(); ++i) {               // for each maturity
+        if (_interpolationType == InterpolationType::CubicSpline) { // check type: do cubic spline interpolation
             _smileInterpolators.push_back(
-                std::make_unique<CubicSplineInterpolation>(
+                std::make_unique<CubicSplineInterpolation>(       // make_unique creates a unique pointer
                     _strikes, _volatilities[i], 
                     CubicSplineInterpolation::BoundaryType::Natural));
         } else {
@@ -74,12 +77,12 @@ void VolatilitySurface::initializeInterpolators()
     }
     
     // Initialize 1D interpolators for each strike (term structure interpolation)
-    _termStructureInterpolators.reserve(_strikes.size());
-    for (size_t j = 0; j < _strikes.size(); ++j) {
-        std::vector<double> termVols;
-        termVols.reserve(_maturities.size());
-        for (size_t i = 0; i < _maturities.size(); ++i) {
-            termVols.push_back(_volatilities[i][j]);
+    _termStructureInterpolators.reserve(_strikes.size());        // reserve space for strikes
+    for (size_t j = 0; j < _strikes.size(); ++j) {                 // for each strike
+        std::vector<double> termVols;                              // volatilities across maturities for strike j
+        termVols.reserve(_maturities.size());                    // reserve space for maturities
+        for (size_t i = 0; i < _maturities.size(); ++i) {          // for each maturity
+            termVols.push_back(_volatilities[i][j]);               // collect volatilities for strike j
         }
         
         if (_interpolationType == InterpolationType::CubicSpline) {
