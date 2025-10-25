@@ -5,12 +5,11 @@
 #include <random>
 #include <vector>
 
-using namespace std;
 
 class PathSimulator
 {
 public:
-    PathSimulator(const vector<double>& timeSteps, const Model& model, size_t randomSeed);
+    PathSimulator(const std::vector<double>& timeSteps, const Model& model, size_t randomSeed);
 
     virtual ~PathSimulator();
     // PathSimulator owns the memory pointed to by _modelPtr - it was allocated with new
@@ -20,7 +19,8 @@ public:
     // We delegate the implementation of nextStep to the derived classes
     
     // Virtual getter for polymorphic access
-    virtual const vector<double>& timeSteps() const 
+    // Other methods will want to use different time steps, so we need to make it virtual ?
+    virtual const std::vector<double>& timeSteps() const 
     { 
         return _timeSteps; 
     }
@@ -28,15 +28,15 @@ public:
 protected:
     bool timeStepsSanityCheck() const;
 
-    vector<double> _timeSteps; // information for discretisation; not necessarily equally spaced! {t_0, t_1, ..., t_n}
+    std::vector<double> _timeSteps; // information for discretisation; not necessarily equally spaced! {t_0, t_1, ..., t_n}
     const Model* _modelPtr; // Pointer to base class Model pure virtual cannot instantiate - take const pointer
-    mutable default_random_engine _randomEngine; // had to change to mutable because of the const method path()
+    mutable std::default_random_engine _randomEngine; // had to change to mutable because of the const method path()
 };
 
 class EulerPathSimulator : public PathSimulator
 {
 public:
-    EulerPathSimulator(const vector<double>& timeSteps, const Model& model, size_t randomSeed) // constructor with parameters
+    EulerPathSimulator(const std::vector<double>& timeSteps, const Model& model, size_t randomSeed) // constructor with parameters
         : PathSimulator(timeSteps, model, randomSeed) 
         {
         }
@@ -46,7 +46,7 @@ public:
 class MilsteinPathSimulator : public PathSimulator
 {
 public:
-    MilsteinPathSimulator(const vector<double>& timeSteps, const Model& model, size_t randomSeed)
+    MilsteinPathSimulator(const std::vector<double>& timeSteps, const Model& model, size_t randomSeed)
         : PathSimulator(timeSteps, model, randomSeed)
         {
         }

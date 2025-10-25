@@ -47,10 +47,6 @@ public:
     double price(const EuropeanOptionPayoff& option) const override;
 
 protected:
-    // Analytic formula
-    static double d1(double spot, double strike, double r, double sigma, double T);
-    static double d2(double d1, double sigma, double T);
-
     const BlackScholesModel* _bsModelPtr { nullptr };
 
 };

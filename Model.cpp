@@ -26,8 +26,8 @@ Model& Model::operator=(const Model& model)
 // ============================================================================
 // BlackScholesModel Implementation
 // ============================================================================
-BlackScholesModel::BlackScholesModel(double spot, const DiscountCurve& discountCurve, double sigma)
-	: Model(spot), _drift(discountCurve.rate()), _volatility(sigma)
+BlackScholesModel::BlackScholesModel(double spot, const DiscountCurve& discountCurve, double volatility)
+	: Model(spot), _drift(discountCurve.rate()), _volatility(volatility)
 	// Actually it calls the copy constructor of each data member
 {
 }
@@ -78,8 +78,11 @@ DupireModel::DupireModel(double spot, const VolatilitySurface& volSurface)
 /* DupireModel volSurface.clone() makes independent copy of the VolatilitySurface
  * DupireModel has its own VolatilitySurface copy, independent of the original VolatilitySurface
  * Risk-free rate is extracted from the VolatilitySurface's DiscountCurve
+ * NOTE: unique_ptr constructor accepts raw pointer from clone()
+ * and takes ownership automatically - no manual delete needed!
  */
 }
+
 
 DupireModel::DupireModel(const DupireModel& model)
 	: Model(model), _volSurfacePtr(model._volSurfacePtr->clone())
@@ -96,14 +99,15 @@ DupireModel& DupireModel::operator=(const DupireModel& model)
 	if (this != &model)
 	{
 		Model::operator=(model);
-		// Exception-safe assignment: create new object first
-		VolatilitySurface* newVolSurface = model._volSurfacePtr->clone();
-		
-		// Only delete old pointer if new one was created successfully
-		if (_volSurfacePtr) {
-			delete _volSurfacePtr;
-		}
-		_volSurfacePtr = newVolSurface;
+		// // Exception-safe assignment: create new object first
+		// VolatilitySurface* newVolSurface = model._volSurfacePtr->clone();
+		//
+		// // Only delete old pointer if new one was created successfully
+		// if (_volSurfacePtr) {
+		// 	delete _volSurfacePtr;
+		// }
+		// _volSurfacePtr = newVolSurface;
+		_volSurfacePtr.reset(model._volSurfacePtr->clone()); // handles delete and assignment
 	}
 	return *this;
 }
@@ -116,6 +120,7 @@ bool DupireModel::operator==(const Model& model) const
 	
 	return (_initValue == dupireModel->_initValue) && 
 		   (*_volSurfacePtr == *dupireModel->_volSurfacePtr);
+		   // dereferencing the unique_ptr to get the VolatilitySurface object
 }
 
 double DupireModel::drift(double time, double assetPrice) const
@@ -124,11 +129,12 @@ double DupireModel::drift(double time, double assetPrice) const
 	// For time-dependent rates, we need the instantaneous rate r(t) at time t
 	// This is computed as: r(t) = -d/dt[log(B(t))] where B(t) is the discount factor
 	// For numerical approximation: r(t) ≈ -[log(B(t+ε)) - log(B(t))]/ε
-	const double eps = 1e-6;
-	const DiscountCurve& discountCurve = _volSurfacePtr->getDiscountCurve();
-	double discount_t = discountCurve.discount(time);
-	double discount_t_plus = discountCurve.discount(time + eps);
-	double riskFreeRate = -std::log(discount_t_plus / discount_t) / eps;
+	// const double eps = 1e-6;
+	const DiscountCurve& discountCurve = _volSurfacePtr->discountCurve();
+	// double discount_t = discountCurve.discount(time);
+	// double discount_t_plus = discountCurve.discount(time + eps);
+	// double riskFreeRate = -std::log(discount_t_plus / discount_t) / eps;
+	double riskFreeRate = discountCurve.instantaneousRate(time);
 	
 	return riskFreeRate * assetPrice; // under risk-neutral measure -> dS/S = r(t)dt + σ(S,t)dW
 }
@@ -136,16 +142,16 @@ double DupireModel::drift(double time, double assetPrice) const
 double DupireModel::diffusion(double time, double assetPrice) const
 {
 	// Local volatility from Dupire formula
-	double localVol = getLocalVolatility(assetPrice, time);
+	double localVol = localVolatility(assetPrice, time);
 	return localVol * assetPrice;
 }
 
 
 
-double DupireModel::getLocalVolatility(double spot, double time) const
+double DupireModel::localVolatility(double spot, double time) const
 {
 	// Delegate the VolatilitySurface's implementation of the Dupire formula.
-	return _volSurfacePtr->getLocalVolatility(spot, time);
+	return _volSurfacePtr->localVolatility(spot, time);
 /* 
  * Market Data: VolatilitySurface contains market implied volatilities
  * Local Volatility: Dupire formula converts implied to local volatility

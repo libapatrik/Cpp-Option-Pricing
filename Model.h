@@ -5,12 +5,17 @@
 
 #include <cmath>
 #include <vector>
+#include <memory>
 
 // Forward declaration
 class DiscountCurve;
 
-/*
-	TODO:
+/** TODO:
+		Can delegate the computation to the DiscountCurve; just reuse the ε - eps
+		Add Black-Scholes choice for put call.
+		Create h/cpp for finite difference methods and finite element methods
+		
+		Don't do the numerical approximation in the model; delegate to the DiscountCurve
 		DupireModel
 		VolatilitySurface -> Greeks -> Calibration [+interpolation methods] = Study of Volatility
 		Pricing under DupireModel
@@ -41,7 +46,25 @@ class DiscountCurve;
 		HestonModel
 
 		Generalise the BlackScholesModel for non-constant rates
+
+	PDE: 
+		Grid construction
+		Boundary conditions (Dirichlet, Neumann, Robin)
+		Numerical derivatives (1st, 2nd order, mixed)
+		Time-stepping schemes (Explicit, Implicit, Crank-Nicolson)
+		Tridiagonal solvers (Thomas algorithm)
+		Stability analysis
+	
+	American option pricing:
+
 */
+
+/** NOTES:
+ * Getters - if just access the data member, use i.e. rate()
+ * 		   - if need to compute something, use i.e. computeDupireLocalVolatility()
+ *
+ */
+
 
 // Abstract class = class that have at least 1 virtual pure method
 // "Incomplete" class -> cannot instantiate this class
@@ -87,7 +110,7 @@ public:
 	// Default constructor
 	BlackScholesModel() = delete;
 	// Constructor with parameters
-	BlackScholesModel(double spot, const DiscountCurve& discountCurve, double sigma);
+	BlackScholesModel(double spot, const DiscountCurve& discountCurve, double volatility);
 	// Copy constructor
 	BlackScholesModel(const BlackScholesModel& model);
 	// Clone method
@@ -120,10 +143,9 @@ public:
 	// Virtual pure -> You HAVE TO override base class pure virtual methods
 	double drift(double time, double assetPrice) const override;
 	double diffusion(double time, double assetPrice) const override;
-
-	// Getters for model parameters; used 'get' to avoid overloading notation
-	double getDrift() const { return _drift; }
-	double getVolatility() const { return _volatility; }
+	// Getters for model parameters - accessors
+	double drift() const { return _drift; }
+	double volatility() const { return _volatility; }
 
 
 private: // default constructor will call the default constructor for each data member
@@ -153,7 +175,7 @@ class VolatilitySurface;
 class DupireModel : public Model
 {
 public:
-	~DupireModel() override = default; // Destructor
+	// ~DupireModel() override = default; // Destructor
 	/**
 	 * Constructor with volatility surface
 	 * @param spot Initial spot price
@@ -173,7 +195,7 @@ public:
 	// double volatility() const; // Volatility is accessed through the VolatilitySurface
 	
 	// Getters
-	const VolatilitySurface& getVolatilitySurface() const 
+	const VolatilitySurface& volatilitySurface() const 
 	{ 
 		return *_volSurfacePtr; // pointer to the VolatilitySurface
 	}
@@ -184,10 +206,13 @@ public:
 	 * @param time Current time
 	 * @return Local volatility
 	 */
-	double getLocalVolatility(double spot, double time) const;
+	double localVolatility(double spot, double time) const;
 
 private:
-	const VolatilitySurface* _volSurfacePtr;
+	// const VolatilitySurface* _volSurfacePtr; // remove the raw pointer
+	std::unique_ptr<const VolatilitySurface> _volSurfacePtr;
+
+
 };
 
 

@@ -3,19 +3,20 @@
 //
 
 #include "VolatilitySurface.h"
+#include "BlackScholesFormulas.h"
 #include "Utils.h"
 #include <algorithm>
 #include <stdexcept>
 #include <cmath>
 
-// ============================================================================
-// VolatilitySurface Implementation
-// ============================================================================
-VolatilitySurface::VolatilitySurface(const std::vector<double>& strikes,
-                                     const std::vector<double>& maturities,
-                                     const std::vector<std::vector<double>>& volatilities,
-                                     const DiscountCurve& discountCurve,
-                                     InterpolationType interpolationType)
+/**
+ * VolatilitySurface Implementation
+ */
+VolatilitySurface::VolatilitySurface(const std::vector<double>& strikes,                        // [strike]; 1d vector
+                                     const std::vector<double>& maturities,                     // [maturity]; 1d vector
+                                     const std::vector<std::vector<double>>& volatilities,      // [maturity][strike]; 2d matrix
+                                     const DiscountCurve& discountCurve,                        // discount curve
+                                     InterpolationType interpolationType)                       // interpolation type
     : _strikes(strikes), _maturities(maturities), _volatilities(volatilities),
       _interpolationType(interpolationType), _discountCurve(discountCurve.clone())
 {
@@ -52,7 +53,7 @@ VolatilitySurface::VolatilitySurface(const std::vector<double>& strikes,
         }
     }
     
-    initializeInterpolators();
+    initializeInterpolators(); // proceeds to next step - call private method to create interpolators for strikes and maturities
 }
 /**
  *   Smile Interpolation: For each maturity, interpolate volatility across strikes (the volatility smile)
@@ -62,13 +63,13 @@ void VolatilitySurface::initializeInterpolators()
 {
     // Initialize 1D interpolators for each maturity (smile interpolation)
     // cubic spline interpolation along strikes
-    _smileInterpolators.reserve(_maturities.size());              // reserve space for maturities in _smileInterpolators vector
-    for (size_t i = 0; i < _maturities.size(); ++i) {               // for each maturity
-        if (_interpolationType == InterpolationType::CubicSpline) { // check type: do cubic spline interpolation
+    _smileInterpolators.reserve(_maturities.size());                   // reserve space for maturities in _smileInterpolators vector
+    for (size_t i = 0; i < _maturities.size(); ++i) {                    // for each maturity
+        if (_interpolationType == InterpolationType::CubicSpline) {      // check type: do cubic spline interpolation
             _smileInterpolators.push_back(
-                std::make_unique<CubicSplineInterpolation>(       // make_unique creates a unique pointer
+                std::make_unique<CubicSplineInterpolation>(            // creates a unique pointer to a new CubicSplineInterpolation object
                     _strikes, _volatilities[i], 
-                    CubicSplineInterpolation::BoundaryType::Natural));
+                    CubicSplineInterpolation::BoundaryType::Natural));   // boundary type: natural
         } else {
             // Linear interpolation for smiles
             _smileInterpolators.push_back(
@@ -77,12 +78,12 @@ void VolatilitySurface::initializeInterpolators()
     }
     
     // Initialize 1D interpolators for each strike (term structure interpolation)
-    _termStructureInterpolators.reserve(_strikes.size());        // reserve space for strikes
-    for (size_t j = 0; j < _strikes.size(); ++j) {                 // for each strike
-        std::vector<double> termVols;                              // volatilities across maturities for strike j
-        termVols.reserve(_maturities.size());                    // reserve space for maturities
-        for (size_t i = 0; i < _maturities.size(); ++i) {          // for each maturity
-            termVols.push_back(_volatilities[i][j]);               // collect volatilities for strike j
+    _termStructureInterpolators.reserve(_strikes.size());          // reserve space for strikes
+    for (size_t j = 0; j < _strikes.size(); ++j) {                   // for each strike
+        std::vector<double> termVols;                                // volatilities across maturities for strike j
+        termVols.reserve(_maturities.size());                      // reserve space for maturities
+        for (size_t i = 0; i < _maturities.size(); ++i) {            // for each maturity
+            termVols.push_back(_volatilities[i][j]);                 // collect volatilities for strike j
         }
         
         if (_interpolationType == InterpolationType::CubicSpline) {
@@ -97,7 +98,7 @@ void VolatilitySurface::initializeInterpolators()
     }
 }
 
-double VolatilitySurface::getImpliedVolatility(double strike, double maturity) const
+double VolatilitySurface::impliedVolatility(double strike, double maturity) const
 {
     // Check bounds
     if (strike < _strikes.front() || strike > _strikes.back() ||
@@ -108,7 +109,7 @@ double VolatilitySurface::getImpliedVolatility(double strike, double maturity) c
     
     // For other interpolation types, use 1D interpolation along maturity first
     // Find the closest maturity index
-    auto maturityIt = std::lower_bound(_maturities.begin(), _maturities.end(), maturity);
+    auto maturityIt = std::lower_bound(_maturities.begin(), _maturities.end(), maturity); // first element >=
     size_t maturityIdx = std::distance(_maturities.begin(), maturityIt);
     
     if (maturityIdx == 0) {
@@ -120,7 +121,7 @@ double VolatilitySurface::getImpliedVolatility(double strike, double maturity) c
     }
     
     // Interpolate between adjacent maturities
-    double t1 = _maturities[maturityIdx - 1];
+    double t1 = _maturities[maturityIdx - 1]; // Check careful here!
     double t2 = _maturities[maturityIdx];
     double vol1 = _smileInterpolators[maturityIdx - 1]->interpolate(strike);
     double vol2 = _smileInterpolators[maturityIdx]->interpolate(strike);
@@ -130,7 +131,7 @@ double VolatilitySurface::getImpliedVolatility(double strike, double maturity) c
     return vol1 + weight * (vol2 - vol1);
 }
 
-double VolatilitySurface::getImpliedVolatilityForwardMoneyness(double strike, double maturity, double spot) const
+double VolatilitySurface::impliedVolatilityForwardMoneyness(double strike, double maturity, double spot) const
 {
     // Section 1.3 - Interpolation along maturities
     // Implement equation (1.25) with forward moneyness k_F_T = K/F_T
@@ -142,7 +143,7 @@ double VolatilitySurface::getImpliedVolatilityForwardMoneyness(double strike, do
     double forwardMoneyness = strike / forward;
     
     // Step 2: Find maturity interval
-    auto maturityIt = std::lower_bound(_maturities.begin(), _maturities.end(), maturity);
+    auto maturityIt = std::lower_bound(_maturities.begin(), _maturities.end(), maturity); // careful then decide idx
     size_t maturityIdx = std::distance(_maturities.begin(), maturityIt);
     
     if (maturityIdx == 0) {
@@ -195,7 +196,7 @@ double VolatilitySurface::getImpliedVolatilityForwardMoneyness(double strike, do
     return std::sqrt(std::max(interpolatedVariance / maturity, 1e-12));
 }
 
-double VolatilitySurface::getLocalVolatility(double spot, double time) const
+double VolatilitySurface::localVolatility(double spot, double time) const
 {
     return computeDupireLocalVolatility(spot, time);
 }
@@ -230,16 +231,20 @@ double VolatilitySurface::computeDupireLocalVolatility(double spot, double time)
     // For time-dependent rates, we need the instantaneous rate r(t) at time t
     // This is computed as: r(t) = -d/dt[log(B(t))] where B(t) is the discount factor
     // For numerical approximation: r(t) = -[log(B(t+ε)) - log(B(t))]/ε
-    const double eps = 1e-6;
-    double discount_t = _discountCurve->discount(time);
-    double discount_t_plus = _discountCurve->discount(time + eps);
-    double riskFreeRate = -std::log(discount_t_plus / discount_t) / eps;
-    
+
+    // const double eps = 1e-6;
+    // double discount_t = _discountCurve->discount(time);
+    // double discount_t_plus = _discountCurve->discount(time + eps);
+
+    // No mkt data for short-rate
+    // double riskFreeRate = -std::log(discount_t_plus / discount_t) / eps;
+    double riskFreeRate = _discountCurve->instantaneousRate(time);
+
     // Get implied volatility and its derivatives from the interpolated surface
-    double impliedVol = getImpliedVolatility(strike, time);
-    double dSigma_dT = getImpliedVolatilityDerivativeTime(strike, time);
-    double dSigma_dK = getImpliedVolatilityDerivativeStrike(strike, time);
-    double d2Sigma_dK2 = getImpliedVolatilitySecondDerivativeStrike(strike, time);
+    double impliedVol = impliedVolatility(strike, time);
+    double dSigma_dT = impliedVolatilityDerivativeTime(strike, time);
+    double dSigma_dK = impliedVolatilityDerivativeStrike(strike, time);
+    double d2Sigma_dK2 = impliedVolatilitySecondDerivativeStrike(strike, time);
     
     // Compute Black-Scholes d1 and d2 parameters
     // for denominator
@@ -273,6 +278,7 @@ double VolatilitySurface::computeDupireLocalVolatility(double spot, double time)
     double localVolSquared = impliedVol * impliedVol * numerator / denominator;
     
     // Ensure we don't take square root of negative number
+    // If localVol < 0, floor it at very small value. 0.03%
     if (localVolSquared < 0.0) {
         return impliedVol; // Fallback to implied volatility
     }
@@ -283,210 +289,38 @@ double VolatilitySurface::computeDupireLocalVolatility(double spot, double time)
 }
 
 
-/**
- * Black-Scholes Call & Put Option Pricing Formula
- */
 double VolatilitySurface::blackScholesCall(double spot, double strike, double time, double volatility) const
 {
-    /*
-     * Black-Scholes Call Option Pricing Formula with DiscountCurve
-     * 
-     * Formula: C = S*N(d1) - K*B(T)*N(d2)
-     * Where:
-     * - S = spot price
-     * - K = strike price  
-     * - B(T) = discount factor at time T
-     * - T = time to maturity
-     * - sigma = volatility
-     * - d1 = [ln(S/K) + ln(B(T)) + sigma^2*T/2] / (sigma*sqrt(T))
-     * - d2 = d1 - sigma*sqrt(T)
-     */
-    
-    if (time <= 0.0) {
-        return std::max(spot - strike, 0.0); // At maturity, payoff is max(S-K, 0)
-    }
-    
-    const double discountFactor = _discountCurve->discount(time);
-    const double sqrtTime = volatility * std::sqrt(time);
-    const double d1 = (std::log(spot / strike) - std::log(discountFactor) + 0.5 * volatility * volatility * time) / sqrtTime;
-    const double d2 = d1 - sqrtTime;
-    
-    return spot * Utils::stdNormCdf(d1) - strike * discountFactor * Utils::stdNormCdf(d2);
+    return BlackScholesFormulas::callPrice(spot, strike, *_discountCurve, volatility, time);
 }
 
 double VolatilitySurface::blackScholesPut(double spot, double strike, double time, double volatility) const
 {
-    /* Black-Scholes Put Option Pricing Formula with DiscountCurve
-     * 
-     * Formula: P = K*B(T)*N(-d2) - S*N(-d1)
-     * Where:
-     * - S = spot price
-     * - K = strike price  
-     * - B(T) = discount factor at time T
-     * - T = time to maturity
-     * - sigma = volatility
-     * - d1 = [ln(S/K) + ln(B(T)) + sigma^2*T/2] / (sigma*sqrt(T))
-     * - d2 = d1 - sigma*sqrt(T)
-     */
-    if (time <= 0.0) {
-        return std::max(strike - spot, 0.0); // At maturity, payoff is max(K-S, 0)
-    }
-    
-    const double discountFactor = _discountCurve->discount(time);
-    const double sqrtTime = volatility * std::sqrt(time);
-    const double d1 = (std::log(spot / strike) - std::log(discountFactor) + 0.5 * volatility * volatility * time) / sqrtTime;
-    const double d2 = d1 - sqrtTime;
-    
-    return strike * discountFactor * Utils::stdNormCdf(-d2) - spot * Utils::stdNormCdf(-d1);
+    return BlackScholesFormulas::putPrice(spot, strike, *_discountCurve, volatility, time);
 }
 
-/**
- * Black-Scholes Theta (Time Decay)
- */
-double VolatilitySurface::blackScholesTheta(double spot, double strike, double time, double volatility) const
-{
-    /*
-     * Black-Scholes Theta (Time Decay)
-     * 
-     * Theta measures the sensitivity of option price to time decay.
-     * It represents how much the option price changes per unit of time.
-     * 
-     * For call options: theta = -S*N'(d1)*sigma/(2*sqrt(T)) - r*K*e^(-rT)*N(d2)
-     * Where N'(d1) is the standard normal probability density function
-     * 
-     * Theta is typically negative for long positions (time decay works against the holder)
-     */
-    
-    if (time <= 0.0) {
-        return 0.0; // At maturity, theta is zero (no more time decay)
-    }
-    
-    const double discountFactor = _discountCurve->discount(time);
-    const double sqrtTime = volatility * std::sqrt(time);
-    const double d1 = (std::log(spot / strike) - std::log(discountFactor) + 0.5 * volatility * volatility * time) / sqrtTime;
-    const double d2 = d1 - sqrtTime;
-    
-    // Compute the standard normal probability density function at d1
-    const double sqrt2Pi = std::sqrt(2.0 * M_PI);
-    const double nPrimeD1 = std::exp(-0.5 * d1 * d1) / sqrt2Pi;
-    
-    // For time-dependent rates, we need the instantaneous rate r(t)
-    const double eps = 1e-6;
-    double discount_t_plus = _discountCurve->discount(time + eps);
-    double riskFreeRate = -std::log(discount_t_plus / discountFactor) / eps;
-    
-    // Theta has two components:
-    // 1. Time decay from volatility (negative impact)
-    // 2. Interest earned on strike payment (positive impact for calls)
-    double theta = -spot * nPrimeD1 * volatility / (2.0 * std::sqrt(time)) 
-                   - riskFreeRate * strike * discountFactor * Utils::stdNormCdf(d2);
-    
-    return theta;
-}
-
-/**
- * Black-Scholes Gamma (Second Derivative with Respect to Spot)
- */
-double VolatilitySurface::blackScholesGamma(double spot, double strike, double time, double volatility) const
-{
-    /*
-     * Black-Scholes Gamma (Second Derivative with Respect to Spot)
-     * 
-     * Gamma measures the rate of change of delta with respect to the underlying price.
-     * It's the second derivative of the option price with respect to spot.
-     * 
-     * Formula: Gamma = N'(d1) / (S * sigma * sqrt(T))
-     * Where N'(d1) is the standard normal probability density function
-     * 
-     * Gamma is always positive for long positions and represents convexity.
-     * It's highest for at-the-money options and decreases for deep ITM/OTM options.
-     */
-    
-    if (time <= 0.0) {
-        return 0.0; // At maturity, gamma is zero (no more convexity)
-    }
-    
-    const double discountFactor = _discountCurve->discount(time);
-    const double sqrtTime = volatility * std::sqrt(time);
-    const double d1 = (std::log(spot / strike) - std::log(discountFactor) + 0.5 * volatility * volatility * time) / sqrtTime;
-    
-    // Compute the standard normal probability density function at d1
-    const double sqrt2Pi = std::sqrt(2.0 * M_PI);
-    const double nPrimeD1 = std::exp(-0.5 * d1 * d1) / sqrt2Pi;
-    
-    // Gamma decreases with volatility and time (more uncertainty = less convexity)
-    double gamma = nPrimeD1 / (spot * volatility * std::sqrt(time));
-    
-    return gamma;
-}
-
-/**
- * Black-Scholes Vega (First Derivative with Respect to Volatility)
- */
 double VolatilitySurface::blackScholesVega(double spot, double strike, double time, double volatility) const
 {
-    /*
-     * Black-Scholes Vega (Volatility Sensitivity)
-     * 
-     * Vega measures the sensitivity of option price to changes in volatility.
-     * It represents how much the option price changes for a 1% change in volatility.
-     * 
-     * Formula: Vega = K * e^(-rT) * sqrt(T) * N(d2)
-     * Where N(d2) is the standard normal probability density function at d2
-     * 
-     * Vega is always positive for long positions (higher volatility = higher option value).
-     * It increases with time to expiration and is highest for at-the-money options.
-     */
-    
-    if (time <= 0.0) {
-        return 0.0; // At maturity, vega is zero (no more time for volatility to matter)
-    }
-    
-    const double discountFactor = _discountCurve->discount(time);
-    const double sqrtTime = volatility * std::sqrt(time);
-    const double d1 = (std::log(spot / strike) - std::log(discountFactor) + 0.5 * volatility * volatility * time) / sqrtTime;
-    const double d2 = d1 - sqrtTime;
-    
-    // Compute the standard normal probability density function at d2
-    const double sqrt2Pi = std::sqrt(2.0 * M_PI);
-    const double nPrimeD2 = std::exp(-0.5 * d2 * d2) / sqrt2Pi;
-    
-    // Vega increases with time (more time = more opportunity for volatility to matter)
-    // and with the discounted strike value
-    double vega = strike * discountFactor * std::sqrt(time) * nPrimeD2;
-    
-    return vega;
+    return BlackScholesFormulas::vega(spot, strike, *_discountCurve, volatility, time);
 }
 
-double VolatilitySurface::getBlackScholesVega(double spot, double strike, double time, double volatility) const
+double VolatilitySurface::blackScholesGamma(double spot, double strike, double time, double volatility) const
 {
-    return blackScholesVega(spot, strike, time, volatility);
+    return BlackScholesFormulas::gamma(spot, strike, *_discountCurve, volatility, time);
 }
 
-double VolatilitySurface::getBlackScholesGamma(double spot, double strike, double time, double volatility) const
+double VolatilitySurface::blackScholesTheta(double spot, double strike, double time, double volatility) const
 {
-    return blackScholesGamma(spot, strike, time, volatility);
+    // Theta for Call - Dupire formula typically uses call theta
+    return BlackScholesFormulas::theta(spot, strike, *_discountCurve, volatility, time, Option::Type::Call);
 }
 
-double VolatilitySurface::getBlackScholesTheta(double spot, double strike, double time, double volatility) const
-{
-    return blackScholesTheta(spot, strike, time, volatility);
-}
 
-double VolatilitySurface::getBlackScholesCall(double spot, double strike, double time, double volatility) const
-{
-    return blackScholesCall(spot, strike, time, volatility);
-}
-
-double VolatilitySurface::getBlackScholesPut(double spot, double strike, double time, double volatility) const
-{
-    return blackScholesPut(spot, strike, time, volatility);
-}
 
 /**
  * Implied Volatility Time Derivative (dSigma/dT)
  */
-double VolatilitySurface::getImpliedVolatilityDerivativeTime(double strike, double maturity) const
+double VolatilitySurface::impliedVolatilityDerivativeTime(double strike, double maturity) const
 {
     /* Implied Volatility Time Derivative (dSigma/dT)
      * 
@@ -502,8 +336,8 @@ double VolatilitySurface::getImpliedVolatilityDerivativeTime(double strike, doub
     
     const double eps = 1e-4; // Small time step for finite difference
     
-    double vol_center = getImpliedVolatility(strike, maturity);
-    double vol_time_plus = getImpliedVolatility(strike, maturity + eps);
+    double vol_center = impliedVolatility(strike, maturity);
+    double vol_time_plus = impliedVolatility(strike, maturity + eps);
     
     return (vol_time_plus - vol_center) / eps;
 }
@@ -511,7 +345,7 @@ double VolatilitySurface::getImpliedVolatilityDerivativeTime(double strike, doub
 /**
  * Implied Volatility Strike Derivative (dSigma/dK)
  */
-double VolatilitySurface::getImpliedVolatilityDerivativeStrike(double strike, double maturity) const
+double VolatilitySurface::impliedVolatilityDerivativeStrike(double strike, double maturity) const
 {
     /*
      * Implied Volatility Strike Derivative (dSigma/dK)
@@ -529,8 +363,8 @@ double VolatilitySurface::getImpliedVolatilityDerivativeStrike(double strike, do
     
     const double eps = 1e-4; // Small strike step for finite difference
     
-    double vol_strike_plus = getImpliedVolatility(strike + eps, maturity);
-    double vol_strike_minus = getImpliedVolatility(strike - eps, maturity);
+    double vol_strike_plus = impliedVolatility(strike + eps, maturity);
+    double vol_strike_minus = impliedVolatility(strike - eps, maturity);
     
     return (vol_strike_plus - vol_strike_minus) / (2.0 * eps);
 }
@@ -538,7 +372,7 @@ double VolatilitySurface::getImpliedVolatilityDerivativeStrike(double strike, do
 /**
  * Implied Volatility Second Strike Derivative (d2Sigma/dK2)
  */
-double VolatilitySurface::getImpliedVolatilitySecondDerivativeStrike(double strike, double maturity) const
+double VolatilitySurface::impliedVolatilitySecondDerivativeStrike(double strike, double maturity) const
 {
     /*
      * Implied Volatility Second Strike Derivative (d2Sigma/dK2)
@@ -558,49 +392,49 @@ double VolatilitySurface::getImpliedVolatilitySecondDerivativeStrike(double stri
     
     const double eps = 1e-4; // Small strike step for finite difference
     
-    double vol_center = getImpliedVolatility(strike, maturity);
-    double vol_strike_plus = getImpliedVolatility(strike + eps, maturity);
-    double vol_strike_minus = getImpliedVolatility(strike - eps, maturity);
+    double vol_center = impliedVolatility(strike, maturity);
+    double vol_strike_plus = impliedVolatility(strike + eps, maturity);
+    double vol_strike_minus = impliedVolatility(strike - eps, maturity);
     
     return (vol_strike_plus - 2.0 * vol_center + vol_strike_minus) / (eps * eps);
 }
 
 
-double VolatilitySurface::getImpliedVolatilityTimeDerivative(double strike, double maturity) const
+double VolatilitySurface::impliedVolatilityTimeDerivative(double strike, double maturity) const
 {
-    return getImpliedVolatilityDerivativeTime(strike, maturity);
+    return impliedVolatilityDerivativeTime(strike, maturity);
 }
 
-double VolatilitySurface::getImpliedVolatilityStrikeDerivative(double strike, double maturity) const
+double VolatilitySurface::impliedVolatilityStrikeDerivative(double strike, double maturity) const
 {
-    return getImpliedVolatilityDerivativeStrike(strike, maturity);
+    return impliedVolatilityDerivativeStrike(strike, maturity);
 }
 
-double VolatilitySurface::getImpliedVolatilitySecondStrikeDerivative(double strike, double maturity) const
+double VolatilitySurface::impliedVolatilitySecondStrikeDerivative(double strike, double maturity) const
 {
-    return getImpliedVolatilitySecondDerivativeStrike(strike, maturity);
+    return impliedVolatilitySecondDerivativeStrike(strike, maturity);
 }
 
 
-std::vector<double> VolatilitySurface::getVolatilitySmile(double maturity, const std::vector<double>& strikes) const
+std::vector<double> VolatilitySurface::volatilitySmile(double maturity, const std::vector<double>& strikes) const
 {
     std::vector<double> result;
     result.reserve(strikes.size());
     
     for (double strike : strikes) {
-        result.push_back(getImpliedVolatility(strike, maturity));
+        result.push_back(impliedVolatility(strike, maturity));
     }
     
     return result;
 }
 
-std::vector<double> VolatilitySurface::getVolatilityTermStructure(double strike, const std::vector<double>& maturities) const
+std::vector<double> VolatilitySurface::volatilityTermStructure(double strike, const std::vector<double>& maturities) const
 {
     std::vector<double> result;
     result.reserve(maturities.size());
     
     for (double maturity : maturities) {
-        result.push_back(getImpliedVolatility(strike, maturity));
+        result.push_back(impliedVolatility(strike, maturity));
     }
     
     return result;

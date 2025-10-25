@@ -17,9 +17,13 @@ EuropeanOptionPayoff::EuropeanOptionPayoff(Type type)
 EuropeanOptionPayoff::EuropeanOptionPayoff(Type type, double strike, double maturity)
     : Option(type), _strike(strike), _maturity(maturity)
 {
+    if (strike <= 0.0)
+        throw "Strike must be positive";
+    if (maturity <= 0.0)
+        throw "Maturity must be positive";
 }
 
-Option::Type EuropeanOptionPayoff::getType() const
+Option::Type EuropeanOptionPayoff::type() const
 {
     return _type;
 }

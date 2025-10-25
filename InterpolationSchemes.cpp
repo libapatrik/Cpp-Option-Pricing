@@ -10,6 +10,7 @@
 // ============================================================================
 // LinearInterpolation Implementation
 // ============================================================================
+
 LinearInterpolation::LinearInterpolation(const std::vector<double>& xData, const std::vector<double>& yData)
     : _xData(xData), _yData(yData)
 {
@@ -80,6 +81,7 @@ double LinearInterpolation::extrapolate(double x) const
 // ============================================================================
 // CubicSplineInterpolation Implementation
 // ============================================================================
+
 CubicSplineInterpolation::CubicSplineInterpolation(const std::vector<double>& xData, const std::vector<double>& yData, BoundaryType boundaryType)
     : _xData(xData), _yData(yData), _boundaryType(boundaryType)
 {
@@ -158,19 +160,10 @@ void CubicSplineInterpolation::solveThomasAlgorithm()
         d[i] = 3.0 * (slope_j - slope_j_prev);
     }
     
-    // Apply natural boundary conditions
-    // β_1 = 0 is already handled (we don't include it in the system)
-    // For the last equation, we need to handle β_{N-1} specially as per equation (1.21)
-    if (num_unknowns > 0) {
-        double dx_n2 = _xData[n-1] - _xData[n-2];
-        double dx_n1 = _xData[n] - _xData[n-1];
-        double slope_n1 = (_yData[n-1] - _yData[n-2]) / dx_n2;
-        double slope_n = (_yData[n] - _yData[n-1]) / dx_n1;
-        
-        // Modify the last equation for β_{N-1} as per equation (1.21)
-        b[num_unknowns-1] = dx_n2 + 2.0 * (dx_n2 + dx_n1);  // coefficient of β_{N-1}
-        d[num_unknowns-1] = 3.0 * (slope_n - slope_n1);
-    }
+    // Natural boundary conditions are already enforced:
+    // - β[0] = 0 (not included in the system, already enforced)
+    // - β[n-1] = 0 (not included in the system, will be kept at 0)
+    // The tridiagonal system equations from the loop above are correct for natural splines
     
     // LECTURE NOTES THOMAS ALGORITHM: Following equations (1.22)-(1.24)
     std::vector<double> c_prime(num_unknowns), r_prime(num_unknowns);
@@ -186,36 +179,37 @@ void CubicSplineInterpolation::solveThomasAlgorithm()
     }
     
     // Back substitution - Equation (1.24)
-    std::vector<double> beta(n, 0.0);  // β coefficients (β_1 = β_N = 0)
+    // Natural splines: β[0] = 0 and β[n-1] = 0 (boundary conditions)
+    // Solve for β[1], β[2], ..., β[n-2] only
+    std::vector<double> beta(n, 0.0);  // Initialize all to 0
     
+    // Back-substitute to find interior β values
     if (num_unknowns > 0) {
-        beta[n-1] = r_prime[num_unknowns-1];  // β_{N-1}
+        // Start from the last unknown and work backwards
+        beta[n-2] = r_prime[num_unknowns-1];  // β[n-2] (last interior point)
         
         for (int i = static_cast<int>(num_unknowns) - 2; i >= 0; --i) {
-            beta[i+2] = r_prime[i] - c_prime[i] * beta[i+3];
+            beta[i+1] = r_prime[i] - c_prime[i] * beta[i+2];
         }
     }
+    // Note: beta[0] = 0 and beta[n-1] = 0 remain unchanged (natural boundary conditions)
     
     // LECTURE NOTES: Compute all coefficients using equations (1.26)-(1.27)
     for (size_t j = 0; j < n-1; ++j) {
         double dx_j = _xData[j+1] - _xData[j];
         
-        // Equation (1.26): α_j = (β_{j+1} - β_j) / (3Δx_j) for j ∈ [1, N-2]
-        // α_{N-1} = -β_{N-1} / (3Δx_{N-1}) for j = N-1
-        if (j == n-2) {
-            _alpha[j] = -beta[j+1] / (3.0 * dx_j);
-        } else {
-            _alpha[j] = (beta[j+2] - beta[j+1]) / (3.0 * dx_j);
-        }
+        // Equation (1.26): α_j = (β_{j+1} - β_j) / (3Δx_j)
+        // For interval j, we use second derivatives at nodes j and j+1
+        _alpha[j] = (beta[j+1] - beta[j]) / (3.0 * dx_j);
         
         // Equation (1.27): γ_j = (y_{j+1} - y_j) / Δx_j - α_j * Δx_j^2 - β_j * Δx_j
-        _gamma[j] = (_yData[j+1] - _yData[j]) / dx_j - _alpha[j] * dx_j * dx_j - beta[j+1] * dx_j;
+        _gamma[j] = (_yData[j+1] - _yData[j]) / dx_j - _alpha[j] * dx_j * dx_j - beta[j] * dx_j;
         
         // δ_j = y_j (from equation 1.7)
         _delta[j] = _yData[j];
         
-        // β_j coefficients (second derivatives)
-        _beta[j] = beta[j+1];
+        // β_j coefficients (second derivatives at left endpoint of interval j)
+        _beta[j] = beta[j];
     }
 }
 
@@ -233,9 +227,9 @@ double CubicSplineInterpolation::interpolate(double x) const
     // LECTURE NOTES IMPLEMENTATION: Following equation (1.6)
     // S_j(x) = α_j(x-x_j)^3 + β_j(x-x_j)^2 + γ_j(x-x_j) + δ_j
     double x0 = _xData[idx];
-    double dx = x - x0;  // (x - x_j)
-    double dx2 = dx * dx;
-    double dx3 = dx2 * dx;
+    double dx = x - x0;    // (x - x_j)
+    double dx2 = dx * dx;  // (x - x_j)^2
+    double dx3 = dx2 * dx; // (x - x_j)^3
     
     // Use pre-computed coefficients
     double alpha_j = _alpha[idx];
@@ -318,7 +312,15 @@ std::pair<double, double> CubicSplineInterpolation::getRange() const
 
 size_t CubicSplineInterpolation::findInterval(double x) const
 {
+    // upper_bound returns the first element greater than x
+    // For x in [xData[i], xData[i+1]), we want to return i
     auto it = std::upper_bound(_xData.begin(), _xData.end(), x);
+    
+    // Handle edge case: if x <= xData[0], return interval 0
+    if (it == _xData.begin()) {
+        return 0;
+    }
+    
     return std::distance(_xData.begin(), it) - 1;
 }
 

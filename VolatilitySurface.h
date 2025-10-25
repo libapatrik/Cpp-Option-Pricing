@@ -39,7 +39,7 @@ public:
      * @param maturity Time to maturity (in years)
      * @return Implied volatility
      */
-    double getImpliedVolatility(double strike, double maturity) const;
+    double impliedVolatility(double strike, double maturity) const; // accessor
     
     /**
      * Get implied volatility using forward moneyness interpolation
@@ -48,7 +48,7 @@ public:
      * @param spot Current spot price
      * @return Implied volatility
      */
-    double getImpliedVolatilityForwardMoneyness(double strike, double maturity, double spot) const;
+    double impliedVolatilityForwardMoneyness(double strike, double maturity, double spot) const; // accessor
     
     /**
      * Get local volatility using Dupire formula
@@ -56,7 +56,7 @@ public:
      * @param time Current time
      * @return Local volatility
      */
-    double getLocalVolatility(double spot, double time) const;
+    double localVolatility(double spot, double time) const; // accessor
     
     /**
      * Get volatility smile for given maturity
@@ -64,7 +64,7 @@ public:
      * @param strikes Vector of strikes to evaluate
      * @return Vector of implied volatilities
      */
-    std::vector<double> getVolatilitySmile(double maturity, const std::vector<double>& strikes) const;
+    std::vector<double> volatilitySmile(double maturity, const std::vector<double>& strikes) const; // accessor
     
     /**
      * Get volatility term structure for given strike
@@ -72,7 +72,7 @@ public:
      * @param maturities Vector of maturities to evaluate
      * @return Vector of implied volatilities
      */
-    std::vector<double> getVolatilityTermStructure(double strike, const std::vector<double>& maturities) const;
+    std::vector<double> volatilityTermStructure(double strike, const std::vector<double>& maturities) const; // accessor
     
     
     /**
@@ -81,23 +81,23 @@ public:
      */
     std::pair<std::pair<double, double>, std::pair<double, double>> getBounds() const;
 
-    // Black-Sholes
-    double getBlackScholesCall(double spot, double strike, double time, double volatility) const;
-    double getBlackScholesPut(double spot, double strike, double time, double volatility) const;
+    // Black-Scholes formulas delegation
+    double blackScholesCall(double spot, double strike, double time, double volatility) const; // accessor
+    double blackScholesPut(double spot, double strike, double time, double volatility) const; // accessor
 
     // Greeks
-    double getBlackScholesVega(double spot, double strike, double time, double volatility) const;
-    double getBlackScholesGamma(double spot, double strike, double time, double volatility) const;
-    double getBlackScholesTheta(double spot, double strike, double time, double volatility) const;
+    double blackScholesVega(double spot, double strike, double time, double volatility) const; // accessor
+    double blackScholesGamma(double spot, double strike, double time, double volatility) const; // accessor
+    double blackScholesTheta(double spot, double strike, double time, double volatility) const; // accessor
 
      // dSigma/dT - how implied volatility changes with time
-    double getImpliedVolatilityTimeDerivative(double strike, double maturity) const;
+    double impliedVolatilityTimeDerivative(double strike, double maturity) const; // accessor
 
     // dSigma/dK - how implied volatility changes with strike (smile slope)
-    double getImpliedVolatilityStrikeDerivative(double strike, double maturity) const;
+    double impliedVolatilityStrikeDerivative(double strike, double maturity) const; // accessor
 
      // d2Sigma/dK2 - smile curvature (convexity)
-    double getImpliedVolatilitySecondStrikeDerivative(double strike, double maturity) const;
+    double impliedVolatilitySecondStrikeDerivative(double strike, double maturity) const; // accessor
 
     // Pointer to new VolatilitySurface instance
     VolatilitySurface* clone() const;        // Clone method for polymorphic copying
@@ -105,11 +105,11 @@ public:
     // True if surfaces are equal
     bool operator==(const VolatilitySurface& other) const;
     
-    // Get raw data access
-    const std::vector<double>& getStrikes() const { return _strikes; }
-    const std::vector<double>& getMaturities() const { return _maturities; }
-    const std::vector<std::vector<double>>& getVolatilities() const { return _volatilities; }
-    const DiscountCurve& getDiscountCurve() const { return *_discountCurve; }
+    // Raw data accessors
+    const std::vector<double>& strikes() const { return _strikes; } 
+    const std::vector<double>& maturities() const { return _maturities; }
+    const std::vector<std::vector<double>>& volatilities() const { return _volatilities; }
+    const DiscountCurve& discountCurve() const { return *_discountCurve; }
 
 private:
     std::vector<double> _strikes;
@@ -121,25 +121,15 @@ private:
     // Interpolation objects for different dimensions
     std::vector<std::unique_ptr<InterpolationSchemes>> _smileInterpolators;
     std::vector<std::unique_ptr<InterpolationSchemes>> _termStructureInterpolators;
-    
+    // A "is-a" relation does not apply to unique_ptr; only for class-to-class
+
     void initializeInterpolators(); // to create interpolators for strikes and matiruties
     double computeDupireLocalVolatility(double spot, double time) const;
     
-    // Black-Scholes pricing for Dupire formula (using DiscountCurve)
-    double blackScholesCall(double spot, double strike, double time, double volatility) const;
-    double blackScholesPut(double spot, double strike, double time, double volatility) const;
-    
-    // Analytical Black-Scholes Greeks (using DiscountCurve)
-    double blackScholesVega(double spot, double strike, double time, double volatility) const;
-    double blackScholesGamma(double spot, double strike, double time, double volatility) const;
-    double blackScholesTheta(double spot, double strike, double time, double volatility) const;
-    
-    
-    
-    // Implied volatility surface derivatives (used in Dupire formula)
-    double getImpliedVolatilityDerivativeTime(double strike, double maturity) const;
-    double getImpliedVolatilityDerivativeStrike(double strike, double maturity) const;
-    double getImpliedVolatilitySecondDerivativeStrike(double strike, double maturity) const;
+    // Implied volatility surface derivatives (used in Dupire formula) - private helpers
+    double impliedVolatilityDerivativeTime(double strike, double maturity) const;
+    double impliedVolatilityDerivativeStrike(double strike, double maturity) const;
+    double impliedVolatilitySecondDerivativeStrike(double strike, double maturity) const;
     
     
 };
@@ -150,7 +140,7 @@ private:
 class VolatilitySurfaceBuilder
 {
 /**
- * TODO: We need to add the arbitrage checks here
+ * TODO:  We need to add the arbitrage checks here
  * As discussed Calendar Spread Arbitrage, Butterfly Arbitrage
  */
 public:

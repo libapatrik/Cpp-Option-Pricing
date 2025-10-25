@@ -37,13 +37,8 @@ public:
     ~Option() override = default;       // ALWAYS DECLARE BASE CLASS DESTRUCTOR VIRTUAL -> Avoid memory leak
 
     // Getter as virtual - allow model to check if its call or put
-    // TODO: Each Model or Option will override this?
-
-    // inline virtual Type getType() const // was confusing, so used getType instead of Type()
-    // {
-    //     return _type; // pure virtual method
-    // }
-    virtual Type getType() const = 0; // pure virtual method - getter
+    // Getter - accessor 
+    virtual Type type() const = 0; // pure virtual method - simple accessor
     Option* clone() const override = 0; // Virtual Pure method - clone
 
 protected:
@@ -61,10 +56,10 @@ public:
     EuropeanOptionPayoff& operator=(const EuropeanOptionPayoff&) = default;
     ~EuropeanOptionPayoff() override = default;
 
-    Option::Type getType() const override; // C/P provided by Option class; EUOption overrides and provides its own implementation
+    Option::Type type() const override; // C/P provided by Option class; EUOption overrides and provides its own implementation
     EuropeanOptionPayoff* clone() const override;
 
-    // Virtual getters for polymorphic access
+    // Virtual getters for polymorphic access 
     virtual double strike() const { return _strike; }
     virtual double maturity() const { return _maturity; }
 

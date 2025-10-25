@@ -4,23 +4,21 @@
 #include <vector>
 #include <random>
 
-using namespace std;
-
 // GBM implementation
 //TODO: Make it into one for loop - requires some vectorisation
-vector<vector<double>> GBM_pathSimulator(const double& S0, const double& r, const double& sigma, const double& T, int numSteps, int numPaths) {
+std::vector<std::vector<double>> GBM_pathSimulator(const double& S0, const double& r, const double& sigma, const double& T, int numSteps, int numPaths) {
     // Seed
-    default_random_engine generator(1);
-    normal_distribution<double> distribution(0.0, 1.0); // mean 0, stddev 1
+    std::default_random_engine generator(1);
+    std::normal_distribution<double> distribution(0.0, 1.0); // mean 0, stddev 1
 
     double dt = T / static_cast<double>(numSteps);     // time step
     double drift = (r - 0.5 * pow(sigma, 2)) * dt;
     double vol_sqrt_dt = sigma * sqrt(dt);
     int numTotal = 2 * numPaths;                       // Antithetic samples
-    // vector<vector<double>> paths(numTotal, vector<double>(numSteps + 1));
+    // std::vector<std::vector<double>> paths(numTotal, std::vector<double>(numSteps + 1));
 
     // Want to do: np.zeros(); initialise path[0] = S0
-    vector<vector<double>> S(numTotal, vector<double>(numSteps + 1, S0));
+    std::vector<std::vector<double>> S(numTotal, std::vector<double>(numSteps + 1, S0));
 
     // Simulate paths
     for (int i = 0; i < numPaths; ++i) {
@@ -28,16 +26,15 @@ vector<vector<double>> GBM_pathSimulator(const double& S0, const double& r, cons
             double Z = distribution(generator);
 
             // Paths first half
-            S[i][j + 1] = S[i][j] * exp(drift + vol_sqrt_dt * Z);
+            S[i][j + 1] = S[i][j] * std::exp(drift + vol_sqrt_dt * Z);
             // Paths second half - antithetic
-            S[i + numPaths][j + 1] = S[i + numPaths][j] * exp(drift + vol_sqrt_dt * (-Z));
+            S[i + numPaths][j + 1] = S[i + numPaths][j] * std::exp(drift + vol_sqrt_dt * (-Z));
         }
     }
     return S;
 }
 
-
-PathSimulator::PathSimulator(const vector<double> &timeSteps, const Model &model, size_t randomSeed)
+PathSimulator::PathSimulator(const std::vector<double> &timeSteps, const Model &model, size_t randomSeed)
     : _timeSteps(timeSteps), _modelPtr(model.clone()), _randomEngine(randomSeed)
 {
     // _modelPtr(&model) IS WRONG!
@@ -51,7 +48,7 @@ PathSimulator::PathSimulator(const vector<double> &timeSteps, const Model &model
         // TimeSteps is strictly increasing sequence
 
     if (!timeStepsSanityCheck())
-        throw "The Time Steps are not correct!";
+        throw std::runtime_error("The Time Steps are not correct!"); // exception
 }
 
 PathSimulator::~PathSimulator()
@@ -64,10 +61,10 @@ PathSimulator::~PathSimulator()
 }
 
 
-vector<double> PathSimulator::path() const
+std::vector<double> PathSimulator::path() const
 {
     // Initialisation stage : Path[0] = S0
-    vector<double> path;
+    std::vector<double> path;
     path.push_back(_modelPtr->initValue());               // .append()
 
     // Iteration stage : Path[i] to Path[i+1]
@@ -83,7 +80,7 @@ bool PathSimulator::timeStepsSanityCheck() const
     if (_timeSteps[0] < 0.0) return false;
     for (size_t i = 1; i < _timeSteps.size(); ++i)
     {
-        if (!isfinite(_timeSteps[i])) return false; // finiteness
+        if (!std::isfinite(_timeSteps[i])) return false; // finiteness
         if (_timeSteps[i] <= _timeSteps[i-1]) return false; // increasing
     }
     return true;
@@ -94,12 +91,12 @@ double EulerPathSimulator::nextStep(size_t timeIndex, double assetPrice) const
     double deltaT = _timeSteps[timeIndex + 1] - _timeSteps[timeIndex];
 
     // Rnadom Number Generation
-    normal_distribution<double> distribution(0.0, 1.0);
+    std::normal_distribution<double> distribution(0.0, 1.0);
     double Z = distribution(_randomEngine);
 
     // Apply Euler scheme
     double nextStep = assetPrice + _modelPtr->drift(_timeSteps[timeIndex], assetPrice) * deltaT
-        + _modelPtr->diffusion(_timeSteps[timeIndex], assetPrice) * sqrt(deltaT) * Z;
+                    + _modelPtr->diffusion(_timeSteps[timeIndex], assetPrice) * std::sqrt(deltaT) * Z;
 
     return nextStep;
 }
@@ -110,7 +107,7 @@ double MilsteinPathSimulator::nextStep(size_t timeIndex, double assetPrice) cons
     double deltaT = _timeSteps[timeIndex + 1] - _timeSteps[timeIndex];
 
     // Rnadom Number Generation
-    normal_distribution<double> distribution(0.0, 1.0);
+    std::normal_distribution<double> distribution(0.0, 1.0);
     double Z = distribution(_randomEngine);
 
     // 
@@ -119,13 +116,13 @@ double MilsteinPathSimulator::nextStep(size_t timeIndex, double assetPrice) cons
 
     // Derivative of diffusion(t, S) wrt S by central difference
     // TODO: Create pure virtual method for diffusion(t,S)/dS
-    const double eps = 1e-6 * (1.0 + fabs(assetPrice)); // small perturbation; avoid division by zero
+    const double eps = 1e-6 * (1.0 + std::fabs(assetPrice)); // small perturbation; avoid division by zero
     double sigma_plus = _modelPtr->diffusion(t, assetPrice + eps);
     double sigma_minus = _modelPtr->diffusion(t, assetPrice - eps);
     double sigma_prime = (sigma_plus - sigma_minus) / (2.0 * eps);
 
-    double dW = sqrt(deltaT) * Z;
-    // CORRECTED Milstein scheme: X_{n+1} = X_n + μ(X_n)Δt + σ(X_n)ΔW + 0.5 * σ(X_n) * σ'(X_n) * (ΔW² - Δt)
-    double next = assetPrice + mu * deltaT + sigma * dW + 0.5 * sigma * sigma_prime * (pow(dW, 2) - deltaT);
+    double dW = std::sqrt(deltaT) * Z;
+    // Milstein scheme: X_{n+1} = X_n + μ(X_n)Δt + σ(X_n)ΔW + 0.5 * σ(X_n) * σ'(X_n) * (ΔW² - Δt)
+    double next = assetPrice + mu * deltaT + sigma * dW + 0.5 * sigma * sigma_prime * (std::pow(dW, 2) - deltaT);
     return next;
 }
