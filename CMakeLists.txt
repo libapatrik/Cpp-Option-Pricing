@@ -48,6 +48,7 @@ add_executable(CppFM main.cpp
         PDEs/Solver.h
         PDEs/PDEGreeksCalculator.cpp
         PDEs/PDEGreeksCalculator.h
+        tests/test_pde_grid.cpp
 )
 
 # Test executables
