@@ -3,6 +3,7 @@
 //
 
 #include "InterpolationSchemes.h"
+#include "Utils.h"
 #include <algorithm>
 #include <stdexcept>
 #include <cmath>
@@ -135,7 +136,10 @@ void CubicSplineInterpolation::solveThomasAlgorithm()
     // β_1 = 0 and β_N = 0 (natural boundary conditions)
     
     size_t num_unknowns = n - 2;  // β_2, β_3, ..., β_{N-1}
-    std::vector<double> a(num_unknowns), b(num_unknowns), c(num_unknowns), d(num_unknowns);
+    std::vector<double> lower(num_unknowns, 0.0);
+    std::vector<double> diag(num_unknowns, 0.0);
+    std::vector<double> upper(num_unknowns, 0.0);
+    std::vector<double> rhs(num_unknowns, 0.0);
     
     // Build the tridiagonal system for β coefficients
     // Equation (1.20): β_{j+2}Δx_{j+1} + 2β_{j+1}(Δx_{j+1} + Δx_j) + β_j Δx_j = 3(...)
@@ -146,18 +150,14 @@ void CubicSplineInterpolation::solveThomasAlgorithm()
         double dx_j_prev = _xData[j] - _xData[j-1];   // Δx_{j-1}
         
         // Matrix coefficients for β_{j}, β_{j+1}, β_{j+2} following equation (1.20)
-        if (i > 0) {
-            a[i] = dx_j_prev;  // coefficient of β_j
-        }
-        b[i] = 2.0 * (dx_j_prev + dx_j);  // coefficient of β_{j+1}
-        if (i < num_unknowns - 1) {
-            c[i] = dx_j;  // coefficient of β_{j+2}
-        }
+        lower[i] = dx_j_prev;                // coefficient of β_j
+        diag[i] = 2.0 * (dx_j_prev + dx_j);  // coefficient of β_{j+1}
+        upper[i] = dx_j;                     // coefficient of β_{j+2}
         
         // Right-hand side from equation (1.20)
         double slope_j = (_yData[j+1] - _yData[j]) / dx_j;
         double slope_j_prev = (_yData[j] - _yData[j-1]) / dx_j_prev;
-        d[i] = 3.0 * (slope_j - slope_j_prev);
+        rhs[i] = 3.0 * (slope_j - slope_j_prev);
     }
     
     // Natural boundary conditions are already enforced:
@@ -165,32 +165,17 @@ void CubicSplineInterpolation::solveThomasAlgorithm()
     // - β[n-1] = 0 (not included in the system, will be kept at 0)
     // The tridiagonal system equations from the loop above are correct for natural splines
     
-    // LECTURE NOTES THOMAS ALGORITHM: Following equations (1.22)-(1.24)
-    std::vector<double> c_prime(num_unknowns), r_prime(num_unknowns);
+    // Solve using general TridiagonalSolver (replaces inline Thomas algorithm)
+    // Forward and Backward Elimination is done in the Utils.cpp file
+    std::vector<double> beta_interior = ThomasAlgorithm::solve(lower, diag, upper, rhs);
     
-    // Forward elimination - Equations (1.22)-(1.23)
-    c_prime[0] = c[0] / b[0];
-    r_prime[0] = d[0] / b[0];
-    
-    for (size_t i = 1; i < num_unknowns; ++i) {
-        double denom = b[i] - a[i] * c_prime[i-1];
-        c_prime[i] = c[i] / denom;
-        r_prime[i] = (d[i] - a[i] * r_prime[i-1]) / denom;
-    }
-    
-    // Back substitution - Equation (1.24)
+    // Construct full β vector with boundary conditions
     // Natural splines: β[0] = 0 and β[n-1] = 0 (boundary conditions)
-    // Solve for β[1], β[2], ..., β[n-2] only
     std::vector<double> beta(n, 0.0);  // Initialize all to 0
     
-    // Back-substitute to find interior β values
-    if (num_unknowns > 0) {
-        // Start from the last unknown and work backwards
-        beta[n-2] = r_prime[num_unknowns-1];  // β[n-2] (last interior point)
-        
-        for (int i = static_cast<int>(num_unknowns) - 2; i >= 0; --i) {
-            beta[i+1] = r_prime[i] - c_prime[i] * beta[i+2];
-        }
+    // Fill in interior β values from solver result
+    for (size_t i = 0; i < num_unknowns; ++i) {
+        beta[i+1] = beta_interior[i];  // β[1], β[2], ..., β[n-2]
     }
     // Note: beta[0] = 0 and beta[n-1] = 0 remain unchanged (natural boundary conditions)
     

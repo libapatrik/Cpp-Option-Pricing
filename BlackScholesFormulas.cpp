@@ -283,7 +283,7 @@ double BlackScholesFormulas::vega(double spot, double strike, double rate, doubl
     // - Decreases as option moves ITM or OTM
     // - Increases with time to maturity
     const double d1Val = d1(spot, strike, rate, volatility, maturity);
-    const double sqrtTime = std::sqrt(maturity);
+    const double sqrtTime = std::sqrt(maturity);    // vega/100?
 
     return spot * normPdf(d1Val) * sqrtTime;
 }
@@ -296,7 +296,7 @@ double BlackScholesFormulas::vega(double spot, double strike, const DiscountCurv
     const double d1Val = d1(spot, strike, discountCurve, volatility, maturity);
     const double sqrtTime = std::sqrt(maturity);
 
-    return spot * normPdf(d1Val) * sqrtTime;
+    return spot * normPdf(d1Val) * sqrtTime;  // vega/100?
 }
 
 double BlackScholesFormulas::theta(double spot, double strike, double rate, double volatility, double maturity, Option::Type optionType)
@@ -350,7 +350,7 @@ double BlackScholesFormulas::theta(double spot, double strike, const DiscountCur
         return term1 + term2;
     } else {
         const double term2 = rate * strike * discountFactor * normCdf(-d2Val);
-        return term1 + term2;
+        return term1 + term2;    // θ/365?
     }
 }
 
@@ -360,7 +360,7 @@ double BlackScholesFormulas::rho(double spot, double strike, double rate, double
         return 0.0;
     }
 
-    // Rho: ρ = ∂V/∂r
+    // Rho: ρ = ∂V/∂r.      
     //
     // Call Rho: ρ_call = K·T·e^(-rT)·N(d2)  (positive)
     // Put Rho:  ρ_put = -K·T·e^(-rT)·N(-d₂) (negative)
@@ -374,9 +374,9 @@ double BlackScholesFormulas::rho(double spot, double strike, double rate, double
     const double discountFactor = std::exp(-rate * maturity);
 
     if (optionType == Option::Type::Call) {
-        return strike * maturity * discountFactor * normCdf(d2Val);
+        return strike * maturity * discountFactor * normCdf(d2Val);        // ρ/100?
     } else {
-        return -strike * maturity * discountFactor * normCdf(-d2Val);
+        return -strike * maturity * discountFactor * normCdf(-d2Val);    // ρ/100?
     }
     // TODO: Rho with dividend yield
 }
@@ -398,7 +398,7 @@ double BlackScholesFormulas::gamma(double spot, double strike, double rate, doub
     // Formula: Γ = φ(d1) / (S*σ*√T)
     const double d1Val = d1(spot, strike, rate, volatility, maturity);
     const double sqrtTime = std::sqrt(maturity);
-    return normPdf(d1Val) / (spot * volatility * sqrtTime);
+    return normPdf(d1Val) / (spot * volatility * sqrtTime);   // γ/100?
 }
 
 /**
@@ -412,7 +412,7 @@ double BlackScholesFormulas::gamma(double spot, double strike, const DiscountCur
     const double d1Val = d1(spot, strike, discountCurve, volatility, maturity);
     const double sqrtTime = std::sqrt(maturity);
 
-    return normPdf(d1Val) / (spot * volatility * sqrtTime);
+    return normPdf(d1Val) / (spot * volatility * sqrtTime);   // γ/100?
 }
 
 /** NOTE:
@@ -450,7 +450,7 @@ double BlackScholesFormulas::volga(double spot, double strike, double rate, doub
     }
 
     // Formula: Volga = S*φ(d1) * √T * d1*d2/σ
-    //
+    // ∂^2V/∂σ^2 = vega(d1*d2/σ) 
     // Measures convexity of option value with respect to volatility
     //
     // Financial interpretation:
@@ -462,5 +462,6 @@ double BlackScholesFormulas::volga(double spot, double strike, double rate, doub
     const double d2Val = d2(spot, strike, rate, volatility, maturity);
     const double sqrtTime = std::sqrt(maturity);
 
-    return spot * normPdf(d1Val) * sqrtTime * d1Val * d2Val / volatility;
+    // return (spot * normPdf(d1Val) * sqrtTime * d1Val * d2Val / volatility);  // volga/100? Or, no! Δ has no division.
+    return vega(spot, strike, rate, volatility, maturity) * (d1Val * d2Val / volatility); // gives the same result
 }

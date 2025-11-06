@@ -36,7 +36,11 @@ int main()
     double mcMilPrice = mcMil.price(callPayoff);
     std::cout << "Call Price under MC (Milstein):     " << mcMilPrice << std::endl;
 
+    // Finite Difference Pricer
 
+
+    std::cout << "\nPricing American Options" << std::endl;
+    // TODO: Add FD AM Pricer
     
     
 

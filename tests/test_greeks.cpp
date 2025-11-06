@@ -1,9 +1,3 @@
-//
-// Comprehensive Tests for Black-Scholes Greeks
-// 
-// Educational test suite that validates option sensitivities with clear explanations
-//
-
 #include <gtest/gtest.h>
 #include "../BlackScholesFormulas.h"
 #include "../FinancialInstrument.h"
@@ -14,17 +8,6 @@
 ═══════════════════════════════════════════════════════════════════════════════
                     GREEKS: The Option Sensitivities
 ═══════════════════════════════════════════════════════════════════════════════
-
-WHAT ARE GREEKS?
-Greeks measure how option prices change with respect to various parameters.
-They are essential for:
-  - Risk management: Understanding exposure to market movements
-  - Hedging: Neutralizing unwanted risks
-  - Trading: Exploiting market inefficiencies
-  - Portfolio management: Optimizing risk-return profiles
-
-GREEKS WE TEST:
-
 First-Order (Price Sensitivities):
   Δ (Delta)   -> How option price changes with spot price (∂V/∂S)
   ν (Vega)    -> How option price changes with volatility (∂V/∂σ)
@@ -75,10 +58,7 @@ double numericalDerivative(
     return (f(x + h) - f(x - h)) / (2.0 * h);
 }
 
-double numericalSecondDerivative(
-    std::function<double(double)> f,
-    double x,
-    double h = 1e-4)
+double numericalSecondDerivative(std::function<double(double)> f, double x, double h = 1e-4)
 {
     return (f(x + h) - 2.0 * f(x) + f(x - h)) / (h * h);
 }
@@ -110,7 +90,9 @@ TEST(GreeksTest, DeltaCallBasic) {
     EXPECT_LE(delta, 1.0) << "Call delta cannot exceed 1 (max leverage is 1:1)";
     
     // ATM call delta ≈ 0.5-0.65 (above 0.5 due to positive drift from r > 0)
+    // 50% probability that the option will expiry ITM
     // The forward price F = S*e^(rT) > S, so ATM by strike is ITM by forward
+    // F = S*e^(rT) = 100*e^(0.05*1) = 105.12710963718821 > S = 100
     EXPECT_NEAR(delta, 0.6, 0.15) 
         << "ATM call delta should be ~0.6 (slightly ITM on forward basis)";
 }

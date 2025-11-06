@@ -73,4 +73,9 @@ protected:
 };
 
 
+class FDPricer : public Pricer
+{
+
+};
+
 #endif //CPPFM_PRICER_H

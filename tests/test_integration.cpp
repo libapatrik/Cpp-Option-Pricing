@@ -1,13 +1,9 @@
-//
-// Integration tests for VolatilitySurface
-//
-
 /**
  * Learning the basics
  */
 #include <gtest/gtest.h>  
 #include <iostream>
-
+/// PRACTICE: Simple excercise aside
 struct BankAccount {
     double balance = 0;
 

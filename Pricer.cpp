@@ -64,7 +64,7 @@ MonteCarloPricer::MonteCarloPricer(const Model& model, const DiscountCurve& disc
 {  // NOTE: PathSimulator may need clone method for safety
 }
 
-MonteCarloPricer * MonteCarloPricer::clone() const
+MonteCarloPricer* MonteCarloPricer::clone() const
 {
     return new MonteCarloPricer(*this); // destroyed by Pricer destructor!
 }
@@ -94,3 +94,6 @@ double MonteCarloPricer::price(const EuropeanOptionPayoff &option) const
     double avgPayoff = sumPayoff / static_cast<double>(numPaths); // average payoff
     return std::exp(-r * T) * avgPayoff; // discount 
 }
+
+
+double FDPricer

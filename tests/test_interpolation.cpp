@@ -1,8 +1,3 @@
-//
-// Tests for InterpolationSchemes (Linear and Cubic Spline)
-// Computational Finance - Interpolation Testing Framework
-//
-
 #include <gtest/gtest.h>        // Google Test framework - provides TEST macros and assertions
 #include <vector>               // Standard vector container for dynamic arrays
 #include <memory>               // Smart pointers (unique_ptr) for memory management
@@ -10,7 +5,6 @@
 #include <iostream>             // For output stream
 #include <iomanip>              // For output formatting
 #include "../InterpolationSchemes.h"  // Our interpolation classes to test
-
 // ============================================================================
 // Test Constants and Utilities
 // ============================================================================
