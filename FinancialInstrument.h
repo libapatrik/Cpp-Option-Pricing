@@ -19,6 +19,8 @@ class FinancialInstrument // Abstract class - base class
 {
 public:
 
+    // payoff method -> value that you get at "expiry" -> something to think of
+
     virtual FinancialInstrument* clone() const = 0; // Virtual Pure method - clone
 
     virtual ~FinancialInstrument() = default;       // Virtual destructor for FinancialInstrument

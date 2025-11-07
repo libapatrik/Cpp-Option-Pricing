@@ -21,6 +21,8 @@ VolatilitySurface::VolatilitySurface(const std::vector<double>& strikes,        
       _interpolationType(interpolationType), _discountCurve(discountCurve.clone())
 {
     // Validate input data
+
+    // Can be delegated to a private method
     if (_strikes.empty() || _maturities.empty() || _volatilities.empty()) {
         throw std::invalid_argument("VolatilitySurface: Empty data provided");
     }
@@ -78,7 +80,7 @@ void VolatilitySurface::initializeInterpolators()
     }
     
     // Initialize 1D interpolators for each strike (term structure interpolation)
-    _termStructureInterpolators.reserve(_strikes.size());          // reserve space for strikes
+    /*_termStructureInterpolators.reserve(_strikes.size());          // reserve space for strikes
     for (size_t j = 0; j < _strikes.size(); ++j) {                   // for each strike
         std::vector<double> termVols;                                // volatilities across maturities for strike j
         termVols.reserve(_maturities.size());                      // reserve space for maturities
@@ -96,9 +98,10 @@ void VolatilitySurface::initializeInterpolators()
                 std::make_unique<LinearInterpolation>(_maturities, termVols));
         }
     }
+    */
 }
 
-double VolatilitySurface::impliedVolatility(double strike, double maturity) const
+/*double VolatilitySurface::impliedVolatility(double strike, double maturity) const
 {
     // Check bounds
     if (strike < _strikes.front() || strike > _strikes.back() ||
@@ -129,9 +132,10 @@ double VolatilitySurface::impliedVolatility(double strike, double maturity) cons
     // Linear interpolation in time
     double weight = (maturity - t1) / (t2 - t1);
     return vol1 + weight * (vol2 - vol1);
-}
+}*/
 
-double VolatilitySurface::impliedVolatilityForwardMoneyness(double strike, double maturity, double spot) const
+// No spot as parameter
+double VolatilitySurface::impliedVolatility(double strike, double maturity) const
 {
     // Section 1.3 - Interpolation along maturities
     // Implement equation (1.25) with forward moneyness k_F_T = K/F_T
@@ -399,7 +403,7 @@ double VolatilitySurface::impliedVolatilitySecondDerivativeStrike(double strike,
     return (vol_strike_plus - 2.0 * vol_center + vol_strike_minus) / (eps * eps);
 }
 
-
+/*
 double VolatilitySurface::impliedVolatilityTimeDerivative(double strike, double maturity) const
 {
     return impliedVolatilityDerivativeTime(strike, maturity);
@@ -413,10 +417,10 @@ double VolatilitySurface::impliedVolatilityStrikeDerivative(double strike, doubl
 double VolatilitySurface::impliedVolatilitySecondStrikeDerivative(double strike, double maturity) const
 {
     return impliedVolatilitySecondDerivativeStrike(strike, maturity);
-}
+}*/
 
 
-std::vector<double> VolatilitySurface::volatilitySmile(double maturity, const std::vector<double>& strikes) const
+/*std::vector<double> VolatilitySurface::volatilitySmile(double maturity, const std::vector<double>& strikes) const
 {
     std::vector<double> result;
     result.reserve(strikes.size());
@@ -428,6 +432,7 @@ std::vector<double> VolatilitySurface::volatilitySmile(double maturity, const st
     return result;
 }
 
+// Maybe use forward moneyness as a constant instead of strike
 std::vector<double> VolatilitySurface::volatilityTermStructure(double strike, const std::vector<double>& maturities) const
 {
     std::vector<double> result;
@@ -438,7 +443,7 @@ std::vector<double> VolatilitySurface::volatilityTermStructure(double strike, co
     }
     
     return result;
-}
+}*/
 
 
 std::pair<std::pair<double, double>, std::pair<double, double>> VolatilitySurface::getBounds() const

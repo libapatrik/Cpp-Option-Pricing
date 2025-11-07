@@ -212,6 +212,8 @@ private:
 	// const VolatilitySurface* _volSurfacePtr; // remove the raw pointer
 	std::unique_ptr<const VolatilitySurface> _volSurfacePtr;
 
+	// internal Local Vol Solver as a data member
+
 
 };
 

@@ -39,16 +39,16 @@ public:
      * @param maturity Time to maturity (in years)
      * @return Implied volatility
      */
-    double impliedVolatility(double strike, double maturity) const; // accessor
+    //double impliedVolatility(double strike, double maturity) const; // accessor
     
     /**
      * Get implied volatility using forward moneyness interpolation
      * @param strike Strike price
      * @param maturity Time to maturity (in years)
-     * @param spot Current spot price
      * @return Implied volatility
      */
-    double impliedVolatilityForwardMoneyness(double strike, double maturity, double spot) const; // accessor
+    double impliedVolatility(double strike, double maturity) const; // accessor
+    
     
     /**
      * Get local volatility using Dupire formula
@@ -56,6 +56,8 @@ public:
      * @param time Current time
      * @return Local volatility
      */
+
+    // Should be another class LocalVolatilitySurface externally
     double localVolatility(double spot, double time) const; // accessor
     
     /**
@@ -64,7 +66,7 @@ public:
      * @param strikes Vector of strikes to evaluate
      * @return Vector of implied volatilities
      */
-    std::vector<double> volatilitySmile(double maturity, const std::vector<double>& strikes) const; // accessor
+    //std::vector<double> volatilitySmile(double maturity, const std::vector<double>& strikes) const; // accessor
     
     /**
      * Get volatility term structure for given strike
@@ -72,7 +74,7 @@ public:
      * @param maturities Vector of maturities to evaluate
      * @return Vector of implied volatilities
      */
-    std::vector<double> volatilityTermStructure(double strike, const std::vector<double>& maturities) const; // accessor
+    //std::vector<double> volatilityTermStructure(double strike, const std::vector<double>& maturities) const; // accessor
     
     
     /**
@@ -82,6 +84,8 @@ public:
     std::pair<std::pair<double, double>, std::pair<double, double>> getBounds() const;
 
     // Black-Scholes formulas delegation
+    // Would make sense only if volatility is inferred from vol surface
+    // Or can be done in an external Utility/Mathematical class 
     double blackScholesCall(double spot, double strike, double time, double volatility) const; // accessor
     double blackScholesPut(double spot, double strike, double time, double volatility) const; // accessor
 
@@ -91,13 +95,13 @@ public:
     double blackScholesTheta(double spot, double strike, double time, double volatility) const; // accessor
 
      // dSigma/dT - how implied volatility changes with time
-    double impliedVolatilityTimeDerivative(double strike, double maturity) const; // accessor
+    //double impliedVolatilityTimeDerivative(double strike, double maturity) const; // accessor
 
     // dSigma/dK - how implied volatility changes with strike (smile slope)
-    double impliedVolatilityStrikeDerivative(double strike, double maturity) const; // accessor
+    //double impliedVolatilityStrikeDerivative(double strike, double maturity) const; // accessor
 
      // d2Sigma/dK2 - smile curvature (convexity)
-    double impliedVolatilitySecondStrikeDerivative(double strike, double maturity) const; // accessor
+    //double impliedVolatilitySecondStrikeDerivative(double strike, double maturity) const; // accessor
 
     // Pointer to new VolatilitySurface instance
     VolatilitySurface* clone() const;        // Clone method for polymorphic copying
@@ -120,10 +124,11 @@ private:
     
     // Interpolation objects for different dimensions
     std::vector<std::unique_ptr<InterpolationSchemes>> _smileInterpolators;
-    std::vector<std::unique_ptr<InterpolationSchemes>> _termStructureInterpolators;
+    //std::vector<std::unique_ptr<InterpolationSchemes>> _termStructureInterpolators;
     // A "is-a" relation does not apply to unique_ptr; only for class-to-class
 
     void initializeInterpolators(); // to create interpolators for strikes and matiruties
+    // Validate() method
     double computeDupireLocalVolatility(double spot, double time) const;
     
     // Implied volatility surface derivatives (used in Dupire formula) - private helpers
