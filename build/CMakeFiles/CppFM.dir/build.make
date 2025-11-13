@@ -76,211 +76,211 @@ CMakeFiles/CppFM.dir/main.cpp.o: CMakeFiles/CppFM.dir/flags.make
 CMakeFiles/CppFM.dir/main.cpp.o: /Users/patrikliba/CLionProjects/CppFM/main.cpp
 CMakeFiles/CppFM.dir/main.cpp.o: CMakeFiles/CppFM.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/CppFM.dir/main.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppFM.dir/main.cpp.o -MF CMakeFiles/CppFM.dir/main.cpp.o.d -o CMakeFiles/CppFM.dir/main.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/main.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppFM.dir/main.cpp.o -MF CMakeFiles/CppFM.dir/main.cpp.o.d -o CMakeFiles/CppFM.dir/main.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/main.cpp
 
 CMakeFiles/CppFM.dir/main.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/CppFM.dir/main.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/main.cpp > CMakeFiles/CppFM.dir/main.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/main.cpp > CMakeFiles/CppFM.dir/main.cpp.i
 
 CMakeFiles/CppFM.dir/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/CppFM.dir/main.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/main.cpp -o CMakeFiles/CppFM.dir/main.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/main.cpp -o CMakeFiles/CppFM.dir/main.cpp.s
 
 CMakeFiles/CppFM.dir/Model.cpp.o: CMakeFiles/CppFM.dir/flags.make
 CMakeFiles/CppFM.dir/Model.cpp.o: /Users/patrikliba/CLionProjects/CppFM/Model.cpp
 CMakeFiles/CppFM.dir/Model.cpp.o: CMakeFiles/CppFM.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/CppFM.dir/Model.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppFM.dir/Model.cpp.o -MF CMakeFiles/CppFM.dir/Model.cpp.o.d -o CMakeFiles/CppFM.dir/Model.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/Model.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppFM.dir/Model.cpp.o -MF CMakeFiles/CppFM.dir/Model.cpp.o.d -o CMakeFiles/CppFM.dir/Model.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/Model.cpp
 
 CMakeFiles/CppFM.dir/Model.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/CppFM.dir/Model.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/Model.cpp > CMakeFiles/CppFM.dir/Model.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/Model.cpp > CMakeFiles/CppFM.dir/Model.cpp.i
 
 CMakeFiles/CppFM.dir/Model.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/CppFM.dir/Model.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/Model.cpp -o CMakeFiles/CppFM.dir/Model.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/Model.cpp -o CMakeFiles/CppFM.dir/Model.cpp.s
 
 CMakeFiles/CppFM.dir/Utils.cpp.o: CMakeFiles/CppFM.dir/flags.make
 CMakeFiles/CppFM.dir/Utils.cpp.o: /Users/patrikliba/CLionProjects/CppFM/Utils.cpp
 CMakeFiles/CppFM.dir/Utils.cpp.o: CMakeFiles/CppFM.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/CppFM.dir/Utils.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppFM.dir/Utils.cpp.o -MF CMakeFiles/CppFM.dir/Utils.cpp.o.d -o CMakeFiles/CppFM.dir/Utils.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/Utils.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppFM.dir/Utils.cpp.o -MF CMakeFiles/CppFM.dir/Utils.cpp.o.d -o CMakeFiles/CppFM.dir/Utils.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/Utils.cpp
 
 CMakeFiles/CppFM.dir/Utils.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/CppFM.dir/Utils.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/Utils.cpp > CMakeFiles/CppFM.dir/Utils.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/Utils.cpp > CMakeFiles/CppFM.dir/Utils.cpp.i
 
 CMakeFiles/CppFM.dir/Utils.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/CppFM.dir/Utils.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/Utils.cpp -o CMakeFiles/CppFM.dir/Utils.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/Utils.cpp -o CMakeFiles/CppFM.dir/Utils.cpp.s
 
 CMakeFiles/CppFM.dir/PathSimulator.cpp.o: CMakeFiles/CppFM.dir/flags.make
 CMakeFiles/CppFM.dir/PathSimulator.cpp.o: /Users/patrikliba/CLionProjects/CppFM/PathSimulator.cpp
 CMakeFiles/CppFM.dir/PathSimulator.cpp.o: CMakeFiles/CppFM.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/CppFM.dir/PathSimulator.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppFM.dir/PathSimulator.cpp.o -MF CMakeFiles/CppFM.dir/PathSimulator.cpp.o.d -o CMakeFiles/CppFM.dir/PathSimulator.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/PathSimulator.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppFM.dir/PathSimulator.cpp.o -MF CMakeFiles/CppFM.dir/PathSimulator.cpp.o.d -o CMakeFiles/CppFM.dir/PathSimulator.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/PathSimulator.cpp
 
 CMakeFiles/CppFM.dir/PathSimulator.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/CppFM.dir/PathSimulator.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/PathSimulator.cpp > CMakeFiles/CppFM.dir/PathSimulator.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/PathSimulator.cpp > CMakeFiles/CppFM.dir/PathSimulator.cpp.i
 
 CMakeFiles/CppFM.dir/PathSimulator.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/CppFM.dir/PathSimulator.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/PathSimulator.cpp -o CMakeFiles/CppFM.dir/PathSimulator.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/PathSimulator.cpp -o CMakeFiles/CppFM.dir/PathSimulator.cpp.s
 
 CMakeFiles/CppFM.dir/FinancialInstrument.cpp.o: CMakeFiles/CppFM.dir/flags.make
 CMakeFiles/CppFM.dir/FinancialInstrument.cpp.o: /Users/patrikliba/CLionProjects/CppFM/FinancialInstrument.cpp
 CMakeFiles/CppFM.dir/FinancialInstrument.cpp.o: CMakeFiles/CppFM.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/CppFM.dir/FinancialInstrument.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppFM.dir/FinancialInstrument.cpp.o -MF CMakeFiles/CppFM.dir/FinancialInstrument.cpp.o.d -o CMakeFiles/CppFM.dir/FinancialInstrument.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/FinancialInstrument.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppFM.dir/FinancialInstrument.cpp.o -MF CMakeFiles/CppFM.dir/FinancialInstrument.cpp.o.d -o CMakeFiles/CppFM.dir/FinancialInstrument.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/FinancialInstrument.cpp
 
 CMakeFiles/CppFM.dir/FinancialInstrument.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/CppFM.dir/FinancialInstrument.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/FinancialInstrument.cpp > CMakeFiles/CppFM.dir/FinancialInstrument.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/FinancialInstrument.cpp > CMakeFiles/CppFM.dir/FinancialInstrument.cpp.i
 
 CMakeFiles/CppFM.dir/FinancialInstrument.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/CppFM.dir/FinancialInstrument.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/FinancialInstrument.cpp -o CMakeFiles/CppFM.dir/FinancialInstrument.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/FinancialInstrument.cpp -o CMakeFiles/CppFM.dir/FinancialInstrument.cpp.s
 
 CMakeFiles/CppFM.dir/Pricer.cpp.o: CMakeFiles/CppFM.dir/flags.make
 CMakeFiles/CppFM.dir/Pricer.cpp.o: /Users/patrikliba/CLionProjects/CppFM/Pricer.cpp
 CMakeFiles/CppFM.dir/Pricer.cpp.o: CMakeFiles/CppFM.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/CppFM.dir/Pricer.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppFM.dir/Pricer.cpp.o -MF CMakeFiles/CppFM.dir/Pricer.cpp.o.d -o CMakeFiles/CppFM.dir/Pricer.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/Pricer.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppFM.dir/Pricer.cpp.o -MF CMakeFiles/CppFM.dir/Pricer.cpp.o.d -o CMakeFiles/CppFM.dir/Pricer.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/Pricer.cpp
 
 CMakeFiles/CppFM.dir/Pricer.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/CppFM.dir/Pricer.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/Pricer.cpp > CMakeFiles/CppFM.dir/Pricer.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/Pricer.cpp > CMakeFiles/CppFM.dir/Pricer.cpp.i
 
 CMakeFiles/CppFM.dir/Pricer.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/CppFM.dir/Pricer.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/Pricer.cpp -o CMakeFiles/CppFM.dir/Pricer.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/Pricer.cpp -o CMakeFiles/CppFM.dir/Pricer.cpp.s
 
 CMakeFiles/CppFM.dir/DiscountCurve.cpp.o: CMakeFiles/CppFM.dir/flags.make
 CMakeFiles/CppFM.dir/DiscountCurve.cpp.o: /Users/patrikliba/CLionProjects/CppFM/DiscountCurve.cpp
 CMakeFiles/CppFM.dir/DiscountCurve.cpp.o: CMakeFiles/CppFM.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/CppFM.dir/DiscountCurve.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppFM.dir/DiscountCurve.cpp.o -MF CMakeFiles/CppFM.dir/DiscountCurve.cpp.o.d -o CMakeFiles/CppFM.dir/DiscountCurve.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/DiscountCurve.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppFM.dir/DiscountCurve.cpp.o -MF CMakeFiles/CppFM.dir/DiscountCurve.cpp.o.d -o CMakeFiles/CppFM.dir/DiscountCurve.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/DiscountCurve.cpp
 
 CMakeFiles/CppFM.dir/DiscountCurve.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/CppFM.dir/DiscountCurve.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/DiscountCurve.cpp > CMakeFiles/CppFM.dir/DiscountCurve.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/DiscountCurve.cpp > CMakeFiles/CppFM.dir/DiscountCurve.cpp.i
 
 CMakeFiles/CppFM.dir/DiscountCurve.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/CppFM.dir/DiscountCurve.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/DiscountCurve.cpp -o CMakeFiles/CppFM.dir/DiscountCurve.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/DiscountCurve.cpp -o CMakeFiles/CppFM.dir/DiscountCurve.cpp.s
 
 CMakeFiles/CppFM.dir/VolatilitySurface.cpp.o: CMakeFiles/CppFM.dir/flags.make
 CMakeFiles/CppFM.dir/VolatilitySurface.cpp.o: /Users/patrikliba/CLionProjects/CppFM/VolatilitySurface.cpp
 CMakeFiles/CppFM.dir/VolatilitySurface.cpp.o: CMakeFiles/CppFM.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/CppFM.dir/VolatilitySurface.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppFM.dir/VolatilitySurface.cpp.o -MF CMakeFiles/CppFM.dir/VolatilitySurface.cpp.o.d -o CMakeFiles/CppFM.dir/VolatilitySurface.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/VolatilitySurface.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppFM.dir/VolatilitySurface.cpp.o -MF CMakeFiles/CppFM.dir/VolatilitySurface.cpp.o.d -o CMakeFiles/CppFM.dir/VolatilitySurface.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/VolatilitySurface.cpp
 
 CMakeFiles/CppFM.dir/VolatilitySurface.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/CppFM.dir/VolatilitySurface.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/VolatilitySurface.cpp > CMakeFiles/CppFM.dir/VolatilitySurface.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/VolatilitySurface.cpp > CMakeFiles/CppFM.dir/VolatilitySurface.cpp.i
 
 CMakeFiles/CppFM.dir/VolatilitySurface.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/CppFM.dir/VolatilitySurface.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/VolatilitySurface.cpp -o CMakeFiles/CppFM.dir/VolatilitySurface.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/VolatilitySurface.cpp -o CMakeFiles/CppFM.dir/VolatilitySurface.cpp.s
 
 CMakeFiles/CppFM.dir/InterpolationSchemes.cpp.o: CMakeFiles/CppFM.dir/flags.make
 CMakeFiles/CppFM.dir/InterpolationSchemes.cpp.o: /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp
 CMakeFiles/CppFM.dir/InterpolationSchemes.cpp.o: CMakeFiles/CppFM.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/CppFM.dir/InterpolationSchemes.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppFM.dir/InterpolationSchemes.cpp.o -MF CMakeFiles/CppFM.dir/InterpolationSchemes.cpp.o.d -o CMakeFiles/CppFM.dir/InterpolationSchemes.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppFM.dir/InterpolationSchemes.cpp.o -MF CMakeFiles/CppFM.dir/InterpolationSchemes.cpp.o.d -o CMakeFiles/CppFM.dir/InterpolationSchemes.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp
 
 CMakeFiles/CppFM.dir/InterpolationSchemes.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/CppFM.dir/InterpolationSchemes.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp > CMakeFiles/CppFM.dir/InterpolationSchemes.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp > CMakeFiles/CppFM.dir/InterpolationSchemes.cpp.i
 
 CMakeFiles/CppFM.dir/InterpolationSchemes.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/CppFM.dir/InterpolationSchemes.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp -o CMakeFiles/CppFM.dir/InterpolationSchemes.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp -o CMakeFiles/CppFM.dir/InterpolationSchemes.cpp.s
 
 CMakeFiles/CppFM.dir/BlackScholesFormulas.cpp.o: CMakeFiles/CppFM.dir/flags.make
 CMakeFiles/CppFM.dir/BlackScholesFormulas.cpp.o: /Users/patrikliba/CLionProjects/CppFM/BlackScholesFormulas.cpp
 CMakeFiles/CppFM.dir/BlackScholesFormulas.cpp.o: CMakeFiles/CppFM.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/CppFM.dir/BlackScholesFormulas.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppFM.dir/BlackScholesFormulas.cpp.o -MF CMakeFiles/CppFM.dir/BlackScholesFormulas.cpp.o.d -o CMakeFiles/CppFM.dir/BlackScholesFormulas.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/BlackScholesFormulas.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppFM.dir/BlackScholesFormulas.cpp.o -MF CMakeFiles/CppFM.dir/BlackScholesFormulas.cpp.o.d -o CMakeFiles/CppFM.dir/BlackScholesFormulas.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/BlackScholesFormulas.cpp
 
 CMakeFiles/CppFM.dir/BlackScholesFormulas.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/CppFM.dir/BlackScholesFormulas.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/BlackScholesFormulas.cpp > CMakeFiles/CppFM.dir/BlackScholesFormulas.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/BlackScholesFormulas.cpp > CMakeFiles/CppFM.dir/BlackScholesFormulas.cpp.i
 
 CMakeFiles/CppFM.dir/BlackScholesFormulas.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/CppFM.dir/BlackScholesFormulas.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/BlackScholesFormulas.cpp -o CMakeFiles/CppFM.dir/BlackScholesFormulas.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/BlackScholesFormulas.cpp -o CMakeFiles/CppFM.dir/BlackScholesFormulas.cpp.s
 
 CMakeFiles/CppFM.dir/PDEs/PDE.cpp.o: CMakeFiles/CppFM.dir/flags.make
 CMakeFiles/CppFM.dir/PDEs/PDE.cpp.o: /Users/patrikliba/CLionProjects/CppFM/PDEs/PDE.cpp
 CMakeFiles/CppFM.dir/PDEs/PDE.cpp.o: CMakeFiles/CppFM.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/CppFM.dir/PDEs/PDE.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppFM.dir/PDEs/PDE.cpp.o -MF CMakeFiles/CppFM.dir/PDEs/PDE.cpp.o.d -o CMakeFiles/CppFM.dir/PDEs/PDE.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/PDEs/PDE.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppFM.dir/PDEs/PDE.cpp.o -MF CMakeFiles/CppFM.dir/PDEs/PDE.cpp.o.d -o CMakeFiles/CppFM.dir/PDEs/PDE.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/PDEs/PDE.cpp
 
 CMakeFiles/CppFM.dir/PDEs/PDE.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/CppFM.dir/PDEs/PDE.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/PDEs/PDE.cpp > CMakeFiles/CppFM.dir/PDEs/PDE.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/PDEs/PDE.cpp > CMakeFiles/CppFM.dir/PDEs/PDE.cpp.i
 
 CMakeFiles/CppFM.dir/PDEs/PDE.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/CppFM.dir/PDEs/PDE.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/PDEs/PDE.cpp -o CMakeFiles/CppFM.dir/PDEs/PDE.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/PDEs/PDE.cpp -o CMakeFiles/CppFM.dir/PDEs/PDE.cpp.s
 
 CMakeFiles/CppFM.dir/PDEs/Grid.cpp.o: CMakeFiles/CppFM.dir/flags.make
 CMakeFiles/CppFM.dir/PDEs/Grid.cpp.o: /Users/patrikliba/CLionProjects/CppFM/PDEs/Grid.cpp
 CMakeFiles/CppFM.dir/PDEs/Grid.cpp.o: CMakeFiles/CppFM.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/CppFM.dir/PDEs/Grid.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppFM.dir/PDEs/Grid.cpp.o -MF CMakeFiles/CppFM.dir/PDEs/Grid.cpp.o.d -o CMakeFiles/CppFM.dir/PDEs/Grid.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/PDEs/Grid.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppFM.dir/PDEs/Grid.cpp.o -MF CMakeFiles/CppFM.dir/PDEs/Grid.cpp.o.d -o CMakeFiles/CppFM.dir/PDEs/Grid.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/PDEs/Grid.cpp
 
 CMakeFiles/CppFM.dir/PDEs/Grid.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/CppFM.dir/PDEs/Grid.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/PDEs/Grid.cpp > CMakeFiles/CppFM.dir/PDEs/Grid.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/PDEs/Grid.cpp > CMakeFiles/CppFM.dir/PDEs/Grid.cpp.i
 
 CMakeFiles/CppFM.dir/PDEs/Grid.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/CppFM.dir/PDEs/Grid.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/PDEs/Grid.cpp -o CMakeFiles/CppFM.dir/PDEs/Grid.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/PDEs/Grid.cpp -o CMakeFiles/CppFM.dir/PDEs/Grid.cpp.s
 
 CMakeFiles/CppFM.dir/PDEs/BoundaryConditions.cpp.o: CMakeFiles/CppFM.dir/flags.make
 CMakeFiles/CppFM.dir/PDEs/BoundaryConditions.cpp.o: /Users/patrikliba/CLionProjects/CppFM/PDEs/BoundaryConditions.cpp
 CMakeFiles/CppFM.dir/PDEs/BoundaryConditions.cpp.o: CMakeFiles/CppFM.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object CMakeFiles/CppFM.dir/PDEs/BoundaryConditions.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppFM.dir/PDEs/BoundaryConditions.cpp.o -MF CMakeFiles/CppFM.dir/PDEs/BoundaryConditions.cpp.o.d -o CMakeFiles/CppFM.dir/PDEs/BoundaryConditions.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/PDEs/BoundaryConditions.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppFM.dir/PDEs/BoundaryConditions.cpp.o -MF CMakeFiles/CppFM.dir/PDEs/BoundaryConditions.cpp.o.d -o CMakeFiles/CppFM.dir/PDEs/BoundaryConditions.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/PDEs/BoundaryConditions.cpp
 
 CMakeFiles/CppFM.dir/PDEs/BoundaryConditions.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/CppFM.dir/PDEs/BoundaryConditions.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/PDEs/BoundaryConditions.cpp > CMakeFiles/CppFM.dir/PDEs/BoundaryConditions.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/PDEs/BoundaryConditions.cpp > CMakeFiles/CppFM.dir/PDEs/BoundaryConditions.cpp.i
 
 CMakeFiles/CppFM.dir/PDEs/BoundaryConditions.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/CppFM.dir/PDEs/BoundaryConditions.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/PDEs/BoundaryConditions.cpp -o CMakeFiles/CppFM.dir/PDEs/BoundaryConditions.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/PDEs/BoundaryConditions.cpp -o CMakeFiles/CppFM.dir/PDEs/BoundaryConditions.cpp.s
 
 CMakeFiles/CppFM.dir/PDEs/Solver.cpp.o: CMakeFiles/CppFM.dir/flags.make
 CMakeFiles/CppFM.dir/PDEs/Solver.cpp.o: /Users/patrikliba/CLionProjects/CppFM/PDEs/Solver.cpp
 CMakeFiles/CppFM.dir/PDEs/Solver.cpp.o: CMakeFiles/CppFM.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building CXX object CMakeFiles/CppFM.dir/PDEs/Solver.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppFM.dir/PDEs/Solver.cpp.o -MF CMakeFiles/CppFM.dir/PDEs/Solver.cpp.o.d -o CMakeFiles/CppFM.dir/PDEs/Solver.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/PDEs/Solver.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppFM.dir/PDEs/Solver.cpp.o -MF CMakeFiles/CppFM.dir/PDEs/Solver.cpp.o.d -o CMakeFiles/CppFM.dir/PDEs/Solver.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/PDEs/Solver.cpp
 
 CMakeFiles/CppFM.dir/PDEs/Solver.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/CppFM.dir/PDEs/Solver.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/PDEs/Solver.cpp > CMakeFiles/CppFM.dir/PDEs/Solver.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/PDEs/Solver.cpp > CMakeFiles/CppFM.dir/PDEs/Solver.cpp.i
 
 CMakeFiles/CppFM.dir/PDEs/Solver.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/CppFM.dir/PDEs/Solver.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/PDEs/Solver.cpp -o CMakeFiles/CppFM.dir/PDEs/Solver.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/PDEs/Solver.cpp -o CMakeFiles/CppFM.dir/PDEs/Solver.cpp.s
 
 CMakeFiles/CppFM.dir/PDEs/PDEGreeksCalculator.cpp.o: CMakeFiles/CppFM.dir/flags.make
 CMakeFiles/CppFM.dir/PDEs/PDEGreeksCalculator.cpp.o: /Users/patrikliba/CLionProjects/CppFM/PDEs/PDEGreeksCalculator.cpp
 CMakeFiles/CppFM.dir/PDEs/PDEGreeksCalculator.cpp.o: CMakeFiles/CppFM.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building CXX object CMakeFiles/CppFM.dir/PDEs/PDEGreeksCalculator.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppFM.dir/PDEs/PDEGreeksCalculator.cpp.o -MF CMakeFiles/CppFM.dir/PDEs/PDEGreeksCalculator.cpp.o.d -o CMakeFiles/CppFM.dir/PDEs/PDEGreeksCalculator.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/PDEs/PDEGreeksCalculator.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppFM.dir/PDEs/PDEGreeksCalculator.cpp.o -MF CMakeFiles/CppFM.dir/PDEs/PDEGreeksCalculator.cpp.o.d -o CMakeFiles/CppFM.dir/PDEs/PDEGreeksCalculator.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/PDEs/PDEGreeksCalculator.cpp
 
 CMakeFiles/CppFM.dir/PDEs/PDEGreeksCalculator.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/CppFM.dir/PDEs/PDEGreeksCalculator.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/PDEs/PDEGreeksCalculator.cpp > CMakeFiles/CppFM.dir/PDEs/PDEGreeksCalculator.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/PDEs/PDEGreeksCalculator.cpp > CMakeFiles/CppFM.dir/PDEs/PDEGreeksCalculator.cpp.i
 
 CMakeFiles/CppFM.dir/PDEs/PDEGreeksCalculator.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/CppFM.dir/PDEs/PDEGreeksCalculator.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/PDEs/PDEGreeksCalculator.cpp -o CMakeFiles/CppFM.dir/PDEs/PDEGreeksCalculator.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/PDEs/PDEGreeksCalculator.cpp -o CMakeFiles/CppFM.dir/PDEs/PDEGreeksCalculator.cpp.s
 
 # Object files for target CppFM
 CppFM_OBJECTS = \

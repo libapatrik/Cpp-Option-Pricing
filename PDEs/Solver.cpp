@@ -256,15 +256,14 @@ std::vector<double> ThetaMethodSolver::timeStep(const std::vector<double>& u_old
         double c = _pde->reaction(x, t_eval);
         double d = _pde->source(x, t_eval);
         
-        // Grid spacing (handles non-uniform grids)
-        double dx_forward = _grid->spot(i+1) - _grid->spot(i);
-        double dx_backward = _grid->spot(i) - _grid->spot(i-1);
-        double dx_center = (dx_forward + dx_backward) / 2.0;
-        double dx2 = dx_center * dx_center;
+        // Grid spacing for non-uniform grids
+        double h_plus = _grid->spot(i+1) - _grid->spot(i);    // forward step
+        double h_minus = _grid->spot(i) - _grid->spot(i-1);   // backward step
+        double h_sum = h_plus + h_minus;
         
         /**
-         * FINITE DIFFERENCE STENCIL:
-         * ==========================
+         * FINITE DIFFERENCE STENCIL FOR UNIFORM AND LOG-SPACED GRIDS:
+         * =================================================
          * The spatial operator L discretized gives a 3-point stencil:
          *   L(u_i) = α·u[i-1] + β·u[i] + γ·u[i+1] + δ
          * 
@@ -274,10 +273,9 @@ std::vector<double> ThetaMethodSolver::timeStep(const std::vector<double>& u_old
          *   γ = a/Δx² + b/(2Δx)      (coefficient of u[i+1])
          *   δ = d                    (source term)
          */
-        /// TODO: Fix stencil coefficients for non-uniform grids
-        double alpha = a / dx2 - b / (2.0 * dx_center);   // u[i-1] coefficient
-        double beta = -2.0 * a / dx2 + c;                 // u[i] coefficient
-        double gamma = a / dx2 + b / (2.0 * dx_center);   // u[i+1] coefficient
+        double alpha = (2.0 * a - b * h_plus) / (h_minus * h_sum);
+        double beta = (-2.0 * a + b * (h_plus - h_minus)) / (h_plus * h_minus) + c;
+        double gamma = (2.0 * a + b * h_minus) / (h_plus * h_sum);
         
         /**
          * LEFT-HAND SIDE: (I - θΔt·L)u^{n+1}

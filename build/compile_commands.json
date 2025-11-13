@@ -582,6 +582,66 @@
   "output": "CMakeFiles/test_pde_greeks.dir/BlackScholesFormulas.cpp.o"
 },
 {
+  "directory": "/Users/patrikliba/CLionProjects/CppFM/build",
+  "command": "/usr/bin/clang++  -isystem /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest/include -isystem /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest -g -std=gnu++20 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk -o CMakeFiles/test_grid_spacing_comparison.dir/tests/test_grid_spacing_comparison.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/tests/test_grid_spacing_comparison.cpp",
+  "file": "/Users/patrikliba/CLionProjects/CppFM/tests/test_grid_spacing_comparison.cpp",
+  "output": "CMakeFiles/test_grid_spacing_comparison.dir/tests/test_grid_spacing_comparison.cpp.o"
+},
+{
+  "directory": "/Users/patrikliba/CLionProjects/CppFM/build",
+  "command": "/usr/bin/clang++  -isystem /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest/include -isystem /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest -g -std=gnu++20 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk -o CMakeFiles/test_grid_spacing_comparison.dir/PDEs/PDEGreeksCalculator.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/PDEs/PDEGreeksCalculator.cpp",
+  "file": "/Users/patrikliba/CLionProjects/CppFM/PDEs/PDEGreeksCalculator.cpp",
+  "output": "CMakeFiles/test_grid_spacing_comparison.dir/PDEs/PDEGreeksCalculator.cpp.o"
+},
+{
+  "directory": "/Users/patrikliba/CLionProjects/CppFM/build",
+  "command": "/usr/bin/clang++  -isystem /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest/include -isystem /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest -g -std=gnu++20 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk -o CMakeFiles/test_grid_spacing_comparison.dir/PDEs/Solver.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/PDEs/Solver.cpp",
+  "file": "/Users/patrikliba/CLionProjects/CppFM/PDEs/Solver.cpp",
+  "output": "CMakeFiles/test_grid_spacing_comparison.dir/PDEs/Solver.cpp.o"
+},
+{
+  "directory": "/Users/patrikliba/CLionProjects/CppFM/build",
+  "command": "/usr/bin/clang++  -isystem /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest/include -isystem /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest -g -std=gnu++20 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk -o CMakeFiles/test_grid_spacing_comparison.dir/PDEs/PDE.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/PDEs/PDE.cpp",
+  "file": "/Users/patrikliba/CLionProjects/CppFM/PDEs/PDE.cpp",
+  "output": "CMakeFiles/test_grid_spacing_comparison.dir/PDEs/PDE.cpp.o"
+},
+{
+  "directory": "/Users/patrikliba/CLionProjects/CppFM/build",
+  "command": "/usr/bin/clang++  -isystem /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest/include -isystem /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest -g -std=gnu++20 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk -o CMakeFiles/test_grid_spacing_comparison.dir/PDEs/Grid.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/PDEs/Grid.cpp",
+  "file": "/Users/patrikliba/CLionProjects/CppFM/PDEs/Grid.cpp",
+  "output": "CMakeFiles/test_grid_spacing_comparison.dir/PDEs/Grid.cpp.o"
+},
+{
+  "directory": "/Users/patrikliba/CLionProjects/CppFM/build",
+  "command": "/usr/bin/clang++  -isystem /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest/include -isystem /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest -g -std=gnu++20 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk -o CMakeFiles/test_grid_spacing_comparison.dir/PDEs/BoundaryConditions.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/PDEs/BoundaryConditions.cpp",
+  "file": "/Users/patrikliba/CLionProjects/CppFM/PDEs/BoundaryConditions.cpp",
+  "output": "CMakeFiles/test_grid_spacing_comparison.dir/PDEs/BoundaryConditions.cpp.o"
+},
+{
+  "directory": "/Users/patrikliba/CLionProjects/CppFM/build",
+  "command": "/usr/bin/clang++  -isystem /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest/include -isystem /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest -g -std=gnu++20 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk -o CMakeFiles/test_grid_spacing_comparison.dir/Utils.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/Utils.cpp",
+  "file": "/Users/patrikliba/CLionProjects/CppFM/Utils.cpp",
+  "output": "CMakeFiles/test_grid_spacing_comparison.dir/Utils.cpp.o"
+},
+{
+  "directory": "/Users/patrikliba/CLionProjects/CppFM/build",
+  "command": "/usr/bin/clang++  -isystem /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest/include -isystem /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest -g -std=gnu++20 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk -o CMakeFiles/test_grid_spacing_comparison.dir/InterpolationSchemes.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp",
+  "file": "/Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp",
+  "output": "CMakeFiles/test_grid_spacing_comparison.dir/InterpolationSchemes.cpp.o"
+},
+{
+  "directory": "/Users/patrikliba/CLionProjects/CppFM/build",
+  "command": "/usr/bin/clang++  -isystem /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest/include -isystem /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest -g -std=gnu++20 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk -o CMakeFiles/test_grid_spacing_comparison.dir/BlackScholesFormulas.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/BlackScholesFormulas.cpp",
+  "file": "/Users/patrikliba/CLionProjects/CppFM/BlackScholesFormulas.cpp",
+  "output": "CMakeFiles/test_grid_spacing_comparison.dir/BlackScholesFormulas.cpp.o"
+},
+{
+  "directory": "/Users/patrikliba/CLionProjects/CppFM/build",
+  "command": "/usr/bin/clang++  -isystem /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest/include -isystem /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest -g -std=gnu++20 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk -o CMakeFiles/test_grid_spacing_comparison.dir/DiscountCurve.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/DiscountCurve.cpp",
+  "file": "/Users/patrikliba/CLionProjects/CppFM/DiscountCurve.cpp",
+  "output": "CMakeFiles/test_grid_spacing_comparison.dir/DiscountCurve.cpp.o"
+},
+{
   "directory": "/Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-build/googlemock",
   "command": "/usr/bin/clang++  -I/Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googlemock/include -I/Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googlemock -isystem /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest/include -isystem /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest -g -std=c++20 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk  -DGTEST_HAS_PTHREAD=1   -o CMakeFiles/gmock.dir/src/gmock-all.cc.o -c /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googlemock/src/gmock-all.cc",
   "file": "/Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googlemock/src/gmock-all.cc",

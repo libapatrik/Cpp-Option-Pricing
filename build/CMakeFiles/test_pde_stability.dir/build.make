@@ -76,99 +76,99 @@ CMakeFiles/test_pde_stability.dir/tests/test_pde_stability.cpp.o: CMakeFiles/tes
 CMakeFiles/test_pde_stability.dir/tests/test_pde_stability.cpp.o: /Users/patrikliba/CLionProjects/CppFM/tests/test_pde_stability.cpp
 CMakeFiles/test_pde_stability.dir/tests/test_pde_stability.cpp.o: CMakeFiles/test_pde_stability.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/test_pde_stability.dir/tests/test_pde_stability.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_pde_stability.dir/tests/test_pde_stability.cpp.o -MF CMakeFiles/test_pde_stability.dir/tests/test_pde_stability.cpp.o.d -o CMakeFiles/test_pde_stability.dir/tests/test_pde_stability.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/tests/test_pde_stability.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_pde_stability.dir/tests/test_pde_stability.cpp.o -MF CMakeFiles/test_pde_stability.dir/tests/test_pde_stability.cpp.o.d -o CMakeFiles/test_pde_stability.dir/tests/test_pde_stability.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/tests/test_pde_stability.cpp
 
 CMakeFiles/test_pde_stability.dir/tests/test_pde_stability.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_pde_stability.dir/tests/test_pde_stability.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/tests/test_pde_stability.cpp > CMakeFiles/test_pde_stability.dir/tests/test_pde_stability.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/tests/test_pde_stability.cpp > CMakeFiles/test_pde_stability.dir/tests/test_pde_stability.cpp.i
 
 CMakeFiles/test_pde_stability.dir/tests/test_pde_stability.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_pde_stability.dir/tests/test_pde_stability.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/tests/test_pde_stability.cpp -o CMakeFiles/test_pde_stability.dir/tests/test_pde_stability.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/tests/test_pde_stability.cpp -o CMakeFiles/test_pde_stability.dir/tests/test_pde_stability.cpp.s
 
 CMakeFiles/test_pde_stability.dir/PDEs/PDE.cpp.o: CMakeFiles/test_pde_stability.dir/flags.make
 CMakeFiles/test_pde_stability.dir/PDEs/PDE.cpp.o: /Users/patrikliba/CLionProjects/CppFM/PDEs/PDE.cpp
 CMakeFiles/test_pde_stability.dir/PDEs/PDE.cpp.o: CMakeFiles/test_pde_stability.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/test_pde_stability.dir/PDEs/PDE.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_pde_stability.dir/PDEs/PDE.cpp.o -MF CMakeFiles/test_pde_stability.dir/PDEs/PDE.cpp.o.d -o CMakeFiles/test_pde_stability.dir/PDEs/PDE.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/PDEs/PDE.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_pde_stability.dir/PDEs/PDE.cpp.o -MF CMakeFiles/test_pde_stability.dir/PDEs/PDE.cpp.o.d -o CMakeFiles/test_pde_stability.dir/PDEs/PDE.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/PDEs/PDE.cpp
 
 CMakeFiles/test_pde_stability.dir/PDEs/PDE.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_pde_stability.dir/PDEs/PDE.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/PDEs/PDE.cpp > CMakeFiles/test_pde_stability.dir/PDEs/PDE.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/PDEs/PDE.cpp > CMakeFiles/test_pde_stability.dir/PDEs/PDE.cpp.i
 
 CMakeFiles/test_pde_stability.dir/PDEs/PDE.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_pde_stability.dir/PDEs/PDE.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/PDEs/PDE.cpp -o CMakeFiles/test_pde_stability.dir/PDEs/PDE.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/PDEs/PDE.cpp -o CMakeFiles/test_pde_stability.dir/PDEs/PDE.cpp.s
 
 CMakeFiles/test_pde_stability.dir/PDEs/Grid.cpp.o: CMakeFiles/test_pde_stability.dir/flags.make
 CMakeFiles/test_pde_stability.dir/PDEs/Grid.cpp.o: /Users/patrikliba/CLionProjects/CppFM/PDEs/Grid.cpp
 CMakeFiles/test_pde_stability.dir/PDEs/Grid.cpp.o: CMakeFiles/test_pde_stability.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/test_pde_stability.dir/PDEs/Grid.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_pde_stability.dir/PDEs/Grid.cpp.o -MF CMakeFiles/test_pde_stability.dir/PDEs/Grid.cpp.o.d -o CMakeFiles/test_pde_stability.dir/PDEs/Grid.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/PDEs/Grid.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_pde_stability.dir/PDEs/Grid.cpp.o -MF CMakeFiles/test_pde_stability.dir/PDEs/Grid.cpp.o.d -o CMakeFiles/test_pde_stability.dir/PDEs/Grid.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/PDEs/Grid.cpp
 
 CMakeFiles/test_pde_stability.dir/PDEs/Grid.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_pde_stability.dir/PDEs/Grid.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/PDEs/Grid.cpp > CMakeFiles/test_pde_stability.dir/PDEs/Grid.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/PDEs/Grid.cpp > CMakeFiles/test_pde_stability.dir/PDEs/Grid.cpp.i
 
 CMakeFiles/test_pde_stability.dir/PDEs/Grid.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_pde_stability.dir/PDEs/Grid.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/PDEs/Grid.cpp -o CMakeFiles/test_pde_stability.dir/PDEs/Grid.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/PDEs/Grid.cpp -o CMakeFiles/test_pde_stability.dir/PDEs/Grid.cpp.s
 
 CMakeFiles/test_pde_stability.dir/PDEs/BoundaryConditions.cpp.o: CMakeFiles/test_pde_stability.dir/flags.make
 CMakeFiles/test_pde_stability.dir/PDEs/BoundaryConditions.cpp.o: /Users/patrikliba/CLionProjects/CppFM/PDEs/BoundaryConditions.cpp
 CMakeFiles/test_pde_stability.dir/PDEs/BoundaryConditions.cpp.o: CMakeFiles/test_pde_stability.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/test_pde_stability.dir/PDEs/BoundaryConditions.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_pde_stability.dir/PDEs/BoundaryConditions.cpp.o -MF CMakeFiles/test_pde_stability.dir/PDEs/BoundaryConditions.cpp.o.d -o CMakeFiles/test_pde_stability.dir/PDEs/BoundaryConditions.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/PDEs/BoundaryConditions.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_pde_stability.dir/PDEs/BoundaryConditions.cpp.o -MF CMakeFiles/test_pde_stability.dir/PDEs/BoundaryConditions.cpp.o.d -o CMakeFiles/test_pde_stability.dir/PDEs/BoundaryConditions.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/PDEs/BoundaryConditions.cpp
 
 CMakeFiles/test_pde_stability.dir/PDEs/BoundaryConditions.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_pde_stability.dir/PDEs/BoundaryConditions.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/PDEs/BoundaryConditions.cpp > CMakeFiles/test_pde_stability.dir/PDEs/BoundaryConditions.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/PDEs/BoundaryConditions.cpp > CMakeFiles/test_pde_stability.dir/PDEs/BoundaryConditions.cpp.i
 
 CMakeFiles/test_pde_stability.dir/PDEs/BoundaryConditions.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_pde_stability.dir/PDEs/BoundaryConditions.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/PDEs/BoundaryConditions.cpp -o CMakeFiles/test_pde_stability.dir/PDEs/BoundaryConditions.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/PDEs/BoundaryConditions.cpp -o CMakeFiles/test_pde_stability.dir/PDEs/BoundaryConditions.cpp.s
 
 CMakeFiles/test_pde_stability.dir/PDEs/Solver.cpp.o: CMakeFiles/test_pde_stability.dir/flags.make
 CMakeFiles/test_pde_stability.dir/PDEs/Solver.cpp.o: /Users/patrikliba/CLionProjects/CppFM/PDEs/Solver.cpp
 CMakeFiles/test_pde_stability.dir/PDEs/Solver.cpp.o: CMakeFiles/test_pde_stability.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/test_pde_stability.dir/PDEs/Solver.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_pde_stability.dir/PDEs/Solver.cpp.o -MF CMakeFiles/test_pde_stability.dir/PDEs/Solver.cpp.o.d -o CMakeFiles/test_pde_stability.dir/PDEs/Solver.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/PDEs/Solver.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_pde_stability.dir/PDEs/Solver.cpp.o -MF CMakeFiles/test_pde_stability.dir/PDEs/Solver.cpp.o.d -o CMakeFiles/test_pde_stability.dir/PDEs/Solver.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/PDEs/Solver.cpp
 
 CMakeFiles/test_pde_stability.dir/PDEs/Solver.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_pde_stability.dir/PDEs/Solver.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/PDEs/Solver.cpp > CMakeFiles/test_pde_stability.dir/PDEs/Solver.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/PDEs/Solver.cpp > CMakeFiles/test_pde_stability.dir/PDEs/Solver.cpp.i
 
 CMakeFiles/test_pde_stability.dir/PDEs/Solver.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_pde_stability.dir/PDEs/Solver.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/PDEs/Solver.cpp -o CMakeFiles/test_pde_stability.dir/PDEs/Solver.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/PDEs/Solver.cpp -o CMakeFiles/test_pde_stability.dir/PDEs/Solver.cpp.s
 
 CMakeFiles/test_pde_stability.dir/Utils.cpp.o: CMakeFiles/test_pde_stability.dir/flags.make
 CMakeFiles/test_pde_stability.dir/Utils.cpp.o: /Users/patrikliba/CLionProjects/CppFM/Utils.cpp
 CMakeFiles/test_pde_stability.dir/Utils.cpp.o: CMakeFiles/test_pde_stability.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/test_pde_stability.dir/Utils.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_pde_stability.dir/Utils.cpp.o -MF CMakeFiles/test_pde_stability.dir/Utils.cpp.o.d -o CMakeFiles/test_pde_stability.dir/Utils.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/Utils.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_pde_stability.dir/Utils.cpp.o -MF CMakeFiles/test_pde_stability.dir/Utils.cpp.o.d -o CMakeFiles/test_pde_stability.dir/Utils.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/Utils.cpp
 
 CMakeFiles/test_pde_stability.dir/Utils.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_pde_stability.dir/Utils.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/Utils.cpp > CMakeFiles/test_pde_stability.dir/Utils.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/Utils.cpp > CMakeFiles/test_pde_stability.dir/Utils.cpp.i
 
 CMakeFiles/test_pde_stability.dir/Utils.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_pde_stability.dir/Utils.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/Utils.cpp -o CMakeFiles/test_pde_stability.dir/Utils.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/Utils.cpp -o CMakeFiles/test_pde_stability.dir/Utils.cpp.s
 
 CMakeFiles/test_pde_stability.dir/InterpolationSchemes.cpp.o: CMakeFiles/test_pde_stability.dir/flags.make
 CMakeFiles/test_pde_stability.dir/InterpolationSchemes.cpp.o: /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp
 CMakeFiles/test_pde_stability.dir/InterpolationSchemes.cpp.o: CMakeFiles/test_pde_stability.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/test_pde_stability.dir/InterpolationSchemes.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_pde_stability.dir/InterpolationSchemes.cpp.o -MF CMakeFiles/test_pde_stability.dir/InterpolationSchemes.cpp.o.d -o CMakeFiles/test_pde_stability.dir/InterpolationSchemes.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_pde_stability.dir/InterpolationSchemes.cpp.o -MF CMakeFiles/test_pde_stability.dir/InterpolationSchemes.cpp.o.d -o CMakeFiles/test_pde_stability.dir/InterpolationSchemes.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp
 
 CMakeFiles/test_pde_stability.dir/InterpolationSchemes.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_pde_stability.dir/InterpolationSchemes.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp > CMakeFiles/test_pde_stability.dir/InterpolationSchemes.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp > CMakeFiles/test_pde_stability.dir/InterpolationSchemes.cpp.i
 
 CMakeFiles/test_pde_stability.dir/InterpolationSchemes.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_pde_stability.dir/InterpolationSchemes.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp -o CMakeFiles/test_pde_stability.dir/InterpolationSchemes.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp -o CMakeFiles/test_pde_stability.dir/InterpolationSchemes.cpp.s
 
 # Object files for target test_pde_stability
 test_pde_stability_OBJECTS = \

@@ -223,7 +223,6 @@ add_executable(test_pde_greeks tests/test_pde_greeks.cpp
     BlackScholesFormulas.cpp
 )
 
-
 # Link test executables with Google Test
 target_link_libraries(test_volatility_surface_construction gtest_main)
 target_link_libraries(test_interpolation gtest_main)

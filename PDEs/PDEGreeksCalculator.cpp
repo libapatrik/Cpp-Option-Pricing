@@ -70,8 +70,9 @@ double PDEGreeksCalculator::vega(const PDEFactory& pdeFactory) const
      * ===========================
      * Vega = ∂V/∂σ = [V(σ+h) - V(σ-h)] / (2h)
      * Step size h is handled automatically by NumericalDerivatives utility
-     * The spatial domain should scale as S_max = exp(σ√T) to capture the proper diffusion range.
-     
+     * 
+     * KEY: Use a WIDE spatial domain (e.g., [K/4, 4K]) instead of scaling
+     * This ensures accurate results when perturbing σ
      */
     
     if (!_solved) {
@@ -152,13 +153,16 @@ double PDEGreeksCalculator::vanna(const PDEFactory& pdeFactory) const
     /**
      * VANNA VIA CENTRAL DIFFERENCE OF DELTA
      * =====================================
-     * Vanna = ∂^2V/∂S∂σ = ∂Δ/∂σ = vega(σ) = [Δ(σ+h) - Δ(σ-h)] / (2h)
+     * Vanna = ∂^2V/∂S∂σ = ∂Δ/∂σ = [Δ(σ+h) - Δ(σ-h)] / (2h)
+     * 
+     * KEY: Use base grid with wide domain, no scaling needed
      */
     
     if (!_solved) {
         throw std::runtime_error("PDEGreeksCalculator::vanna: Must call solve() first");
     }
     // Create function that computes delta for given volatility
+    // Use base grid (no scaling)
     auto deltaFunction = [&](double sigma) {
         auto pde = pdeFactory(sigma, _r_base);
         return solvePDEDelta(*pde, _spot);   // or sigma-scaled grid?
@@ -176,9 +180,7 @@ double PDEGreeksCalculator::volga(const PDEFactory& pdeFactory) const
      * Volga = ∂^2V/∂σ^2 = ∂ν/∂σ = [V(σ+h) - 2*V(σ) + V(σ-h)] / h²   - solve 3 PDEs
      * Volga = [vega(σ+h) - vega(σ-h)] / (2h) - nested function worse
      * Bump size h is handled automatically by NumericalDerivatives in Utils.cpp
-     * TODO: We need to update the grid
-     *   - grid is setup for _sigma_base = 0.2, but then we solve PDEs at σ = 0.2 +/- h 
-     * so, we need new S_max = K + exp(n * σ * sqrt(T))
+
      */
 
     if (!_solved) {
@@ -191,10 +193,9 @@ double PDEGreeksCalculator::volga(const PDEFactory& pdeFactory) const
         return solvePDEAt(*pde, _spot);   // or sigma-scaled grid?
     };
     
-    // Compute second derivative using reusable utility (h = 1e-4 by default)
-    /// TODO: Volga blows up, why? and how to fix this. [see test_pde_greeks.cpp]
-    
-    return NumericalDerivatives::secondDerivative(valueFunction, _sigma_base, 0.01);
+    // Compute second derivative with default step size (h = 1e-4)
+    // This works well with wide domain
+    return NumericalDerivatives::secondDerivative(valueFunction, _sigma_base);
 }
 
 // ============================================================================

@@ -76,155 +76,155 @@ CMakeFiles/test_greeks.dir/tests/test_greeks.cpp.o: CMakeFiles/test_greeks.dir/f
 CMakeFiles/test_greeks.dir/tests/test_greeks.cpp.o: /Users/patrikliba/CLionProjects/CppFM/tests/test_greeks.cpp
 CMakeFiles/test_greeks.dir/tests/test_greeks.cpp.o: CMakeFiles/test_greeks.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/test_greeks.dir/tests/test_greeks.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_greeks.dir/tests/test_greeks.cpp.o -MF CMakeFiles/test_greeks.dir/tests/test_greeks.cpp.o.d -o CMakeFiles/test_greeks.dir/tests/test_greeks.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/tests/test_greeks.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_greeks.dir/tests/test_greeks.cpp.o -MF CMakeFiles/test_greeks.dir/tests/test_greeks.cpp.o.d -o CMakeFiles/test_greeks.dir/tests/test_greeks.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/tests/test_greeks.cpp
 
 CMakeFiles/test_greeks.dir/tests/test_greeks.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_greeks.dir/tests/test_greeks.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/tests/test_greeks.cpp > CMakeFiles/test_greeks.dir/tests/test_greeks.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/tests/test_greeks.cpp > CMakeFiles/test_greeks.dir/tests/test_greeks.cpp.i
 
 CMakeFiles/test_greeks.dir/tests/test_greeks.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_greeks.dir/tests/test_greeks.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/tests/test_greeks.cpp -o CMakeFiles/test_greeks.dir/tests/test_greeks.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/tests/test_greeks.cpp -o CMakeFiles/test_greeks.dir/tests/test_greeks.cpp.s
 
 CMakeFiles/test_greeks.dir/Model.cpp.o: CMakeFiles/test_greeks.dir/flags.make
 CMakeFiles/test_greeks.dir/Model.cpp.o: /Users/patrikliba/CLionProjects/CppFM/Model.cpp
 CMakeFiles/test_greeks.dir/Model.cpp.o: CMakeFiles/test_greeks.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/test_greeks.dir/Model.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_greeks.dir/Model.cpp.o -MF CMakeFiles/test_greeks.dir/Model.cpp.o.d -o CMakeFiles/test_greeks.dir/Model.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/Model.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_greeks.dir/Model.cpp.o -MF CMakeFiles/test_greeks.dir/Model.cpp.o.d -o CMakeFiles/test_greeks.dir/Model.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/Model.cpp
 
 CMakeFiles/test_greeks.dir/Model.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_greeks.dir/Model.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/Model.cpp > CMakeFiles/test_greeks.dir/Model.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/Model.cpp > CMakeFiles/test_greeks.dir/Model.cpp.i
 
 CMakeFiles/test_greeks.dir/Model.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_greeks.dir/Model.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/Model.cpp -o CMakeFiles/test_greeks.dir/Model.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/Model.cpp -o CMakeFiles/test_greeks.dir/Model.cpp.s
 
 CMakeFiles/test_greeks.dir/Utils.cpp.o: CMakeFiles/test_greeks.dir/flags.make
 CMakeFiles/test_greeks.dir/Utils.cpp.o: /Users/patrikliba/CLionProjects/CppFM/Utils.cpp
 CMakeFiles/test_greeks.dir/Utils.cpp.o: CMakeFiles/test_greeks.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/test_greeks.dir/Utils.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_greeks.dir/Utils.cpp.o -MF CMakeFiles/test_greeks.dir/Utils.cpp.o.d -o CMakeFiles/test_greeks.dir/Utils.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/Utils.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_greeks.dir/Utils.cpp.o -MF CMakeFiles/test_greeks.dir/Utils.cpp.o.d -o CMakeFiles/test_greeks.dir/Utils.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/Utils.cpp
 
 CMakeFiles/test_greeks.dir/Utils.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_greeks.dir/Utils.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/Utils.cpp > CMakeFiles/test_greeks.dir/Utils.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/Utils.cpp > CMakeFiles/test_greeks.dir/Utils.cpp.i
 
 CMakeFiles/test_greeks.dir/Utils.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_greeks.dir/Utils.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/Utils.cpp -o CMakeFiles/test_greeks.dir/Utils.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/Utils.cpp -o CMakeFiles/test_greeks.dir/Utils.cpp.s
 
 CMakeFiles/test_greeks.dir/PathSimulator.cpp.o: CMakeFiles/test_greeks.dir/flags.make
 CMakeFiles/test_greeks.dir/PathSimulator.cpp.o: /Users/patrikliba/CLionProjects/CppFM/PathSimulator.cpp
 CMakeFiles/test_greeks.dir/PathSimulator.cpp.o: CMakeFiles/test_greeks.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/test_greeks.dir/PathSimulator.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_greeks.dir/PathSimulator.cpp.o -MF CMakeFiles/test_greeks.dir/PathSimulator.cpp.o.d -o CMakeFiles/test_greeks.dir/PathSimulator.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/PathSimulator.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_greeks.dir/PathSimulator.cpp.o -MF CMakeFiles/test_greeks.dir/PathSimulator.cpp.o.d -o CMakeFiles/test_greeks.dir/PathSimulator.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/PathSimulator.cpp
 
 CMakeFiles/test_greeks.dir/PathSimulator.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_greeks.dir/PathSimulator.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/PathSimulator.cpp > CMakeFiles/test_greeks.dir/PathSimulator.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/PathSimulator.cpp > CMakeFiles/test_greeks.dir/PathSimulator.cpp.i
 
 CMakeFiles/test_greeks.dir/PathSimulator.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_greeks.dir/PathSimulator.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/PathSimulator.cpp -o CMakeFiles/test_greeks.dir/PathSimulator.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/PathSimulator.cpp -o CMakeFiles/test_greeks.dir/PathSimulator.cpp.s
 
 CMakeFiles/test_greeks.dir/FinancialInstrument.cpp.o: CMakeFiles/test_greeks.dir/flags.make
 CMakeFiles/test_greeks.dir/FinancialInstrument.cpp.o: /Users/patrikliba/CLionProjects/CppFM/FinancialInstrument.cpp
 CMakeFiles/test_greeks.dir/FinancialInstrument.cpp.o: CMakeFiles/test_greeks.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/test_greeks.dir/FinancialInstrument.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_greeks.dir/FinancialInstrument.cpp.o -MF CMakeFiles/test_greeks.dir/FinancialInstrument.cpp.o.d -o CMakeFiles/test_greeks.dir/FinancialInstrument.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/FinancialInstrument.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_greeks.dir/FinancialInstrument.cpp.o -MF CMakeFiles/test_greeks.dir/FinancialInstrument.cpp.o.d -o CMakeFiles/test_greeks.dir/FinancialInstrument.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/FinancialInstrument.cpp
 
 CMakeFiles/test_greeks.dir/FinancialInstrument.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_greeks.dir/FinancialInstrument.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/FinancialInstrument.cpp > CMakeFiles/test_greeks.dir/FinancialInstrument.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/FinancialInstrument.cpp > CMakeFiles/test_greeks.dir/FinancialInstrument.cpp.i
 
 CMakeFiles/test_greeks.dir/FinancialInstrument.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_greeks.dir/FinancialInstrument.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/FinancialInstrument.cpp -o CMakeFiles/test_greeks.dir/FinancialInstrument.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/FinancialInstrument.cpp -o CMakeFiles/test_greeks.dir/FinancialInstrument.cpp.s
 
 CMakeFiles/test_greeks.dir/Pricer.cpp.o: CMakeFiles/test_greeks.dir/flags.make
 CMakeFiles/test_greeks.dir/Pricer.cpp.o: /Users/patrikliba/CLionProjects/CppFM/Pricer.cpp
 CMakeFiles/test_greeks.dir/Pricer.cpp.o: CMakeFiles/test_greeks.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/test_greeks.dir/Pricer.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_greeks.dir/Pricer.cpp.o -MF CMakeFiles/test_greeks.dir/Pricer.cpp.o.d -o CMakeFiles/test_greeks.dir/Pricer.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/Pricer.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_greeks.dir/Pricer.cpp.o -MF CMakeFiles/test_greeks.dir/Pricer.cpp.o.d -o CMakeFiles/test_greeks.dir/Pricer.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/Pricer.cpp
 
 CMakeFiles/test_greeks.dir/Pricer.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_greeks.dir/Pricer.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/Pricer.cpp > CMakeFiles/test_greeks.dir/Pricer.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/Pricer.cpp > CMakeFiles/test_greeks.dir/Pricer.cpp.i
 
 CMakeFiles/test_greeks.dir/Pricer.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_greeks.dir/Pricer.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/Pricer.cpp -o CMakeFiles/test_greeks.dir/Pricer.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/Pricer.cpp -o CMakeFiles/test_greeks.dir/Pricer.cpp.s
 
 CMakeFiles/test_greeks.dir/DiscountCurve.cpp.o: CMakeFiles/test_greeks.dir/flags.make
 CMakeFiles/test_greeks.dir/DiscountCurve.cpp.o: /Users/patrikliba/CLionProjects/CppFM/DiscountCurve.cpp
 CMakeFiles/test_greeks.dir/DiscountCurve.cpp.o: CMakeFiles/test_greeks.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/test_greeks.dir/DiscountCurve.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_greeks.dir/DiscountCurve.cpp.o -MF CMakeFiles/test_greeks.dir/DiscountCurve.cpp.o.d -o CMakeFiles/test_greeks.dir/DiscountCurve.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/DiscountCurve.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_greeks.dir/DiscountCurve.cpp.o -MF CMakeFiles/test_greeks.dir/DiscountCurve.cpp.o.d -o CMakeFiles/test_greeks.dir/DiscountCurve.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/DiscountCurve.cpp
 
 CMakeFiles/test_greeks.dir/DiscountCurve.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_greeks.dir/DiscountCurve.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/DiscountCurve.cpp > CMakeFiles/test_greeks.dir/DiscountCurve.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/DiscountCurve.cpp > CMakeFiles/test_greeks.dir/DiscountCurve.cpp.i
 
 CMakeFiles/test_greeks.dir/DiscountCurve.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_greeks.dir/DiscountCurve.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/DiscountCurve.cpp -o CMakeFiles/test_greeks.dir/DiscountCurve.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/DiscountCurve.cpp -o CMakeFiles/test_greeks.dir/DiscountCurve.cpp.s
 
 CMakeFiles/test_greeks.dir/VolatilitySurface.cpp.o: CMakeFiles/test_greeks.dir/flags.make
 CMakeFiles/test_greeks.dir/VolatilitySurface.cpp.o: /Users/patrikliba/CLionProjects/CppFM/VolatilitySurface.cpp
 CMakeFiles/test_greeks.dir/VolatilitySurface.cpp.o: CMakeFiles/test_greeks.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/test_greeks.dir/VolatilitySurface.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_greeks.dir/VolatilitySurface.cpp.o -MF CMakeFiles/test_greeks.dir/VolatilitySurface.cpp.o.d -o CMakeFiles/test_greeks.dir/VolatilitySurface.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/VolatilitySurface.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_greeks.dir/VolatilitySurface.cpp.o -MF CMakeFiles/test_greeks.dir/VolatilitySurface.cpp.o.d -o CMakeFiles/test_greeks.dir/VolatilitySurface.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/VolatilitySurface.cpp
 
 CMakeFiles/test_greeks.dir/VolatilitySurface.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_greeks.dir/VolatilitySurface.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/VolatilitySurface.cpp > CMakeFiles/test_greeks.dir/VolatilitySurface.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/VolatilitySurface.cpp > CMakeFiles/test_greeks.dir/VolatilitySurface.cpp.i
 
 CMakeFiles/test_greeks.dir/VolatilitySurface.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_greeks.dir/VolatilitySurface.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/VolatilitySurface.cpp -o CMakeFiles/test_greeks.dir/VolatilitySurface.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/VolatilitySurface.cpp -o CMakeFiles/test_greeks.dir/VolatilitySurface.cpp.s
 
 CMakeFiles/test_greeks.dir/InterpolationSchemes.cpp.o: CMakeFiles/test_greeks.dir/flags.make
 CMakeFiles/test_greeks.dir/InterpolationSchemes.cpp.o: /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp
 CMakeFiles/test_greeks.dir/InterpolationSchemes.cpp.o: CMakeFiles/test_greeks.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/test_greeks.dir/InterpolationSchemes.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_greeks.dir/InterpolationSchemes.cpp.o -MF CMakeFiles/test_greeks.dir/InterpolationSchemes.cpp.o.d -o CMakeFiles/test_greeks.dir/InterpolationSchemes.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_greeks.dir/InterpolationSchemes.cpp.o -MF CMakeFiles/test_greeks.dir/InterpolationSchemes.cpp.o.d -o CMakeFiles/test_greeks.dir/InterpolationSchemes.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp
 
 CMakeFiles/test_greeks.dir/InterpolationSchemes.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_greeks.dir/InterpolationSchemes.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp > CMakeFiles/test_greeks.dir/InterpolationSchemes.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp > CMakeFiles/test_greeks.dir/InterpolationSchemes.cpp.i
 
 CMakeFiles/test_greeks.dir/InterpolationSchemes.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_greeks.dir/InterpolationSchemes.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp -o CMakeFiles/test_greeks.dir/InterpolationSchemes.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp -o CMakeFiles/test_greeks.dir/InterpolationSchemes.cpp.s
 
 CMakeFiles/test_greeks.dir/BlackScholesFormulas.cpp.o: CMakeFiles/test_greeks.dir/flags.make
 CMakeFiles/test_greeks.dir/BlackScholesFormulas.cpp.o: /Users/patrikliba/CLionProjects/CppFM/BlackScholesFormulas.cpp
 CMakeFiles/test_greeks.dir/BlackScholesFormulas.cpp.o: CMakeFiles/test_greeks.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/test_greeks.dir/BlackScholesFormulas.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_greeks.dir/BlackScholesFormulas.cpp.o -MF CMakeFiles/test_greeks.dir/BlackScholesFormulas.cpp.o.d -o CMakeFiles/test_greeks.dir/BlackScholesFormulas.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/BlackScholesFormulas.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_greeks.dir/BlackScholesFormulas.cpp.o -MF CMakeFiles/test_greeks.dir/BlackScholesFormulas.cpp.o.d -o CMakeFiles/test_greeks.dir/BlackScholesFormulas.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/BlackScholesFormulas.cpp
 
 CMakeFiles/test_greeks.dir/BlackScholesFormulas.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_greeks.dir/BlackScholesFormulas.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/BlackScholesFormulas.cpp > CMakeFiles/test_greeks.dir/BlackScholesFormulas.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/BlackScholesFormulas.cpp > CMakeFiles/test_greeks.dir/BlackScholesFormulas.cpp.i
 
 CMakeFiles/test_greeks.dir/BlackScholesFormulas.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_greeks.dir/BlackScholesFormulas.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/BlackScholesFormulas.cpp -o CMakeFiles/test_greeks.dir/BlackScholesFormulas.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/BlackScholesFormulas.cpp -o CMakeFiles/test_greeks.dir/BlackScholesFormulas.cpp.s
 
 CMakeFiles/test_greeks.dir/tests/test_volatility_surface_construction.cpp.o: CMakeFiles/test_greeks.dir/flags.make
 CMakeFiles/test_greeks.dir/tests/test_volatility_surface_construction.cpp.o: /Users/patrikliba/CLionProjects/CppFM/tests/test_volatility_surface_construction.cpp
 CMakeFiles/test_greeks.dir/tests/test_volatility_surface_construction.cpp.o: CMakeFiles/test_greeks.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/test_greeks.dir/tests/test_volatility_surface_construction.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_greeks.dir/tests/test_volatility_surface_construction.cpp.o -MF CMakeFiles/test_greeks.dir/tests/test_volatility_surface_construction.cpp.o.d -o CMakeFiles/test_greeks.dir/tests/test_volatility_surface_construction.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/tests/test_volatility_surface_construction.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_greeks.dir/tests/test_volatility_surface_construction.cpp.o -MF CMakeFiles/test_greeks.dir/tests/test_volatility_surface_construction.cpp.o.d -o CMakeFiles/test_greeks.dir/tests/test_volatility_surface_construction.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/tests/test_volatility_surface_construction.cpp
 
 CMakeFiles/test_greeks.dir/tests/test_volatility_surface_construction.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_greeks.dir/tests/test_volatility_surface_construction.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/tests/test_volatility_surface_construction.cpp > CMakeFiles/test_greeks.dir/tests/test_volatility_surface_construction.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/tests/test_volatility_surface_construction.cpp > CMakeFiles/test_greeks.dir/tests/test_volatility_surface_construction.cpp.i
 
 CMakeFiles/test_greeks.dir/tests/test_volatility_surface_construction.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_greeks.dir/tests/test_volatility_surface_construction.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/tests/test_volatility_surface_construction.cpp -o CMakeFiles/test_greeks.dir/tests/test_volatility_surface_construction.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/tests/test_volatility_surface_construction.cpp -o CMakeFiles/test_greeks.dir/tests/test_volatility_surface_construction.cpp.s
 
 # Object files for target test_greeks
 test_greeks_OBJECTS = \

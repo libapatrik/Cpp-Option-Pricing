@@ -76,155 +76,155 @@ CMakeFiles/test_integration.dir/tests/test_integration.cpp.o: CMakeFiles/test_in
 CMakeFiles/test_integration.dir/tests/test_integration.cpp.o: /Users/patrikliba/CLionProjects/CppFM/tests/test_integration.cpp
 CMakeFiles/test_integration.dir/tests/test_integration.cpp.o: CMakeFiles/test_integration.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/test_integration.dir/tests/test_integration.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_integration.dir/tests/test_integration.cpp.o -MF CMakeFiles/test_integration.dir/tests/test_integration.cpp.o.d -o CMakeFiles/test_integration.dir/tests/test_integration.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/tests/test_integration.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_integration.dir/tests/test_integration.cpp.o -MF CMakeFiles/test_integration.dir/tests/test_integration.cpp.o.d -o CMakeFiles/test_integration.dir/tests/test_integration.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/tests/test_integration.cpp
 
 CMakeFiles/test_integration.dir/tests/test_integration.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_integration.dir/tests/test_integration.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/tests/test_integration.cpp > CMakeFiles/test_integration.dir/tests/test_integration.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/tests/test_integration.cpp > CMakeFiles/test_integration.dir/tests/test_integration.cpp.i
 
 CMakeFiles/test_integration.dir/tests/test_integration.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_integration.dir/tests/test_integration.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/tests/test_integration.cpp -o CMakeFiles/test_integration.dir/tests/test_integration.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/tests/test_integration.cpp -o CMakeFiles/test_integration.dir/tests/test_integration.cpp.s
 
 CMakeFiles/test_integration.dir/Model.cpp.o: CMakeFiles/test_integration.dir/flags.make
 CMakeFiles/test_integration.dir/Model.cpp.o: /Users/patrikliba/CLionProjects/CppFM/Model.cpp
 CMakeFiles/test_integration.dir/Model.cpp.o: CMakeFiles/test_integration.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/test_integration.dir/Model.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_integration.dir/Model.cpp.o -MF CMakeFiles/test_integration.dir/Model.cpp.o.d -o CMakeFiles/test_integration.dir/Model.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/Model.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_integration.dir/Model.cpp.o -MF CMakeFiles/test_integration.dir/Model.cpp.o.d -o CMakeFiles/test_integration.dir/Model.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/Model.cpp
 
 CMakeFiles/test_integration.dir/Model.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_integration.dir/Model.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/Model.cpp > CMakeFiles/test_integration.dir/Model.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/Model.cpp > CMakeFiles/test_integration.dir/Model.cpp.i
 
 CMakeFiles/test_integration.dir/Model.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_integration.dir/Model.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/Model.cpp -o CMakeFiles/test_integration.dir/Model.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/Model.cpp -o CMakeFiles/test_integration.dir/Model.cpp.s
 
 CMakeFiles/test_integration.dir/Utils.cpp.o: CMakeFiles/test_integration.dir/flags.make
 CMakeFiles/test_integration.dir/Utils.cpp.o: /Users/patrikliba/CLionProjects/CppFM/Utils.cpp
 CMakeFiles/test_integration.dir/Utils.cpp.o: CMakeFiles/test_integration.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/test_integration.dir/Utils.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_integration.dir/Utils.cpp.o -MF CMakeFiles/test_integration.dir/Utils.cpp.o.d -o CMakeFiles/test_integration.dir/Utils.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/Utils.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_integration.dir/Utils.cpp.o -MF CMakeFiles/test_integration.dir/Utils.cpp.o.d -o CMakeFiles/test_integration.dir/Utils.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/Utils.cpp
 
 CMakeFiles/test_integration.dir/Utils.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_integration.dir/Utils.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/Utils.cpp > CMakeFiles/test_integration.dir/Utils.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/Utils.cpp > CMakeFiles/test_integration.dir/Utils.cpp.i
 
 CMakeFiles/test_integration.dir/Utils.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_integration.dir/Utils.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/Utils.cpp -o CMakeFiles/test_integration.dir/Utils.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/Utils.cpp -o CMakeFiles/test_integration.dir/Utils.cpp.s
 
 CMakeFiles/test_integration.dir/PathSimulator.cpp.o: CMakeFiles/test_integration.dir/flags.make
 CMakeFiles/test_integration.dir/PathSimulator.cpp.o: /Users/patrikliba/CLionProjects/CppFM/PathSimulator.cpp
 CMakeFiles/test_integration.dir/PathSimulator.cpp.o: CMakeFiles/test_integration.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/test_integration.dir/PathSimulator.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_integration.dir/PathSimulator.cpp.o -MF CMakeFiles/test_integration.dir/PathSimulator.cpp.o.d -o CMakeFiles/test_integration.dir/PathSimulator.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/PathSimulator.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_integration.dir/PathSimulator.cpp.o -MF CMakeFiles/test_integration.dir/PathSimulator.cpp.o.d -o CMakeFiles/test_integration.dir/PathSimulator.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/PathSimulator.cpp
 
 CMakeFiles/test_integration.dir/PathSimulator.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_integration.dir/PathSimulator.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/PathSimulator.cpp > CMakeFiles/test_integration.dir/PathSimulator.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/PathSimulator.cpp > CMakeFiles/test_integration.dir/PathSimulator.cpp.i
 
 CMakeFiles/test_integration.dir/PathSimulator.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_integration.dir/PathSimulator.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/PathSimulator.cpp -o CMakeFiles/test_integration.dir/PathSimulator.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/PathSimulator.cpp -o CMakeFiles/test_integration.dir/PathSimulator.cpp.s
 
 CMakeFiles/test_integration.dir/FinancialInstrument.cpp.o: CMakeFiles/test_integration.dir/flags.make
 CMakeFiles/test_integration.dir/FinancialInstrument.cpp.o: /Users/patrikliba/CLionProjects/CppFM/FinancialInstrument.cpp
 CMakeFiles/test_integration.dir/FinancialInstrument.cpp.o: CMakeFiles/test_integration.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/test_integration.dir/FinancialInstrument.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_integration.dir/FinancialInstrument.cpp.o -MF CMakeFiles/test_integration.dir/FinancialInstrument.cpp.o.d -o CMakeFiles/test_integration.dir/FinancialInstrument.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/FinancialInstrument.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_integration.dir/FinancialInstrument.cpp.o -MF CMakeFiles/test_integration.dir/FinancialInstrument.cpp.o.d -o CMakeFiles/test_integration.dir/FinancialInstrument.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/FinancialInstrument.cpp
 
 CMakeFiles/test_integration.dir/FinancialInstrument.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_integration.dir/FinancialInstrument.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/FinancialInstrument.cpp > CMakeFiles/test_integration.dir/FinancialInstrument.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/FinancialInstrument.cpp > CMakeFiles/test_integration.dir/FinancialInstrument.cpp.i
 
 CMakeFiles/test_integration.dir/FinancialInstrument.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_integration.dir/FinancialInstrument.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/FinancialInstrument.cpp -o CMakeFiles/test_integration.dir/FinancialInstrument.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/FinancialInstrument.cpp -o CMakeFiles/test_integration.dir/FinancialInstrument.cpp.s
 
 CMakeFiles/test_integration.dir/Pricer.cpp.o: CMakeFiles/test_integration.dir/flags.make
 CMakeFiles/test_integration.dir/Pricer.cpp.o: /Users/patrikliba/CLionProjects/CppFM/Pricer.cpp
 CMakeFiles/test_integration.dir/Pricer.cpp.o: CMakeFiles/test_integration.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/test_integration.dir/Pricer.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_integration.dir/Pricer.cpp.o -MF CMakeFiles/test_integration.dir/Pricer.cpp.o.d -o CMakeFiles/test_integration.dir/Pricer.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/Pricer.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_integration.dir/Pricer.cpp.o -MF CMakeFiles/test_integration.dir/Pricer.cpp.o.d -o CMakeFiles/test_integration.dir/Pricer.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/Pricer.cpp
 
 CMakeFiles/test_integration.dir/Pricer.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_integration.dir/Pricer.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/Pricer.cpp > CMakeFiles/test_integration.dir/Pricer.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/Pricer.cpp > CMakeFiles/test_integration.dir/Pricer.cpp.i
 
 CMakeFiles/test_integration.dir/Pricer.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_integration.dir/Pricer.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/Pricer.cpp -o CMakeFiles/test_integration.dir/Pricer.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/Pricer.cpp -o CMakeFiles/test_integration.dir/Pricer.cpp.s
 
 CMakeFiles/test_integration.dir/DiscountCurve.cpp.o: CMakeFiles/test_integration.dir/flags.make
 CMakeFiles/test_integration.dir/DiscountCurve.cpp.o: /Users/patrikliba/CLionProjects/CppFM/DiscountCurve.cpp
 CMakeFiles/test_integration.dir/DiscountCurve.cpp.o: CMakeFiles/test_integration.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/test_integration.dir/DiscountCurve.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_integration.dir/DiscountCurve.cpp.o -MF CMakeFiles/test_integration.dir/DiscountCurve.cpp.o.d -o CMakeFiles/test_integration.dir/DiscountCurve.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/DiscountCurve.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_integration.dir/DiscountCurve.cpp.o -MF CMakeFiles/test_integration.dir/DiscountCurve.cpp.o.d -o CMakeFiles/test_integration.dir/DiscountCurve.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/DiscountCurve.cpp
 
 CMakeFiles/test_integration.dir/DiscountCurve.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_integration.dir/DiscountCurve.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/DiscountCurve.cpp > CMakeFiles/test_integration.dir/DiscountCurve.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/DiscountCurve.cpp > CMakeFiles/test_integration.dir/DiscountCurve.cpp.i
 
 CMakeFiles/test_integration.dir/DiscountCurve.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_integration.dir/DiscountCurve.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/DiscountCurve.cpp -o CMakeFiles/test_integration.dir/DiscountCurve.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/DiscountCurve.cpp -o CMakeFiles/test_integration.dir/DiscountCurve.cpp.s
 
 CMakeFiles/test_integration.dir/VolatilitySurface.cpp.o: CMakeFiles/test_integration.dir/flags.make
 CMakeFiles/test_integration.dir/VolatilitySurface.cpp.o: /Users/patrikliba/CLionProjects/CppFM/VolatilitySurface.cpp
 CMakeFiles/test_integration.dir/VolatilitySurface.cpp.o: CMakeFiles/test_integration.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/test_integration.dir/VolatilitySurface.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_integration.dir/VolatilitySurface.cpp.o -MF CMakeFiles/test_integration.dir/VolatilitySurface.cpp.o.d -o CMakeFiles/test_integration.dir/VolatilitySurface.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/VolatilitySurface.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_integration.dir/VolatilitySurface.cpp.o -MF CMakeFiles/test_integration.dir/VolatilitySurface.cpp.o.d -o CMakeFiles/test_integration.dir/VolatilitySurface.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/VolatilitySurface.cpp
 
 CMakeFiles/test_integration.dir/VolatilitySurface.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_integration.dir/VolatilitySurface.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/VolatilitySurface.cpp > CMakeFiles/test_integration.dir/VolatilitySurface.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/VolatilitySurface.cpp > CMakeFiles/test_integration.dir/VolatilitySurface.cpp.i
 
 CMakeFiles/test_integration.dir/VolatilitySurface.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_integration.dir/VolatilitySurface.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/VolatilitySurface.cpp -o CMakeFiles/test_integration.dir/VolatilitySurface.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/VolatilitySurface.cpp -o CMakeFiles/test_integration.dir/VolatilitySurface.cpp.s
 
 CMakeFiles/test_integration.dir/InterpolationSchemes.cpp.o: CMakeFiles/test_integration.dir/flags.make
 CMakeFiles/test_integration.dir/InterpolationSchemes.cpp.o: /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp
 CMakeFiles/test_integration.dir/InterpolationSchemes.cpp.o: CMakeFiles/test_integration.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/test_integration.dir/InterpolationSchemes.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_integration.dir/InterpolationSchemes.cpp.o -MF CMakeFiles/test_integration.dir/InterpolationSchemes.cpp.o.d -o CMakeFiles/test_integration.dir/InterpolationSchemes.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_integration.dir/InterpolationSchemes.cpp.o -MF CMakeFiles/test_integration.dir/InterpolationSchemes.cpp.o.d -o CMakeFiles/test_integration.dir/InterpolationSchemes.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp
 
 CMakeFiles/test_integration.dir/InterpolationSchemes.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_integration.dir/InterpolationSchemes.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp > CMakeFiles/test_integration.dir/InterpolationSchemes.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp > CMakeFiles/test_integration.dir/InterpolationSchemes.cpp.i
 
 CMakeFiles/test_integration.dir/InterpolationSchemes.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_integration.dir/InterpolationSchemes.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp -o CMakeFiles/test_integration.dir/InterpolationSchemes.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp -o CMakeFiles/test_integration.dir/InterpolationSchemes.cpp.s
 
 CMakeFiles/test_integration.dir/BlackScholesFormulas.cpp.o: CMakeFiles/test_integration.dir/flags.make
 CMakeFiles/test_integration.dir/BlackScholesFormulas.cpp.o: /Users/patrikliba/CLionProjects/CppFM/BlackScholesFormulas.cpp
 CMakeFiles/test_integration.dir/BlackScholesFormulas.cpp.o: CMakeFiles/test_integration.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/test_integration.dir/BlackScholesFormulas.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_integration.dir/BlackScholesFormulas.cpp.o -MF CMakeFiles/test_integration.dir/BlackScholesFormulas.cpp.o.d -o CMakeFiles/test_integration.dir/BlackScholesFormulas.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/BlackScholesFormulas.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_integration.dir/BlackScholesFormulas.cpp.o -MF CMakeFiles/test_integration.dir/BlackScholesFormulas.cpp.o.d -o CMakeFiles/test_integration.dir/BlackScholesFormulas.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/BlackScholesFormulas.cpp
 
 CMakeFiles/test_integration.dir/BlackScholesFormulas.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_integration.dir/BlackScholesFormulas.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/BlackScholesFormulas.cpp > CMakeFiles/test_integration.dir/BlackScholesFormulas.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/BlackScholesFormulas.cpp > CMakeFiles/test_integration.dir/BlackScholesFormulas.cpp.i
 
 CMakeFiles/test_integration.dir/BlackScholesFormulas.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_integration.dir/BlackScholesFormulas.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/BlackScholesFormulas.cpp -o CMakeFiles/test_integration.dir/BlackScholesFormulas.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/BlackScholesFormulas.cpp -o CMakeFiles/test_integration.dir/BlackScholesFormulas.cpp.s
 
 CMakeFiles/test_integration.dir/tests/test_volatility_surface_construction.cpp.o: CMakeFiles/test_integration.dir/flags.make
 CMakeFiles/test_integration.dir/tests/test_volatility_surface_construction.cpp.o: /Users/patrikliba/CLionProjects/CppFM/tests/test_volatility_surface_construction.cpp
 CMakeFiles/test_integration.dir/tests/test_volatility_surface_construction.cpp.o: CMakeFiles/test_integration.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/test_integration.dir/tests/test_volatility_surface_construction.cpp.o"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_integration.dir/tests/test_volatility_surface_construction.cpp.o -MF CMakeFiles/test_integration.dir/tests/test_volatility_surface_construction.cpp.o.d -o CMakeFiles/test_integration.dir/tests/test_volatility_surface_construction.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/tests/test_volatility_surface_construction.cpp
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_integration.dir/tests/test_volatility_surface_construction.cpp.o -MF CMakeFiles/test_integration.dir/tests/test_volatility_surface_construction.cpp.o.d -o CMakeFiles/test_integration.dir/tests/test_volatility_surface_construction.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/tests/test_volatility_surface_construction.cpp
 
 CMakeFiles/test_integration.dir/tests/test_volatility_surface_construction.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_integration.dir/tests/test_volatility_surface_construction.cpp.i"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/tests/test_volatility_surface_construction.cpp > CMakeFiles/test_integration.dir/tests/test_volatility_surface_construction.cpp.i
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/tests/test_volatility_surface_construction.cpp > CMakeFiles/test_integration.dir/tests/test_volatility_surface_construction.cpp.i
 
 CMakeFiles/test_integration.dir/tests/test_volatility_surface_construction.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_integration.dir/tests/test_volatility_surface_construction.cpp.s"
-	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/tests/test_volatility_surface_construction.cpp -o CMakeFiles/test_integration.dir/tests/test_volatility_surface_construction.cpp.s
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/tests/test_volatility_surface_construction.cpp -o CMakeFiles/test_integration.dir/tests/test_volatility_surface_construction.cpp.s
 
 # Object files for target test_integration
 test_integration_OBJECTS = \

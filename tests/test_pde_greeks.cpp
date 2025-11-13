@@ -60,12 +60,26 @@ protected:
             );
         };
     
-        // TODO: Create grid
-        S_min = 0.5 * K;
-        S_max = 2.0 * K;
-        // ISSUE: When perrtubing σ for vega/volga we are in the wrong domain
-        N_S = 1001;
-        N_t = 1000;
+        /// TODO: Create grid
+        /**
+         * ISSUE: When perturbing σ from 0.20 to 0.21, the diffusion range expands
+         * With narrow domain [K/2, 2K], the upper boundary at S=2K contaminates
+         * the solution at higher σ, creating asymmetric errors in the centered
+         * finite difference for volga.
+         *
+         * TRADEOFF: Wider domain [K/5, 5K] removes boundary effects BUT increases
+         * step size with fixed N_S = 4001:
+         *   - Old: h = (2K - K/2)/4001 ≈ 0.0375  =>  h² = 0.0014 (finer mesh)
+         *   - New: h = (5K - K/5)/4001 ≈ 0.12    =>  h² = 0.014  (10x coarser mesh)
+         *
+         * (Δσ)² = 10^-6 in finite differences.
+         * So, coarser mesh on wider domain achieves correct volga.
+         */
+
+        S_min = 0.2 * K;   // K/5 for wide domain
+        S_max = 5.0 * K;   // 5K
+        N_S = 4001;        // Very fine grid for accurate second derivatives
+        N_t = 4000;
         
         // Universal grid for both call and put
         grid = std::make_unique<Grid>(S_min, S_max, N_S, T, N_t, 
