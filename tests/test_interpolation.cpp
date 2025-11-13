@@ -1,10 +1,11 @@
-#include <gtest/gtest.h>        // Google Test framework - provides TEST macros and assertions
-#include <vector>               // Standard vector container for dynamic arrays
-#include <memory>               // Smart pointers (unique_ptr) for memory management
-#include <cmath>                // Mathematical functions (std::abs, std::isfinite)
-#include <iostream>             // For output stream
-#include <iomanip>              // For output formatting
-#include "../InterpolationSchemes.h"  // Our interpolation classes to test
+#include <gtest/gtest.h>
+#include <vector>
+#include <memory>
+#include <cmath>
+#include <iostream>
+#include <iomanip>
+#include "../InterpolationSchemes.h"
+
 // ============================================================================
 // Test Constants and Utilities
 // ============================================================================
@@ -475,16 +476,23 @@ TEST_F(InterpolationEdgeCasesTest, TwoPointLinearCase) {  // Test minimal data s
     EXPECT_NEAR(cubic.interpolate(0.5), 0.5, INTERPOLATION_TOLERANCE);  // Test cubic spline at midpoint
 }
 
-TEST_F(InterpolationEdgeCasesTest, OutOfRangeDerivative) {  // Test error handling for out-of-range derivative calculations
+TEST_F(InterpolationEdgeCasesTest, OutOfRangeDerivative) {  // Test derivative calculations work at boundaries (needed for extrapolation)
     std::vector<double> x = createTestXData();  // Get test X data
     std::vector<double> y = createTestYData();  // Get test Y data
     CubicSplineInterpolation cubic(x, y);  // Create cubic spline object
     
-    // Test that derivatives throw exceptions for out-of-range values
-    EXPECT_THROW(cubic.derivative(-1.0), std::out_of_range);  // Test left out-of-range derivative
-    EXPECT_THROW(cubic.derivative(10.0), std::out_of_range);  // Test right out-of-range derivative
-    EXPECT_THROW(cubic.secondDerivative(-1.0), std::out_of_range);  // Test left out-of-range second derivative
-    EXPECT_THROW(cubic.secondDerivative(10.0), std::out_of_range);  // Test right out-of-range second derivative
+    // In the refactored design, derivatives work at boundaries (for generic extrapolation)
+    // Test that derivatives at boundaries produce finite values
+    double deriv_left = cubic.derivative(x.front());  // Test left boundary derivative
+    double deriv_right = cubic.derivative(x.back());  // Test right boundary derivative
+    EXPECT_TRUE(std::isfinite(deriv_left));  // Should be finite, not throw
+    EXPECT_TRUE(std::isfinite(deriv_right));  // Should be finite, not throw
+    
+    // Same for second derivatives
+    double second_deriv_left = cubic.secondDerivative(x.front());  // Test left boundary second derivative
+    double second_deriv_right = cubic.secondDerivative(x.back());  // Test right boundary second derivative
+    EXPECT_TRUE(std::isfinite(second_deriv_left));  // Should be finite, not throw
+    EXPECT_TRUE(std::isfinite(second_deriv_right));  // Should be finite, not throw
 }
 
 // ============================================================================

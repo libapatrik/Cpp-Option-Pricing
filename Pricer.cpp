@@ -96,4 +96,4 @@ double MonteCarloPricer::price(const EuropeanOptionPayoff &option) const
 }
 
 
-double FDPricer
+// double FDPricer

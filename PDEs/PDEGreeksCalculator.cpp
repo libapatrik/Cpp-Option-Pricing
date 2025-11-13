@@ -81,7 +81,7 @@ double PDEGreeksCalculator::vega(const PDEFactory& pdeFactory) const
     // Create function that solves PDE for given volatility
     auto valueFunction = [&](double sigma) {
         auto pde = pdeFactory(sigma, _r_base);
-        return solvePDEAt(*pde, _spot, sigma); // use sigma-scaled grid
+        return solvePDEAt(*pde, _spot); // use sigma-scaled grid
     };
     
     // Compute derivative using reusable utility (h = 1e-4 by default)
@@ -161,7 +161,7 @@ double PDEGreeksCalculator::vanna(const PDEFactory& pdeFactory) const
     // Create function that computes delta for given volatility
     auto deltaFunction = [&](double sigma) {
         auto pde = pdeFactory(sigma, _r_base);
-        return solvePDEDelta(*pde, _spot, sigma);
+        return solvePDEDelta(*pde, _spot);   // or sigma-scaled grid?
     };
     
     // Compute derivative of delta wrt sigma using reusable utility
@@ -188,13 +188,13 @@ double PDEGreeksCalculator::volga(const PDEFactory& pdeFactory) const
     // Create function that solved PDE for a given sigma with scaled grid
     auto valueFunction = [&](double sigma) {
         auto pde = pdeFactory(sigma, _r_base);
-        return solvePDEAt(*pde, _spot, sigma);
+        return solvePDEAt(*pde, _spot);   // or sigma-scaled grid?
     };
     
     // Compute second derivative using reusable utility (h = 1e-4 by default)
     /// TODO: Volga blows up, why? and how to fix this. [see test_pde_greeks.cpp]
-    // return NumericalDerivatives::secondDerivative(valueFunction, _sigma_base);
-    return NumericalDerivatives::secondDerivative(valueFunction, _sigma_base);
+    
+    return NumericalDerivatives::secondDerivative(valueFunction, _sigma_base, 0.01);
 }
 
 // ============================================================================

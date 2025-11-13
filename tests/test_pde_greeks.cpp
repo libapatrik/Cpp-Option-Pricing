@@ -64,8 +64,8 @@ protected:
         S_min = 0.5 * K;
         S_max = 2.0 * K;
         // ISSUE: When perrtubing σ for vega/volga we are in the wrong domain
-        N_S = 401;
-        N_t = 400;
+        N_S = 1001;
+        N_t = 1000;
         
         // Universal grid for both call and put
         grid = std::make_unique<Grid>(S_min, S_max, N_S, T, N_t, 

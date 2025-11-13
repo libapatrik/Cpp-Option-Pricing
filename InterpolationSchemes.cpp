@@ -1,12 +1,13 @@
 //
-// Created by Patrik  Liba on 05/10/2025.
+// Created by Patrik  Liba on 08/11/2025.
 //
 
 #include "InterpolationSchemes.h"
 #include "Utils.h"
-#include <algorithm>
-#include <stdexcept>
-#include <cmath>
+#include<algorithm>
+#include<stdexcept>
+#include<cmath>
+
 
 // ============================================================================
 // LinearInterpolation Implementation
@@ -14,42 +15,64 @@
 
 LinearInterpolation::LinearInterpolation(const std::vector<double>& xData, const std::vector<double>& yData)
     : _xData(xData), _yData(yData)
-{
+{   /// TODO: validate input data as function
     if (_xData.size() != _yData.size() || _xData.size() < 2) {
         throw std::invalid_argument("LinearInterpolation: Invalid data size");
     }
-    
+
     // Check if xData is sorted
     if (!std::is_sorted(_xData.begin(), _xData.end())) {
         throw std::invalid_argument("LinearInterpolation: xData must be sorted");
     }
-    
+
     _xMin = _xData.front();
     _xMax = _xData.back();
 }
 
 double LinearInterpolation::interpolate(double x) const
 {
-    if (x < _xMin || x > _xMax) {
-        return extrapolate(x);
-    }
-    
+    // This method now assumes x is within range [_xMin, _xMax]
+    // Bounds checking is done at the higher level (operator())
+
     size_t idx = findInterval(x);
     if (idx >= _xData.size() - 1) {
         return _yData.back();
     }
-    
+
     // Linear interpolation: y = y0 + (y1-y0) * (x-x0)/(x1-x0)
     double x0 = _xData[idx];
     double x1 = _xData[idx + 1];
     double y0 = _yData[idx];
     double y1 = _yData[idx + 1];
-    
+
     return y0 + (y1 - y0) * (x - x0) / (x1 - x0);
 }
 
-InterpolationSchemes* LinearInterpolation::clone() const
+double LinearInterpolation::derivative(double x) const
 {
+    // For linear interpolation, the derivative is the slope of the interval
+    // Analytical form: y = y0 + m(x - x0), so dy/dx = m
+
+    size_t idx = findInterval(x);
+    if (idx >= _xData.size() - 1) {
+        idx = _xData.size() - 2; // Use last interval
+    }
+
+    // Slope m = (y1 - y0) / (x1 - x0)
+    double slope = (_yData[idx + 1] - _yData[idx]) / (_xData[idx + 1] - _xData[idx]);
+
+    return slope;
+}
+
+double LinearInterpolation::secondDerivative(double x) const
+{
+    // For linear interpolation, the second derivative is always 0
+    // Since y = mx + b, dy/dx = m (constant), d²y/dx² = 0
+    return 0.0;
+}
+
+InterpolationSchemes* LinearInterpolation::clone() const
+{ 
     return new LinearInterpolation(*this);
 }
 
@@ -62,21 +85,12 @@ size_t LinearInterpolation::findInterval(double x) const
 {
     // Binary search O(log n) instead of linear search O(n)
     auto it = std::upper_bound(_xData.begin(), _xData.end(), x);
-    return std::distance(_xData.begin(), it) - 1;
-}
 
-double LinearInterpolation::extrapolate(double x) const
-{
-    if (x < _xMin) {
-        // Left extrapolation: linear continuation from first two points
-        double slope = (_yData[1] - _yData[0]) / (_xData[1] - _xData[0]);
-        return _yData[0] + slope * (x - _xData[0]);
-    } else {
-        // Right extrapolation: linear continuation from last two points
-        size_t n = _xData.size();
-        double slope = (_yData[n-1] - _yData[n-2]) / (_xData[n-1] - _xData[n-2]);
-        return _yData[n-1] + slope * (x - _xData[n-1]);
+    if (it == _xData.begin()) {
+        return 0;
     }
+
+    return std::distance(_xData.begin(), it) - 1;
 }
 
 // ============================================================================
@@ -85,7 +99,7 @@ double LinearInterpolation::extrapolate(double x) const
 
 CubicSplineInterpolation::CubicSplineInterpolation(const std::vector<double>& xData, const std::vector<double>& yData, BoundaryType boundaryType)
     : _xData(xData), _yData(yData), _boundaryType(boundaryType)
-{
+{   /// TODO: validate input data as function
     if (_xData.size() != _yData.size() || _xData.size() < 2) {
         throw std::invalid_argument("CubicSplineInterpolation: Invalid data size");
     }
@@ -102,24 +116,24 @@ CubicSplineInterpolation::CubicSplineInterpolation(const std::vector<double>& xD
 }
 
 void CubicSplineInterpolation::computeSplineCoefficients()
-{
+{ 
     size_t n = _xData.size();
-    
+
     // Initialize coefficient vectors
     _alpha.resize(n-1);
     _beta.resize(n-1);
     _gamma.resize(n-1);
     _delta.resize(n-1);
-    
+
     if (n == 2) {
-        // Linear case - all coefficients except delta are zero
+        // Linear case - all coefficients except gamma and delta are zero
         _alpha[0] = 0.0;
         _beta[0] = 0.0;
         _gamma[0] = (_yData[1] - _yData[0]) / (_xData[1] - _xData[0]);
         _delta[0] = _yData[0];
         return;
     }
-    
+
     solveThomasAlgorithm();
 }
 
@@ -163,10 +177,8 @@ void CubicSplineInterpolation::solveThomasAlgorithm()
     // Natural boundary conditions are already enforced:
     // - β[0] = 0 (not included in the system, already enforced)
     // - β[n-1] = 0 (not included in the system, will be kept at 0)
-    // The tridiagonal system equations from the loop above are correct for natural splines
     
     // Solve using general TridiagonalSolver (replaces inline Thomas algorithm)
-    // Forward and Backward Elimination is done in the Utils.cpp file
     std::vector<double> beta_interior = ThomasAlgorithm::solve(lower, diag, upper, rhs);
     
     // Construct full β vector with boundary conditions
@@ -184,7 +196,6 @@ void CubicSplineInterpolation::solveThomasAlgorithm()
         double dx_j = _xData[j+1] - _xData[j];
         
         // Equation (1.26): α_j = (β_{j+1} - β_j) / (3Δx_j)
-        // For interval j, we use second derivatives at nodes j and j+1
         _alpha[j] = (beta[j+1] - beta[j]) / (3.0 * dx_j);
         
         // Equation (1.27): γ_j = (y_{j+1} - y_j) / Δx_j - α_j * Δx_j^2 - β_j * Δx_j
@@ -200,9 +211,8 @@ void CubicSplineInterpolation::solveThomasAlgorithm()
 
 double CubicSplineInterpolation::interpolate(double x) const
 {
-    if (x < _xMin || x > _xMax) { // check if out of bounds
-        return extrapolate(x);
-    }
+    // This method now assumes x is within range [_xMin, _xMax]
+    // Bounds checking is done at the higher level (operator())
     
     size_t idx = findInterval(x);
     if (idx >= _xData.size() - 1) {
@@ -231,9 +241,8 @@ double CubicSplineInterpolation::interpolate(double x) const
 
 double CubicSplineInterpolation::derivative(double x) const
 {
-    if (x < _xMin || x > _xMax) { // check if out of bounds
-        throw std::out_of_range("CubicSplineInterpolation: x is outside interpolation range");
-    }
+    // ANALYTICAL DERIVATIVE: S'(x) = γ_j + 2β_j(x-x_j) + 3α_j(x-x_j)²
+    // This works for both interpolation and extrapolation at boundaries
     
     size_t idx = findInterval(x);
     if (idx >= _xData.size() - 1) {
@@ -241,8 +250,6 @@ double CubicSplineInterpolation::derivative(double x) const
         idx = _xData.size() - 2;
     }
     
-    // LECTURE NOTES IMPLEMENTATION: Using pre-computed coefficients
-    // S'(x) = γ_j + 2β_j(x-x_j) + 3α_j(x-x_j)²
     double x0 = _xData[idx];
     double dx = x - x0;  // (x - x_j)
     double dx2 = dx * dx;
@@ -260,9 +267,7 @@ double CubicSplineInterpolation::derivative(double x) const
 
 double CubicSplineInterpolation::secondDerivative(double x) const
 {
-    if (x < _xMin || x > _xMax) {
-        throw std::out_of_range("CubicSplineInterpolation: x is outside interpolation range");
-    }
+    // ANALYTICAL SECOND DERIVATIVE: S''(x) = 2β_j + 6α_j(x-x_j)
     
     size_t idx = findInterval(x);
     if (idx >= _xData.size() - 1) {
@@ -270,8 +275,6 @@ double CubicSplineInterpolation::secondDerivative(double x) const
         idx = _xData.size() - 2;
     }
     
-    // LECTURE NOTES IMPLEMENTATION: Using pre-computed coefficients
-    // S''(x) = 2β_j + 6α_j(x-x_j)
     double x0 = _xData[idx];
     double dx = x - x0;  // (x - x_j)
     
@@ -280,9 +283,7 @@ double CubicSplineInterpolation::secondDerivative(double x) const
     double beta_j = _beta[idx];
     
     // LECTURE NOTES: S''(x) = 2β_j + 6α_j(x-x_j)
-    double d2S_dx2 = 2.0 * beta_j + 6.0 * alpha_j * dx;
-    
-    return d2S_dx2;
+    return 2.0 * beta_j + 6.0 * alpha_j * dx;
 }
 
 InterpolationSchemes* CubicSplineInterpolation::clone() const
@@ -308,38 +309,3 @@ size_t CubicSplineInterpolation::findInterval(double x) const
     
     return std::distance(_xData.begin(), it) - 1;
 }
-
-double CubicSplineInterpolation::extrapolate(double x) const
-{
-    // LECTURE NOTES IMPLEMENTATION: Following equations (1.32), (1.26), and (1.27)
-    // σ*(T_i, K) = σ*(T_i, K_1) + D_L × (K - K_1) if K < K_1
-    // σ*(T_i, K) = σ*(T_i, K_N) + D_R × (K - K_N) if K > K_N
-    
-    if (x < _xMin) {
-        // LECTURE NOTES: Left extrapolation using equations (1.26) and (1.27)
-        // D_L = S'_1(x_1) = γ_1
-        // Use pre-computed γ_0 coefficient
-        double gamma0 = _gamma[0];
-        
-        return _yData[0] + gamma0 * (x - _xData[0]);
-    } else {
-        // LECTURE NOTES: Right extrapolation using equations (1.26) and (1.27)
-        // D_R = S'_{N-1}(x_N) = 3α_{N-1}Δx_{N-1}^2 + 2β_{N-1}Δx_{N-1} + γ_{N-1}
-        size_t n = _xData.size();
-        size_t last_idx = n - 2;  // Index of last interval
-        
-        // Use pre-computed coefficients
-        double alpha_n = _alpha[last_idx];
-        double beta_n = _beta[last_idx];
-        double gamma_n = _gamma[last_idx];
-        
-        double hn = _xData[n-1] - _xData[n-2];
-        
-        // D_R = 3α_{N-1}Δx_{N-1}^2 + 2β_{N-1}Δx_{N-1} + γ_{N-1}
-        double D_R = 3.0 * alpha_n * hn * hn + 2.0 * beta_n * hn + gamma_n;
-        
-        return _yData[n-1] + D_R * (x - _xData[n-1]);
-    }
-}
-
-// ============================================================================

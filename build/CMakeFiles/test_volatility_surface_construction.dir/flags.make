@@ -6,7 +6,5 @@ CXX_DEFINES =
 
 CXX_INCLUDES = -isystem /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest/include -isystem /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest
 
-CXX_FLAGSarm64 = -g -std=gnu++20 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk
-
-CXX_FLAGS = -g -std=gnu++20 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk
+CXX_FLAGS = -g -std=gnu++20 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk
 

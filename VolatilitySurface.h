@@ -23,81 +23,45 @@ public:
      * @param strikes Vector of strike prices
      * @param maturities Vector of maturities (in years)
      * @param volatilities Matrix of implied volatilities [maturity][strike]
-     * @param interpolationType Type of interpolation to use
+     * @param discountCurve Discount curve for forward price calculations
+     * @param smileInterpolationType Smile interpolation (across strikes): Linear or CubicSpline
+     * @param maturityInterpolationType Maturity interpolation: Bilinear or ForwardMoneyness
      */
-    enum class InterpolationType { Linear, CubicSpline };
+    enum class SmileInterpolationType { Linear, CubicSpline };
+    enum class MaturityInterpolationType { Bilinear,          // Simple linear interpolation in volatility space
+                                           ForwardMoneyness   // Variance interpolation with constant forward moneyness (recommended)
+    };
     
     VolatilitySurface(const std::vector<double>& strikes,
                       const std::vector<double>& maturities,
                       const std::vector<std::vector<double>>& volatilities,
                       const DiscountCurve& discountCurve,
-                      InterpolationType interpolationType = InterpolationType::CubicSpline);
+                      SmileInterpolationType smileInterpolationType = SmileInterpolationType::CubicSpline,
+                      MaturityInterpolationType maturityInterpolationType = MaturityInterpolationType::ForwardMoneyness);
     
     /**
      * Get implied volatility at given strike and maturity
-     * @param strike Strike price
-     * @param maturity Time to maturity (in years)
-     * @return Implied volatility
+     * Uses the interpolation method specified in constructor
+     * @param strike Strike price K
+     * @param maturity Time to maturity T (in years)
+     * @return Implied volatility σ*(T,K)
      */
-    double impliedVolatility(double strike, double maturity) const; // accessor
-    
-    /**
-     * Get implied volatility using forward moneyness interpolation
-     * @param strike Strike price
-     * @param maturity Time to maturity (in years)
-     * @param spot Current spot price
-     * @return Implied volatility
-     */
-    double impliedVolatilityForwardMoneyness(double strike, double maturity, double spot) const; // accessor
+    double impliedVolatility(double strike, double maturity) const;
     
     /**
      * Get local volatility using Dupire formula
+     * Delegates to computeDupireLocalVolatility (private implementation)
      * @param spot Current spot price
      * @param time Current time
-     * @return Local volatility
+     * @return Local volatility σ_local(S,t)
      */
-    double localVolatility(double spot, double time) const; // accessor
-    
-    /**
-     * Get volatility smile for given maturity
-     * @param maturity Time to maturity
-     * @param strikes Vector of strikes to evaluate
-     * @return Vector of implied volatilities
-     */
-    std::vector<double> volatilitySmile(double maturity, const std::vector<double>& strikes) const; // accessor
-    
-    /**
-     * Get volatility term structure for given strike
-     * @param strike Strike price
-     * @param maturities Vector of maturities to evaluate
-     * @return Vector of implied volatilities
-     */
-    std::vector<double> volatilityTermStructure(double strike, const std::vector<double>& maturities) const; // accessor
-    
+    double localVolatility(double spot, double time) const;
     
     /**
      * Get surface bounds
      * @return Pair of (minStrike, maxStrike) and (minMaturity, maxMaturity)
      */
     std::pair<std::pair<double, double>, std::pair<double, double>> getBounds() const;
-
-    // Black-Scholes formulas delegation
-    double blackScholesCall(double spot, double strike, double time, double volatility) const; // accessor
-    double blackScholesPut(double spot, double strike, double time, double volatility) const; // accessor
-
-    // Greeks
-    double blackScholesVega(double spot, double strike, double time, double volatility) const; // accessor
-    double blackScholesGamma(double spot, double strike, double time, double volatility) const; // accessor
-    double blackScholesTheta(double spot, double strike, double time, double volatility) const; // accessor
-
-     // dSigma/dT - how implied volatility changes with time
-    double impliedVolatilityTimeDerivative(double strike, double maturity) const; // accessor
-
-    // dSigma/dK - how implied volatility changes with strike (smile slope)
-    double impliedVolatilityStrikeDerivative(double strike, double maturity) const; // accessor
-
-     // d2Sigma/dK2 - smile curvature (convexity)
-    double impliedVolatilitySecondStrikeDerivative(double strike, double maturity) const; // accessor
 
     // Pointer to new VolatilitySurface instance
     VolatilitySurface* clone() const;        // Clone method for polymorphic copying
@@ -115,16 +79,22 @@ private:
     std::vector<double> _strikes;
     std::vector<double> _maturities;
     std::vector<std::vector<double>> _volatilities;
-    InterpolationType _interpolationType;
+    SmileInterpolationType _smileInterpolationType;
+    MaturityInterpolationType _maturityInterpolationType;
     std::unique_ptr<DiscountCurve> _discountCurve;
     
     // Interpolation objects for different dimensions
     std::vector<std::unique_ptr<InterpolationSchemes>> _smileInterpolators;
     std::vector<std::unique_ptr<InterpolationSchemes>> _termStructureInterpolators;
-    // A "is-a" relation does not apply to unique_ptr; only for class-to-class
+    // An "is-a" relation does not apply to unique_ptr; only for class-to-class
 
-    void initializeInterpolators(); // to create interpolators for strikes and matiruties
+    void validateInputData() const; // validate strikes, maturities, volatilities matrix
+    void initializeInterpolators(); // to create interpolators for strikes and maturities
     double computeDupireLocalVolatility(double spot, double time) const;
+    
+    // Private interpolation methods - called by impliedVolatility based on _maturityInterpolationType
+    double impliedVolatilityBilinear(double strike, double maturity) const;
+    double impliedVolatilityForwardMoneyness(double strike, double maturity) const;
     
     // Implied volatility surface derivatives (used in Dupire formula) - private helpers
     double impliedVolatilityDerivativeTime(double strike, double maturity) const;
@@ -147,7 +117,8 @@ public:
     VolatilitySurfaceBuilder& addStrike(double strike);
     VolatilitySurfaceBuilder& addMaturity(double maturity);
     VolatilitySurfaceBuilder& setVolatility(double strike, double maturity, double volatility);
-    VolatilitySurfaceBuilder& setInterpolationType(VolatilitySurface::InterpolationType type);
+    VolatilitySurfaceBuilder& setSmileInterpolationType(VolatilitySurface::SmileInterpolationType type);
+    VolatilitySurfaceBuilder& setMaturityInterpolationType(VolatilitySurface::MaturityInterpolationType type);
     VolatilitySurfaceBuilder& setDiscountCurve(const DiscountCurve& discountCurve);
     
     std::unique_ptr<VolatilitySurface> build();
@@ -156,7 +127,8 @@ private:
     std::vector<double> _strikes;
     std::vector<double> _maturities;
     std::vector<std::vector<double>> _volatilities;
-    VolatilitySurface::InterpolationType _interpolationType = VolatilitySurface::InterpolationType::CubicSpline;
+    VolatilitySurface::SmileInterpolationType _smileInterpolationType = VolatilitySurface::SmileInterpolationType::CubicSpline;
+    VolatilitySurface::MaturityInterpolationType _maturityInterpolationType = VolatilitySurface::MaturityInterpolationType::ForwardMoneyness;
     std::unique_ptr<DiscountCurve> _discountCurve;
     
     void sortAndDeduplicate(); // Sort strikes/maturities and remove duplicates

@@ -48,7 +48,8 @@ add_executable(CppFM main.cpp
         PDEs/Solver.h
         PDEs/PDEGreeksCalculator.cpp
         PDEs/PDEGreeksCalculator.h
-        tests/test_pde_grid.cpp
+        InterpolationSchemes.cpp
+        InterpolationSchemes.h
 )
 
 # Test executables
@@ -218,7 +219,7 @@ add_executable(test_pde_greeks tests/test_pde_greeks.cpp
     PDEs/Grid.cpp
     PDEs/BoundaryConditions.cpp
     Utils.cpp
-    InterpolationSchemes.cpp
+        InterpolationSchemes.cpp
     BlackScholesFormulas.cpp
 )
 
