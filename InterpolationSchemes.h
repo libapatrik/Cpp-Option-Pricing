@@ -17,9 +17,14 @@
  * - All schemes must provide analytical derivatives
  */
 
+class ExtrapolationScheme;
+
 class InterpolationSchemes
 {
 public:
+    // constructor
+    InterpolationSchemes(const std::vector<double>& xData, const std::vector<double>& yData, double xMin, double xMax, const ExtrapolationScheme& extrapolationScheme);
+
     virtual ~InterpolationSchemes() = default;
     virtual InterpolationSchemes* clone() const = 0;
 
@@ -37,6 +42,8 @@ public:
      * @param x Point to extrapolate at (outside range)
      * @return Extrapolated value
      */
+
+    // Keep .h methods as only declared. Define them in cpp file.
     virtual double extrapolate(double x) const
     {
         auto [xMin, xMax] = getRange();
@@ -63,15 +70,35 @@ public:
      * @param x Point to evaluate at
      * @return Value at x
      */
-    double  operator()(double x) const // to handle routing to extrapolate() when needed
+    double operator()(double x) const // to handle routing to extrapolate() when needed
     {
         auto [xMin, xMax] = getRange();
         if (x < xMin || x > xMax) {
-            return extrapolate(x);
+            return _extrapolationScheme->extrapolate(x);
         } else {
             return interpolate(x);
         }
     }
+    // Class instance(param1, param2,...) // Constructor
+    // LinearInterpolationScheme interp(params); // Constructor
+    // interp(x) -> interp.operator()(x);
+
+    // operator[](size_t row, size_t column)
+    // Matrix A;
+    // A[2,3]
+
+    // operator=(double x)
+    // double a;
+    // double x;
+    // a = x -> a.operator=(x)
+
+protected:
+    std::vector<double> _xData, _yData;
+    double _xMin, _xMax;
+    std::unique_ptr<ExtrapolationScheme> _extrapolationScheme;
+
+
+
 }; // end of base class InterpolationSchemes1
 
 /**
@@ -147,5 +174,39 @@ private:
     size_t findInterval(double x) const;
 };  // end of class CubicSplineInterpolation
 
+
+// Abstract class
+class ExtrapolationScheme
+{
+public:
+    // Constructor
+    virtual double extrapolate(double x) const = 0;
+
+protected:
+    double _xMin, _xMax;
+};
+
+class FlatExtrapolationScheme : public ExtrapolationScheme
+{
+public:
+    double extrapolate(double x) const override;
+};
+
+class LinearExtrapolationScheme : public ExtrapolationScheme
+{
+public:
+    double extrapolate(double x) const override;
+private:
+    double _dxMin, _dxMax;
+};
+
+class QuadraticExtrapolationScheme : public ExtrapolationScheme
+{
+public:
+    double extrapolate(double x) const override;
+private:
+    double _dxMin, _dxMax;
+    double _d2xMin, _d2xMax;
+};
 
 #endif //CPPFM_INTERPOLATIONSCHEMES_H

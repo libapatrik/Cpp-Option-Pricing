@@ -309,3 +309,19 @@ size_t CubicSplineInterpolation::findInterval(double x) const
     
     return std::distance(_xData.begin(), it) - 1;
 }
+
+double QuadraticExtrapolationScheme::extrapolate(double x) const
+{
+    if (x <= _xMin)
+    {
+        double delta = x - _xMin;
+        return _xMin + _dxMin * delta + 0.5 _d2xMin * delta * delta;
+    }
+    else if (x >= _xMax)
+    {
+        double delta = x - _xMax;
+        return _xMax + _dxMax * delta + 0.5 _d2xMax * delta * delta;
+    }
+    else
+        throw "x is not correct";
+}
