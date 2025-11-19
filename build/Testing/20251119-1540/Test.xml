@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Site BuildName="(empty)"
+	BuildStamp="20251119-1540-Experimental"
+	Name="(empty)"
+	Generator="ctest-3.31.4"
+	CompilerName=""
+	CompilerVersion=""
+	OSName="macOS"
+	Hostname="MacBook-Pro.local"
+	OSRelease="15.6.1"
+	OSVersion="24G90"
+	OSPlatform="arm64"
+	Is64Bits="1"
+	VendorString="Apple"
+	VendorID="Apple"
+	FamilyID="0"
+	ModelID="0"
+	ModelName="Apple M1 Max"
+	ProcessorCacheSize="131072"
+	NumberOfLogicalCPU="10"
+	NumberOfPhysicalCPU="10"
+	TotalVirtualMemory="0"
+	TotalPhysicalMemory="32768"
+	LogicalProcessorsPerPhysical="10"
+	ProcessorClockFrequency="0"
+	>
+	<Testing>
+		<StartDateTime>Nov 19 16:40 CET</StartDateTime>
+		<StartTestTime>1763566834</StartTestTime>
+		<TestList/>
+		<EndDateTime>Nov 19 16:40 CET</EndDateTime>
+		<EndTestTime>1763566834</EndTestTime>
+		<ElapsedMinutes>0</ElapsedMinutes>
+	</Testing>
+</Site>

@@ -452,7 +452,7 @@ double LinearExtrapolation::extrapolate(double x, const InterpolationScheme& int
 
 // QuadraticExtrapolation
 std::unique_ptr<ExtrapolationScheme> QuadraticExtrapolation::clone() const
-{
+{   // Deep copy of member variables
     // 1. Create a new QuadraticExtrapolation object
     auto cloned = std::make_unique<QuadraticExtrapolation>();
     // 2. Copy all the member variables from 'this' to the cloned object
