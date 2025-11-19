@@ -76,43 +76,43 @@ CMakeFiles/test_interpolation.dir/tests/test_interpolation.cpp.o: CMakeFiles/tes
 CMakeFiles/test_interpolation.dir/tests/test_interpolation.cpp.o: /Users/patrikliba/CLionProjects/CppFM/tests/test_interpolation.cpp
 CMakeFiles/test_interpolation.dir/tests/test_interpolation.cpp.o: CMakeFiles/test_interpolation.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/test_interpolation.dir/tests/test_interpolation.cpp.o"
-	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_interpolation.dir/tests/test_interpolation.cpp.o -MF CMakeFiles/test_interpolation.dir/tests/test_interpolation.cpp.o.d -o CMakeFiles/test_interpolation.dir/tests/test_interpolation.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/tests/test_interpolation.cpp
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_interpolation.dir/tests/test_interpolation.cpp.o -MF CMakeFiles/test_interpolation.dir/tests/test_interpolation.cpp.o.d -o CMakeFiles/test_interpolation.dir/tests/test_interpolation.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/tests/test_interpolation.cpp
 
 CMakeFiles/test_interpolation.dir/tests/test_interpolation.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_interpolation.dir/tests/test_interpolation.cpp.i"
-	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/tests/test_interpolation.cpp > CMakeFiles/test_interpolation.dir/tests/test_interpolation.cpp.i
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/tests/test_interpolation.cpp > CMakeFiles/test_interpolation.dir/tests/test_interpolation.cpp.i
 
 CMakeFiles/test_interpolation.dir/tests/test_interpolation.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_interpolation.dir/tests/test_interpolation.cpp.s"
-	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/tests/test_interpolation.cpp -o CMakeFiles/test_interpolation.dir/tests/test_interpolation.cpp.s
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/tests/test_interpolation.cpp -o CMakeFiles/test_interpolation.dir/tests/test_interpolation.cpp.s
 
 CMakeFiles/test_interpolation.dir/InterpolationSchemes.cpp.o: CMakeFiles/test_interpolation.dir/flags.make
 CMakeFiles/test_interpolation.dir/InterpolationSchemes.cpp.o: /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp
 CMakeFiles/test_interpolation.dir/InterpolationSchemes.cpp.o: CMakeFiles/test_interpolation.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/test_interpolation.dir/InterpolationSchemes.cpp.o"
-	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_interpolation.dir/InterpolationSchemes.cpp.o -MF CMakeFiles/test_interpolation.dir/InterpolationSchemes.cpp.o.d -o CMakeFiles/test_interpolation.dir/InterpolationSchemes.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_interpolation.dir/InterpolationSchemes.cpp.o -MF CMakeFiles/test_interpolation.dir/InterpolationSchemes.cpp.o.d -o CMakeFiles/test_interpolation.dir/InterpolationSchemes.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp
 
 CMakeFiles/test_interpolation.dir/InterpolationSchemes.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_interpolation.dir/InterpolationSchemes.cpp.i"
-	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp > CMakeFiles/test_interpolation.dir/InterpolationSchemes.cpp.i
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp > CMakeFiles/test_interpolation.dir/InterpolationSchemes.cpp.i
 
 CMakeFiles/test_interpolation.dir/InterpolationSchemes.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_interpolation.dir/InterpolationSchemes.cpp.s"
-	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp -o CMakeFiles/test_interpolation.dir/InterpolationSchemes.cpp.s
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/InterpolationSchemes.cpp -o CMakeFiles/test_interpolation.dir/InterpolationSchemes.cpp.s
 
 CMakeFiles/test_interpolation.dir/Utils.cpp.o: CMakeFiles/test_interpolation.dir/flags.make
 CMakeFiles/test_interpolation.dir/Utils.cpp.o: /Users/patrikliba/CLionProjects/CppFM/Utils.cpp
 CMakeFiles/test_interpolation.dir/Utils.cpp.o: CMakeFiles/test_interpolation.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/test_interpolation.dir/Utils.cpp.o"
-	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_interpolation.dir/Utils.cpp.o -MF CMakeFiles/test_interpolation.dir/Utils.cpp.o.d -o CMakeFiles/test_interpolation.dir/Utils.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/Utils.cpp
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_interpolation.dir/Utils.cpp.o -MF CMakeFiles/test_interpolation.dir/Utils.cpp.o.d -o CMakeFiles/test_interpolation.dir/Utils.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/Utils.cpp
 
 CMakeFiles/test_interpolation.dir/Utils.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_interpolation.dir/Utils.cpp.i"
-	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/Utils.cpp > CMakeFiles/test_interpolation.dir/Utils.cpp.i
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/Utils.cpp > CMakeFiles/test_interpolation.dir/Utils.cpp.i
 
 CMakeFiles/test_interpolation.dir/Utils.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_interpolation.dir/Utils.cpp.s"
-	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/Utils.cpp -o CMakeFiles/test_interpolation.dir/Utils.cpp.s
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/Utils.cpp -o CMakeFiles/test_interpolation.dir/Utils.cpp.s
 
 # Object files for target test_interpolation
 test_interpolation_OBJECTS = \

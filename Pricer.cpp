@@ -1,7 +1,3 @@
-//
-// Created by Patrik  Liba on 18/09/2025.
-//
-
 #include "Pricer.h"
 #include "Utils.h"
 #include "DiscountCurve.h"

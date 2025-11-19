@@ -84,8 +84,8 @@ private:
     std::unique_ptr<DiscountCurve> _discountCurve;
     
     // Interpolation objects for different dimensions
-    std::vector<std::unique_ptr<InterpolationSchemes>> _smileInterpolators;
-    std::vector<std::unique_ptr<InterpolationSchemes>> _termStructureInterpolators;
+    std::vector<std::unique_ptr<InterpolationScheme>> _smileInterpolators;
+    std::vector<std::unique_ptr<InterpolationScheme>> _termStructureInterpolators;
     // An "is-a" relation does not apply to unique_ptr; only for class-to-class
 
     void validateInputData() const; // validate strikes, maturities, volatilities matrix

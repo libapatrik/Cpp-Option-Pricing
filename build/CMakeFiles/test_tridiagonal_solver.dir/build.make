@@ -76,29 +76,29 @@ CMakeFiles/test_tridiagonal_solver.dir/tests/test_tridiagonal_solver.cpp.o: CMak
 CMakeFiles/test_tridiagonal_solver.dir/tests/test_tridiagonal_solver.cpp.o: /Users/patrikliba/CLionProjects/CppFM/tests/test_tridiagonal_solver.cpp
 CMakeFiles/test_tridiagonal_solver.dir/tests/test_tridiagonal_solver.cpp.o: CMakeFiles/test_tridiagonal_solver.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/test_tridiagonal_solver.dir/tests/test_tridiagonal_solver.cpp.o"
-	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_tridiagonal_solver.dir/tests/test_tridiagonal_solver.cpp.o -MF CMakeFiles/test_tridiagonal_solver.dir/tests/test_tridiagonal_solver.cpp.o.d -o CMakeFiles/test_tridiagonal_solver.dir/tests/test_tridiagonal_solver.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/tests/test_tridiagonal_solver.cpp
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_tridiagonal_solver.dir/tests/test_tridiagonal_solver.cpp.o -MF CMakeFiles/test_tridiagonal_solver.dir/tests/test_tridiagonal_solver.cpp.o.d -o CMakeFiles/test_tridiagonal_solver.dir/tests/test_tridiagonal_solver.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/tests/test_tridiagonal_solver.cpp
 
 CMakeFiles/test_tridiagonal_solver.dir/tests/test_tridiagonal_solver.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_tridiagonal_solver.dir/tests/test_tridiagonal_solver.cpp.i"
-	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/tests/test_tridiagonal_solver.cpp > CMakeFiles/test_tridiagonal_solver.dir/tests/test_tridiagonal_solver.cpp.i
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/tests/test_tridiagonal_solver.cpp > CMakeFiles/test_tridiagonal_solver.dir/tests/test_tridiagonal_solver.cpp.i
 
 CMakeFiles/test_tridiagonal_solver.dir/tests/test_tridiagonal_solver.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_tridiagonal_solver.dir/tests/test_tridiagonal_solver.cpp.s"
-	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/tests/test_tridiagonal_solver.cpp -o CMakeFiles/test_tridiagonal_solver.dir/tests/test_tridiagonal_solver.cpp.s
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/tests/test_tridiagonal_solver.cpp -o CMakeFiles/test_tridiagonal_solver.dir/tests/test_tridiagonal_solver.cpp.s
 
 CMakeFiles/test_tridiagonal_solver.dir/Utils.cpp.o: CMakeFiles/test_tridiagonal_solver.dir/flags.make
 CMakeFiles/test_tridiagonal_solver.dir/Utils.cpp.o: /Users/patrikliba/CLionProjects/CppFM/Utils.cpp
 CMakeFiles/test_tridiagonal_solver.dir/Utils.cpp.o: CMakeFiles/test_tridiagonal_solver.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/patrikliba/CLionProjects/CppFM/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/test_tridiagonal_solver.dir/Utils.cpp.o"
-	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_tridiagonal_solver.dir/Utils.cpp.o -MF CMakeFiles/test_tridiagonal_solver.dir/Utils.cpp.o.d -o CMakeFiles/test_tridiagonal_solver.dir/Utils.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/Utils.cpp
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_tridiagonal_solver.dir/Utils.cpp.o -MF CMakeFiles/test_tridiagonal_solver.dir/Utils.cpp.o.d -o CMakeFiles/test_tridiagonal_solver.dir/Utils.cpp.o -c /Users/patrikliba/CLionProjects/CppFM/Utils.cpp
 
 CMakeFiles/test_tridiagonal_solver.dir/Utils.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_tridiagonal_solver.dir/Utils.cpp.i"
-	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/Utils.cpp > CMakeFiles/test_tridiagonal_solver.dir/Utils.cpp.i
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/patrikliba/CLionProjects/CppFM/Utils.cpp > CMakeFiles/test_tridiagonal_solver.dir/Utils.cpp.i
 
 CMakeFiles/test_tridiagonal_solver.dir/Utils.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_tridiagonal_solver.dir/Utils.cpp.s"
-	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/Utils.cpp -o CMakeFiles/test_tridiagonal_solver.dir/Utils.cpp.s
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/patrikliba/CLionProjects/CppFM/Utils.cpp -o CMakeFiles/test_tridiagonal_solver.dir/Utils.cpp.s
 
 # Object files for target test_tridiagonal_solver
 test_tridiagonal_solver_OBJECTS = \

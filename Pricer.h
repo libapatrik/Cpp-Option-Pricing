@@ -1,7 +1,3 @@
-//
-// Created by Patrik  Liba on 18/09/2025.
-//
-
 #ifndef CPPFM_PRICER_H
 #define CPPFM_PRICER_H
 
@@ -9,11 +5,6 @@
 #include "Model.h" // to access the Model
 #include "PathSimulator.h" // to access the discretisation scheme
 #include "DiscountCurve.h" // discounting
-
-/* Notes
-1. will those pointers point to the same model?
-
-*/
 
 
 class Pricer

@@ -50,6 +50,7 @@ add_executable(CppFM main.cpp
         PDEs/PDEGreeksCalculator.h
         InterpolationSchemes.cpp
         InterpolationSchemes.h
+        Smart_Pointers.h
 )
 
 # Test executables
