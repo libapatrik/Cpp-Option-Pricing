@@ -48,34 +48,34 @@ int main()
     // Test of InterpolationSchemes
     // ============================================================================
     // Want to see how it prompts the user for selecting the extrapolation scheme
-    std::cout << "\nTesting InterpolationSchemes" << std::endl;
-    std::vector<double> xData = {1.0, 2.0, 3.0, 4.0, 5.0};
-    std::vector<double> yData = {2.0, 3.0, 4.0, 5.0, 6.0};
-    
-    std::cout << "Choose the extrapolation scheme: 1. Flat, 2. Linear, 3. Quadratic: ";
-    int choice;
-    std::cin >> choice;
-    
-    std::unique_ptr<ExtrapolationScheme> scheme;
-    if (choice == 1) {
-        scheme = std::make_unique<FlatExtrapolation>();
-    } else if (choice == 2) {
-        scheme = std::make_unique<LinearExtrapolation>();
-    } else {
-        // Default extrapolation
-        scheme = std::make_unique<QuadraticExtrapolation>();
-        if (choice != 3) {
-            std::cout << "Invalid choice. Using Quadratic (default)." << std::endl;
-        }
-    }
-    
-    auto interp = std::make_unique<LinearInterpolation>(xData, yData, std::move(scheme));
-    
-    // Outputs:
-    std::cout << "\nResults:" << std::endl;
-    std::cout << "Value at x=0.5 (extrapolation): " << (*interp)(0.5) << std::endl;
-    std::cout << "Value at x=3.5 (interpolation): " << (*interp)(3.5) << std::endl;
-    std::cout << "Value at x=6.0 (extrapolation): " << (*interp)(6.0) << std::endl;
+    // std::cout << "\nTesting InterpolationSchemes" << std::endl;
+    // std::vector<double> xData = {1.0, 2.0, 3.0, 4.0, 5.0};
+    // std::vector<double> yData = {2.0, 3.0, 4.0, 5.0, 6.0};
+    //
+    // std::cout << "Choose the extrapolation scheme: 1. Flat, 2. Linear, 3. Quadratic: ";
+    // int choice;
+    // std::cin >> choice;
+    //
+    // std::unique_ptr<ExtrapolationScheme> scheme;
+    // if (choice == 1) {
+    //     scheme = std::make_unique<FlatExtrapolation>();
+    // } else if (choice == 2) {
+    //     scheme = std::make_unique<LinearExtrapolation>();
+    // } else {
+    //     // Default extrapolation
+    //     scheme = std::make_unique<QuadraticExtrapolation>();
+    //     if (choice != 3) {
+    //         std::cout << "Invalid choice. Using Quadratic (default)." << std::endl;
+    //     }
+    // }
+    //
+    // auto interp = std::make_unique<LinearInterpolation>(xData, yData, std::move(scheme));
+    //
+    // // Outputs:
+    // std::cout << "\nResults:" << std::endl;
+    // std::cout << "Value at x=0.5 (extrapolation): " << (*interp)(0.5) << std::endl;
+    // std::cout << "Value at x=3.5 (interpolation): " << (*interp)(3.5) << std::endl;
+    // std::cout << "Value at x=6.0 (extrapolation): " << (*interp)(6.0) << std::endl;
     
     return 0;
     
