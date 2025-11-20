@@ -281,7 +281,7 @@ TEST_F(CubicSplineInterpolationTest, DerivativeCalculation) {  // Test derivativ
         bool isFinite = std::isfinite(result);  // Check if derivative is finite
         bool inRange = result > -10.0 && result < 10.0;  // Check if in reasonable range
         bool passed = isFinite && inRange;  // Overall test result
-        
+        ß
         std::cout << "  Spline derivative at x=" << std::fixed << std::setprecision(2) << x 
                   << ": spline=" << std::setprecision(6) << result 
                   << ", analytical=" << analytical
