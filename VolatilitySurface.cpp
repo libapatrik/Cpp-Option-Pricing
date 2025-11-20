@@ -71,11 +71,11 @@ void VolatilitySurface::initializeInterpolators()
 {
     // Initialize 1D interpolators for each maturity (smile interpolation)
     // cubic spline interpolation along strikes
-    _smileInterpolators.reserve(_maturities.size());                   // reserve space for maturities in _smileInterpolators vector
+    _smileInterpolators.reserve(_maturities.size());                     // reserve space for maturities in _smileInterpolators vector
     for (size_t i = 0; i < _maturities.size(); ++i) {                    // for each maturity
         if (_smileInterpolationType == SmileInterpolationType::CubicSpline) {      // check type: do cubic spline interpolation
             _smileInterpolators.push_back(
-                std::make_unique<CubicSplineInterpolation>(            // creates a unique pointer to a new CubicSplineInterpolation object
+                std::make_unique<CubicSplineInterpolation>(              // creates a unique pointer to a new CubicSplineInterpolation object
                     _strikes, _volatilities[i], 
                     CubicSplineInterpolation::BoundaryType::Natural));   // boundary type: natural
         } else {
@@ -86,10 +86,10 @@ void VolatilitySurface::initializeInterpolators()
     }
     
     // Initialize 1D interpolators for each strike (term structure interpolation)
-    _termStructureInterpolators.reserve(_strikes.size());          // reserve space for strikes
+    _termStructureInterpolators.reserve(_strikes.size());            // reserve space for strikes
     for (size_t j = 0; j < _strikes.size(); ++j) {                   // for each strike
         std::vector<double> termVols;                                // volatilities across maturities for strike j
-        termVols.reserve(_maturities.size());                      // reserve space for maturities
+        termVols.reserve(_maturities.size());                        // reserve space for maturities
         for (size_t i = 0; i < _maturities.size(); ++i) {            // for each maturity
             termVols.push_back(_volatilities[i][j]);                 // collect volatilities for strike j
         }
@@ -278,6 +278,12 @@ double VolatilitySurface::computeDupireLocalVolatility(double spot, double time)
     
     // Compute Black-Scholes d1 and d2 parameters
     // for denominator
+    // Ensure no division by zero
+    constexpr double MIN_TIME = 1e-12;
+    if (time = MIN_TIME) {
+        return impliedVol; // for very small times, return implied volatility
+    }
+    
     double sqrtTime = impliedVol * std::sqrt(time);
     double d1 = (std::log(spot / strike) + (riskFreeRate + 0.5 * impliedVol * impliedVol) * time) / sqrtTime;
     double d2 = d1 - sqrtTime;
@@ -446,7 +452,9 @@ VolatilitySurfaceBuilder& VolatilitySurfaceBuilder::setVolatility(double strike,
         _maturities.push_back(maturity);
     }
     
+    // ISSUE: We are not storing the volatility right? -> FIX: Use a map of (strike, maturity) -> volatility ?
     // Could be improved by maintaining a map of (strike, maturity) -> volatility ?
+    // i.e. std::map<std::pair<double, double>, double> volatilityMap; ?
     return *this;
 }
 

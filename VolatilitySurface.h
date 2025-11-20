@@ -116,7 +116,7 @@ class VolatilitySurfaceBuilder
 public:
     VolatilitySurfaceBuilder& addStrike(double strike);
     VolatilitySurfaceBuilder& addMaturity(double maturity);
-    VolatilitySurfaceBuilder& setVolatility(double strike, double maturity, double volatility);
+    VolatilitySurfaceBuilder& setVolatility(double strike, double maturity, double volatility);    // store volatility in a map
     VolatilitySurfaceBuilder& setSmileInterpolationType(VolatilitySurface::SmileInterpolationType type);
     VolatilitySurfaceBuilder& setMaturityInterpolationType(VolatilitySurface::MaturityInterpolationType type);
     VolatilitySurfaceBuilder& setDiscountCurve(const DiscountCurve& discountCurve);
