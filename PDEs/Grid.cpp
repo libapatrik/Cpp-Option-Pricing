@@ -101,10 +101,13 @@ void Grid::constructLogSpacedGrid()
     
     // Log-spaced grid: S_i = exp(ξ_i) where ξ_i is uniformly spaced in log-space
     // This concentrates more grid points near S_min (useful for low strikes)
-    
     // Handle S_min = 0 case (add small epsilon to avoid log(0))
     const double epsilon = 1e-10;
     double S_min_safe = std::max(_S_min, epsilon);
+    
+    if (_S_min < 0.0) {
+        throw std::invalid_argument("Grid: S_min must be non-negative");
+    }
     
     double log_S_min = std::log(S_min_safe);
     double log_S_max = std::log(_S_max);

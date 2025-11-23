@@ -43,11 +43,10 @@ int main()
     // TODO: Add FD AM Pricer
     
 
-    /// TODO: Fix this
     // ============================================================================
     // Test of InterpolationSchemes
     // ============================================================================
-    // Want to see how it prompts the user for selecting the extrapolation schemeß
+    // Demonstrates enum-based extrapolation design
     std::cout << "\nTesting InterpolationSchemes" << std::endl;
     std::vector<double> xData = {1.0, 2.0, 3.0, 4.0, 5.0};
     std::vector<double> yData = {2.0, 3.0, 4.0, 5.0, 6.0};
@@ -56,21 +55,21 @@ int main()
     int choice;
     std::cin >> choice;
     
-    std::unique_ptr<ExtrapolationScheme> scheme;
+    ExtrapolationType extraType;
     if (choice == 1) {
-        scheme = std::make_unique<FlatExtrapolation>();
+        extraType = ExtrapolationType::Flat;
     } else if (choice == 2) {
-        scheme = std::make_unique<LinearExtrapolation>();
+        extraType = ExtrapolationType::Linear;
     } else {
         // Default extrapolation
-        scheme = std::make_unique<QuadraticExtrapolation>();
+        extraType = ExtrapolationType::Quadratic;
         if (choice != 3) {
             std::cout << "Invalid choice. Using Quadratic (default)." << std::endl;
         }
     }
     
-    auto interp = std::make_unique<LinearInterpolation>(xData, yData, std::move(scheme));
-    
+    auto interp = std::make_unique<LinearInterpolation>(xData, yData, extraType);
+    // auto interp->std::make_unique<CubicSplineInterpolation>()
     // Outputs:
     std::cout << "\nResults:" << std::endl;
     std::cout << "Value at x=0.5 (extrapolation): " << (*interp)(0.5) << std::endl;

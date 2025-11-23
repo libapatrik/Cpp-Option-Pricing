@@ -1,18 +1,21 @@
-Start testing: Nov 06 07:33 CET
+Start testing: Nov 23 09:24 CET
 ----------------------------------------------------------
-Unable to find executable: /Users/patrikliba/CLionProjects/CppFM/build/test_volatility_surface_construction
 1/10 Testing: VolatilitySurfaceConstruction
 1/10 Test: VolatilitySurfaceConstruction
-Command: ""
+Command: "/Users/patrikliba/CLionProjects/CppFM/build/test_volatility_surface_construction"
 Directory: /Users/patrikliba/CLionProjects/CppFM/build
-"VolatilitySurfaceConstruction" start time: 
+"VolatilitySurfaceConstruction" start time: Nov 23 09:24 CET
 Output:
 ----------------------------------------------------------
+Running main() from /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest/src/gtest_main.cc
+[==========] Running 0 tests from 0 test suites.
+[==========] 0 tests from 0 test suites ran. (0 ms total)
+[  PASSED  ] 0 tests.
 <end of output>
-Test time =   0.00 sec
+Test time =   0.19 sec
 ----------------------------------------------------------
 Test Passed.
-"VolatilitySurfaceConstruction" end time: Nov 06 07:33 CET
+"VolatilitySurfaceConstruction" end time: Nov 23 09:24 CET
 "VolatilitySurfaceConstruction" time elapsed: 00:00:00
 ----------------------------------------------------------
 
@@ -20,7 +23,7 @@ Test Passed.
 2/10 Test: VolatilitySurfaceInterpolation
 Command: "/Users/patrikliba/CLionProjects/CppFM/build/test_interpolation"
 Directory: /Users/patrikliba/CLionProjects/CppFM/build
-"VolatilitySurfaceInterpolation" start time: Nov 06 07:33 CET
+"VolatilitySurfaceInterpolation" start time: Nov 23 09:24 CET
 Output:
 ----------------------------------------------------------
 Running main() from /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest/src/gtest_main.cc
@@ -28,7 +31,7 @@ Running main() from /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest
 [----------] Global test environment set-up.
 [----------] 6 tests from LinearInterpolationTest
 [ RUN      ] LinearInterpolationTest.ConstructorValidation
-[       OK ] LinearInterpolationTest.ConstructorValidation (0 ms)
+[       OK ] LinearInterpolationTest.ConstructorValidation (1 ms)
 [ RUN      ] LinearInterpolationTest.InterpolationAtKnownPoints
 
 === Linear Interpolation - Exact Data Points ===
@@ -58,14 +61,14 @@ Test Data:
 Test Data:
   X:      0.0     0.5     1.0     1.5     2.0     2.5     3.0
   Y:    1.000   0.800   0.600   0.400   0.200   0.000  -0.200
-  Left extrapolation at x=-0.50: expected=1.200000, actual=1.200000 [PASS]
-  Right extrapolation at x=3.50: expected=-0.400000, actual=-0.400000 [PASS]
+  Left extrapolation at x=-0.500: 1.200 [FINITE]
+  Right extrapolation at x=3.500: 0.010 [FINITE]
 [       OK ] LinearInterpolationTest.ExtrapolationBehavior (0 ms)
 [ RUN      ] LinearInterpolationTest.RangeFunctionality
 [       OK ] LinearInterpolationTest.RangeFunctionality (0 ms)
 [ RUN      ] LinearInterpolationTest.CloneFunctionality
 [       OK ] LinearInterpolationTest.CloneFunctionality (0 ms)
-[----------] 6 tests from LinearInterpolationTest (0 ms total)
+[----------] 6 tests from LinearInterpolationTest (1 ms total)
 
 [----------] 6 tests from CubicSplineInterpolationTest
 [ RUN      ] CubicSplineInterpolationTest.ConstructorValidation
@@ -123,6 +126,8 @@ Second derivatives:
   Boundary at x=4.00: spline=0.000000, required=0.000000, diff=0.000000 [PASS]
 [       OK ] CubicSplineInterpolationTest.SecondDerivativeCalculation (0 ms)
 [ RUN      ] CubicSplineInterpolationTest.ExtrapolationBehavior
+  Left extrapolation at x=-1.000000: 2.000000 [FINITE]
+  Right extrapolation at x=5.000000: 2.000000 [FINITE]
 [       OK ] CubicSplineInterpolationTest.ExtrapolationBehavior (0 ms)
 [ RUN      ] CubicSplineInterpolationTest.BoundaryConditions
 [       OK ] CubicSplineInterpolationTest.BoundaryConditions (0 ms)
@@ -175,77 +180,195 @@ Comparing Linear vs Cubic Spline between data points:
 [----------] 1 test from InterpolationPerformanceTest (0 ms total)
 
 [----------] Global test environment tear-down
-[==========] 17 tests from 5 test suites ran. (0 ms total)
+[==========] 17 tests from 5 test suites ran. (1 ms total)
 [  PASSED  ] 17 tests.
 <end of output>
-Test time =   0.01 sec
+Test time =   0.19 sec
 ----------------------------------------------------------
 Test Passed.
-"VolatilitySurfaceInterpolation" end time: Nov 06 07:33 CET
+"VolatilitySurfaceInterpolation" end time: Nov 23 09:24 CET
 "VolatilitySurfaceInterpolation" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-Unable to find executable: /Users/patrikliba/CLionProjects/CppFM/build/test_dupire
 3/10 Testing: VolatilitySurfaceDupire
 3/10 Test: VolatilitySurfaceDupire
-Command: ""
+Command: "/Users/patrikliba/CLionProjects/CppFM/build/test_dupire"
 Directory: /Users/patrikliba/CLionProjects/CppFM/build
-"VolatilitySurfaceDupire" start time: 
+"VolatilitySurfaceDupire" start time: Nov 23 09:24 CET
 Output:
 ----------------------------------------------------------
+Running main() from /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest/src/gtest_main.cc
+[==========] Running 0 tests from 0 test suites.
+[==========] 0 tests from 0 test suites ran. (0 ms total)
+[  PASSED  ] 0 tests.
 <end of output>
-Test time =   0.00 sec
+Test time =   0.20 sec
 ----------------------------------------------------------
 Test Passed.
-"VolatilitySurfaceDupire" end time: Nov 06 07:33 CET
+"VolatilitySurfaceDupire" end time: Nov 23 09:24 CET
 "VolatilitySurfaceDupire" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-Unable to find executable: /Users/patrikliba/CLionProjects/CppFM/build/test_black_scholes
 4/10 Testing: VolatilitySurfaceBlackScholes
 4/10 Test: VolatilitySurfaceBlackScholes
-Command: ""
+Command: "/Users/patrikliba/CLionProjects/CppFM/build/test_black_scholes"
 Directory: /Users/patrikliba/CLionProjects/CppFM/build
-"VolatilitySurfaceBlackScholes" start time: 
+"VolatilitySurfaceBlackScholes" start time: Nov 23 09:24 CET
 Output:
 ----------------------------------------------------------
+Running main() from /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest/src/gtest_main.cc
+[==========] Running 0 tests from 0 test suites.
+[==========] 0 tests from 0 test suites ran. (0 ms total)
+[  PASSED  ] 0 tests.
 <end of output>
-Test time =   0.00 sec
+Test time =   0.19 sec
 ----------------------------------------------------------
 Test Passed.
-"VolatilitySurfaceBlackScholes" end time: Nov 06 07:33 CET
+"VolatilitySurfaceBlackScholes" end time: Nov 23 09:24 CET
 "VolatilitySurfaceBlackScholes" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-Unable to find executable: /Users/patrikliba/CLionProjects/CppFM/build/test_greeks
 5/10 Testing: VolatilitySurfaceGreeks
 5/10 Test: VolatilitySurfaceGreeks
-Command: ""
+Command: "/Users/patrikliba/CLionProjects/CppFM/build/test_greeks"
 Directory: /Users/patrikliba/CLionProjects/CppFM/build
-"VolatilitySurfaceGreeks" start time: 
+"VolatilitySurfaceGreeks" start time: Nov 23 09:24 CET
 Output:
 ----------------------------------------------------------
+Running main() from /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest/src/gtest_main.cc
+[==========] Running 43 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 43 tests from GreeksTest
+[ RUN      ] GreeksTest.DeltaCallBasic
+[       OK ] GreeksTest.DeltaCallBasic (0 ms)
+[ RUN      ] GreeksTest.DeltaPutBasic
+[       OK ] GreeksTest.DeltaPutBasic (0 ms)
+[ RUN      ] GreeksTest.DeltaPutCallParity
+[       OK ] GreeksTest.DeltaPutCallParity (0 ms)
+[ RUN      ] GreeksTest.DeltaMoneyness
+[       OK ] GreeksTest.DeltaMoneyness (0 ms)
+[ RUN      ] GreeksTest.DeltaAtMaturity
+[       OK ] GreeksTest.DeltaAtMaturity (0 ms)
+[ RUN      ] GreeksTest.DeltaNumericalVerification
+[       OK ] GreeksTest.DeltaNumericalVerification (0 ms)
+[ RUN      ] GreeksTest.GammaBasic
+[       OK ] GreeksTest.GammaBasic (0 ms)
+[ RUN      ] GreeksTest.GammaMoneyness
+[       OK ] GreeksTest.GammaMoneyness (0 ms)
+[ RUN      ] GreeksTest.GammaAtMaturity
+[       OK ] GreeksTest.GammaAtMaturity (0 ms)
+[ RUN      ] GreeksTest.GammaNumericalVerification
+[       OK ] GreeksTest.GammaNumericalVerification (0 ms)
+[ RUN      ] GreeksTest.GammaPutCallIdentity
+[       OK ] GreeksTest.GammaPutCallIdentity (0 ms)
+[ RUN      ] GreeksTest.VegaBasic
+[       OK ] GreeksTest.VegaBasic (0 ms)
+[ RUN      ] GreeksTest.VegaMoneyness
+[       OK ] GreeksTest.VegaMoneyness (0 ms)
+[ RUN      ] GreeksTest.VegaAtMaturity
+[       OK ] GreeksTest.VegaAtMaturity (0 ms)
+[ RUN      ] GreeksTest.VegaTimeEffect
+[       OK ] GreeksTest.VegaTimeEffect (0 ms)
+[ RUN      ] GreeksTest.VegaNumericalVerification
+[       OK ] GreeksTest.VegaNumericalVerification (0 ms)
+[ RUN      ] GreeksTest.VegaPutCallIdentity
+[       OK ] GreeksTest.VegaPutCallIdentity (0 ms)
+[ RUN      ] GreeksTest.ThetaCallBasic
+[       OK ] GreeksTest.ThetaCallBasic (0 ms)
+[ RUN      ] GreeksTest.ThetaPutBasic
+[       OK ] GreeksTest.ThetaPutBasic (0 ms)
+[ RUN      ] GreeksTest.ThetaAtMaturity
+[       OK ] GreeksTest.ThetaAtMaturity (0 ms)
+[ RUN      ] GreeksTest.ThetaMoneyness
+[       OK ] GreeksTest.ThetaMoneyness (0 ms)
+[ RUN      ] GreeksTest.ThetaNumericalVerification
+[       OK ] GreeksTest.ThetaNumericalVerification (0 ms)
+[ RUN      ] GreeksTest.RhoCallBasic
+[       OK ] GreeksTest.RhoCallBasic (0 ms)
+[ RUN      ] GreeksTest.RhoPutBasic
+[       OK ] GreeksTest.RhoPutBasic (0 ms)
+[ RUN      ] GreeksTest.RhoAtMaturity
+[       OK ] GreeksTest.RhoAtMaturity (0 ms)
+[ RUN      ] GreeksTest.RhoTimeEffect
+[       OK ] GreeksTest.RhoTimeEffect (0 ms)
+[ RUN      ] GreeksTest.RhoNumericalVerification
+[       OK ] GreeksTest.RhoNumericalVerification (0 ms)
+[ RUN      ] GreeksTest.VannaBasic
+[       OK ] GreeksTest.VannaBasic (0 ms)
+[ RUN      ] GreeksTest.VannaAtMaturity
+[       OK ] GreeksTest.VannaAtMaturity (0 ms)
+[ RUN      ] GreeksTest.VannaPutCallIdentity
+[       OK ] GreeksTest.VannaPutCallIdentity (0 ms)
+[ RUN      ] GreeksTest.VolgaBasic
+[       OK ] GreeksTest.VolgaBasic (0 ms)
+[ RUN      ] GreeksTest.VolgaMoneyness
+[       OK ] GreeksTest.VolgaMoneyness (0 ms)
+[ RUN      ] GreeksTest.VolgaAtMaturity
+[       OK ] GreeksTest.VolgaAtMaturity (0 ms)
+[ RUN      ] GreeksTest.VolgaNumericalVerification
+[       OK ] GreeksTest.VolgaNumericalVerification (0 ms)
+[ RUN      ] GreeksTest.DeltaWithDiscountCurve
+[       OK ] GreeksTest.DeltaWithDiscountCurve (0 ms)
+[ RUN      ] GreeksTest.VegaWithDiscountCurve
+[       OK ] GreeksTest.VegaWithDiscountCurve (0 ms)
+[ RUN      ] GreeksTest.ThetaWithDiscountCurve
+[       OK ] GreeksTest.ThetaWithDiscountCurve (0 ms)
+[ RUN      ] GreeksTest.GammaWithDiscountCurve
+[       OK ] GreeksTest.GammaWithDiscountCurve (0 ms)
+[ RUN      ] GreeksTest.BlackScholesGammaVegaRelationship
+[       OK ] GreeksTest.BlackScholesGammaVegaRelationship (0 ms)
+[ RUN      ] GreeksTest.ParameterSensitivityConsistency
+[       OK ] GreeksTest.ParameterSensitivityConsistency (0 ms)
+[ RUN      ] GreeksTest.HighVolatilityRegime
+[       OK ] GreeksTest.HighVolatilityRegime (0 ms)
+[ RUN      ] GreeksTest.LongMaturity
+[       OK ] GreeksTest.LongMaturity (0 ms)
+[ RUN      ] GreeksTest.ShortMaturity
+[       OK ] GreeksTest.ShortMaturity (0 ms)
+[----------] 43 tests from GreeksTest (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 43 tests from 1 test suite ran. (0 ms total)
+[  PASSED  ] 43 tests.
 <end of output>
-Test time =   0.00 sec
+Test time =   0.19 sec
 ----------------------------------------------------------
 Test Passed.
-"VolatilitySurfaceGreeks" end time: Nov 06 07:33 CET
+"VolatilitySurfaceGreeks" end time: Nov 23 09:24 CET
 "VolatilitySurfaceGreeks" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-Unable to find executable: /Users/patrikliba/CLionProjects/CppFM/build/test_integration
 6/10 Testing: VolatilitySurfaceIntegration
 6/10 Test: VolatilitySurfaceIntegration
-Command: ""
+Command: "/Users/patrikliba/CLionProjects/CppFM/build/test_integration"
 Directory: /Users/patrikliba/CLionProjects/CppFM/build
-"VolatilitySurfaceIntegration" start time: 
+"VolatilitySurfaceIntegration" start time: Nov 23 09:24 CET
 Output:
 ----------------------------------------------------------
+[==========] Running 4 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 2 tests from BankAccountTest
+[ RUN      ] BankAccountTest.BankAccountStatsEmpty
+[       OK ] BankAccountTest.BankAccountStatsEmpty (0 ms)
+[ RUN      ] BankAccountTest.CanDepositMoney
+[       OK ] BankAccountTest.CanDepositMoney (0 ms)
+[----------] 2 tests from BankAccountTest (0 ms total)
+
+[----------] 2 tests from Default/WithdrawAccountTest
+[ RUN      ] Default/WithdrawAccountTest.FinalBalance/0
+[       OK ] Default/WithdrawAccountTest.FinalBalance/0 (0 ms)
+[ RUN      ] Default/WithdrawAccountTest.FinalBalance/1
+[       OK ] Default/WithdrawAccountTest.FinalBalance/1 (0 ms)
+[----------] 2 tests from Default/WithdrawAccountTest (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 4 tests from 2 test suites ran. (0 ms total)
+[  PASSED  ] 4 tests.
 <end of output>
-Test time =   0.00 sec
+Test time =   0.20 sec
 ----------------------------------------------------------
 Test Passed.
-"VolatilitySurfaceIntegration" end time: Nov 06 07:33 CET
+"VolatilitySurfaceIntegration" end time: Nov 23 09:24 CET
 "VolatilitySurfaceIntegration" time elapsed: 00:00:00
 ----------------------------------------------------------
 
@@ -253,7 +376,7 @@ Test Passed.
 7/10 Test: PDESolver
 Command: "/Users/patrikliba/CLionProjects/CppFM/build/test_pde_solver"
 Directory: /Users/patrikliba/CLionProjects/CppFM/build
-"PDESolver" start time: Nov 06 07:33 CET
+"PDESolver" start time: Nov 23 09:24 CET
 Output:
 ----------------------------------------------------------
 Running main() from /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest/src/gtest_main.cc
@@ -267,24 +390,12 @@ Grid: 101 spatial points, 100 time steps
 dt = 0.001, dx ≈ 0.01
 
 --- Explicit Solver ---
-Max error (Explicit): 4.04332e+31
+unknown file: Failure
+C++ exception with description "CFL stability condition violated for Explicit scheme!
+  μ = 1.000000 > 0.5
+  Solution: Increase time steps or use Implicit/CrankNicolson scheme." thrown in the test body.
 
---- Implicit Solver ---
-Max error (Implicit): 5.14467e-05
-
---- Crank-Nicolson Solver ---
-Max error (Crank-Nicolson): 7.34706e-06
-
-Sample comparison at x = 0.5:
-Analytical:      0.906018
-Explicit:        -4.67086e+30
-Implicit:        0.90607
-Crank-Nicolson:  0.906025
-/Users/patrikliba/CLionProjects/CppFM/tests/test_pde_solver.cpp:113: Failure
-Expected: (max_error_explicit) < (0.01), actual: 4.0433244696871201e+31 vs 0.01
-Explicit solver error too large
-
-[  FAILED  ] PDESolverTest.HeatEquation_AnalyticalSolution (4 ms)
+[  FAILED  ] PDESolverTest.HeatEquation_AnalyticalSolution (0 ms)
 [ RUN      ] PDESolverTest.BlackScholes_EuropeanCall
 
 === Black-Scholes European Call Test ===
@@ -296,39 +407,12 @@ Grid: 201 spatial points, 200 time steps
 --- Solving with ImplicitSolver ---
 
 --- Solving with Crank-Nicolson ---
+unknown file: Failure
+C++ exception with description "CFL stability condition violated for Explicit scheme!
+  μ = 4.000000 > 0.5
+  Solution: Increase time steps or use Implicit/CrankNicolson scheme." thrown in the test body.
 
-Results at S = 100:
-PDE Price Explicit:            -1.97418e+163
-PDE Price Implicit:            10.4445
-PDE Price Crank-Nicolson:      10.4497
-Black-Scholes Price:           10.4506
-
-Price differences:
-Difference Explicit:                 1.97418e+163
-Relative Error Explicit:             1.88906e+164%
-Difference Implicit:                 0.00611046
-Relative Error Implicit:             0.0584701%
-Difference Crank-Nicolson:           0.000859009
-Relative Error Crank-Nicolson:       0.00821972%
-
-Greeks at S = 100:
-Delta (PDE) Explicit:        6.99725e+162
-Delta (PDE) Implicit:        0.636754
-Delta (PDE) Crank-Nicolson:  0.636847
-Delta (BS):                  0.636831
-Gamma (PDE) Explicit:        1.04456e+164
-Gamma (PDE) Implicit:        0.018809
-Gamma (PDE) Crank-Nicolson:  0.0187705
-Gamma (BS):                  0.018762
-/Users/patrikliba/CLionProjects/CppFM/tests/test_pde_solver.cpp:253: Failure
-Expected: (rel_errorE) < (0.005), actual: 1.889062265480072e+162 vs 0.005
-PDE Explicit price differs from Black-Scholes by more than 0.5%
-
-/Users/patrikliba/CLionProjects/CppFM/tests/test_pde_solver.cpp:256: Failure
-Expected: (delta_errorE) < (0.01), actual: 6.9972469528794902e+162 vs 0.01
-Delta Explicit error too large
-
-[  FAILED  ] PDESolverTest.BlackScholes_EuropeanCall (21 ms)
+[  FAILED  ] PDESolverTest.BlackScholes_EuropeanCall (0 ms)
 [ RUN      ] PDESolverTest.Convergence_HeatEquation
 
 === Convergence Test ===
@@ -338,20 +422,20 @@ Refining grid to test convergence:
         51   2.057413e-05       0.000000
        101   5.169376e-06       3.980002
        201   1.295583e-06       3.990001
-       401   3.243012e-07       3.994998
-[       OK ] PDESolverTest.Convergence_HeatEquation (34 ms)
+       401   3.243011e-07       3.995000
+[       OK ] PDESolverTest.Convergence_HeatEquation (35 ms)
 [ RUN      ] PDESolverTest.DiffusionWithSource
 
 === Diffusion with Source Term ===
 Solving diffusion equation with constant source term
-Solution at x=0.5, t=0.500000: 0.462953
+Solution at x=0.5, t=0.500000: 0.231477
 
 Solution profile at t=0.500000:
   x=0.000000: u=0.000000
-  x=0.200000: u=0.336517
-  x=0.400000: u=0.451269
-  x=0.600000: u=0.451269
-  x=0.800000: u=0.336517
+  x=0.200000: u=0.168259
+  x=0.400000: u=0.225635
+  x=0.600000: u=0.225635
+  x=0.800000: u=0.168259
   x=1.000000: u=0.000000
 [       OK ] PDESolverTest.DiffusionWithSource (1 ms)
 [ RUN      ] PDESolverTest.Grid_Uniform
@@ -366,10 +450,10 @@ Spacing near S_min: 0.258925
 Spacing near S_max: 20.567177
 Log-spaced grid test passed
 [       OK ] PDESolverTest.Grid_LogSpaced (0 ms)
-[----------] 6 tests from PDESolverTest (61 ms total)
+[----------] 6 tests from PDESolverTest (37 ms total)
 
 [----------] Global test environment tear-down
-[==========] 6 tests from 1 test suite ran. (61 ms total)
+[==========] 6 tests from 1 test suite ran. (37 ms total)
 [  PASSED  ] 4 tests.
 [  FAILED  ] 2 tests, listed below:
 [  FAILED  ] PDESolverTest.HeatEquation_AnalyticalSolution
@@ -377,10 +461,10 @@ Log-spaced grid test passed
 
  2 FAILED TESTS
 <end of output>
-Test time =   0.07 sec
+Test time =   0.23 sec
 ----------------------------------------------------------
 Test Failed.
-"PDESolver" end time: Nov 06 07:33 CET
+"PDESolver" end time: Nov 23 09:24 CET
 "PDESolver" time elapsed: 00:00:00
 ----------------------------------------------------------
 
@@ -388,7 +472,7 @@ Test Failed.
 8/10 Test: PDEStability
 Command: "/Users/patrikliba/CLionProjects/CppFM/build/test_pde_stability"
 Directory: /Users/patrikliba/CLionProjects/CppFM/build
-"PDEStability" start time: Nov 06 07:33 CET
+"PDEStability" start time: Nov 23 09:24 CET
 Output:
 ----------------------------------------------------------
 Running main() from /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest/src/gtest_main.cc
@@ -403,29 +487,28 @@ Stability condition: mu = α·Δt/Δx² ≤ 0.5
 
        N_x       N_t         Δx         Δt          μ      Max Error      Status
 -----------------------------------------------------------------------------------
-       101       100    0.010000    0.001000    1.000000   4.043324e+31    UNSTABLE
-       101       200    0.010000    0.000500    0.500000   1.471282e-05    MARGINAL
-       101       400    0.010000    0.000250    0.250000   3.677501e-06      STABLE
+unknown file: Failure
+C++ exception with description "CFL stability condition violated for Explicit scheme!
+  μ = 1.000000 > 0.5
+  Solution: Increase time steps or use Implicit/CrankNicolson scheme." thrown in the test body.
 
-✓ Explicit method requires μ ≤ 0.5 for stability
-✓ Implicit and Crank-Nicolson are unconditionally stable
-[       OK ] PDEStabilityTest.ExplicitEuler_StabilityCondition (4 ms)
+[  FAILED  ] PDEStabilityTest.ExplicitEuler_StabilityCondition (0 ms)
 [ RUN      ] PDEStabilityTest.ImplicitVsExplicit_Efficiency
 
 === Implicit vs Explicit: Efficiency Comparison ===
 
-Fixed spatial resolution: N_x = 101, Δx = 1.000000e-02
-Time horizon: T = 1.000000e+00
+Fixed spatial resolution: N_x = 101, Δx = 0.01
+Time horizon: T = 1
 
 Explicit method:
-  Δt = 4.000000e-04 (limited by stability)
+  Δt = 0.0004 (limited by stability)
   N_t = 2500 time steps required
 
 Implicit method:
-  Δt = 4.000000e-03 (no stability limit)
+  Δt = 0.004 (no stability limit)
   N_t = 250 time steps required
 
-Time step ratio: 1.000000e+01x
+Time step ratio: 10x
 
 ✓ Implicit methods can use much larger time steps!
 ✓ This often makes them faster overall despite the tridiagonal solve
@@ -436,32 +519,36 @@ Time step ratio: 1.000000e+01x
 
 For Black-Scholes, diffusion coefficient varies with S:
   a(S) = 0.5·σ²·S²
-  Maximum at S_max = 3.000000e+02
-  a(S_max) = 1.800000e+03
+  Maximum at S_max = 300
+  a(S_max) = 1800
 
 For stability with explicit method:
-  ΔS = 1.500000e+00
-  Required: Δt ≤ 6.250000e-04
-  Safe choice: Δt ≤ 5.000000e-04
+  ΔS = 1.5
+  Required: Δt ≤ 0.000625
+  Safe choice: Δt ≤ 0.0005
   This requires N_t ≥ 2001 time steps!
 
 Testing explicit solver with safe time step...
-Option price at S=1.000000e+02: 1.045024e+01
-Black-Scholes price: 1.045058e+01
-Relative error: 3.260924e-03%
+Option price at S=100: 10.4502
+Black-Scholes price: 10.4506
+Relative error: 0.00326092%
 
 ✓ Explicit method works when stability condition is satisfied
-[       OK ] PDEStabilityTest.BlackScholes_VariableCoefficients (46 ms)
-[----------] 3 tests from PDEStabilityTest (51 ms total)
+[       OK ] PDEStabilityTest.BlackScholes_VariableCoefficients (89 ms)
+[----------] 3 tests from PDEStabilityTest (89 ms total)
 
 [----------] Global test environment tear-down
-[==========] 3 tests from 1 test suite ran. (51 ms total)
-[  PASSED  ] 3 tests.
+[==========] 3 tests from 1 test suite ran. (89 ms total)
+[  PASSED  ] 2 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] PDEStabilityTest.ExplicitEuler_StabilityCondition
+
+ 1 FAILED TEST
 <end of output>
-Test time =   0.06 sec
+Test time =   0.29 sec
 ----------------------------------------------------------
-Test Passed.
-"PDEStability" end time: Nov 06 07:33 CET
+Test Failed.
+"PDEStability" end time: Nov 23 09:24 CET
 "PDEStability" time elapsed: 00:00:00
 ----------------------------------------------------------
 
@@ -469,7 +556,7 @@ Test Passed.
 9/10 Test: TridiagonalSolver
 Command: "/Users/patrikliba/CLionProjects/CppFM/build/test_tridiagonal_solver"
 Directory: /Users/patrikliba/CLionProjects/CppFM/build
-"TridiagonalSolver" start time: Nov 06 07:33 CET
+"TridiagonalSolver" start time: Nov 23 09:24 CET
 Output:
 ----------------------------------------------------------
 Running main() from /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest/src/gtest_main.cc
@@ -499,10 +586,10 @@ Large system (N=100) max error: 1.42109e-14
 [==========] 7 tests from 1 test suite ran. (0 ms total)
 [  PASSED  ] 7 tests.
 <end of output>
-Test time =   0.01 sec
+Test time =   0.19 sec
 ----------------------------------------------------------
 Test Passed.
-"TridiagonalSolver" end time: Nov 06 07:33 CET
+"TridiagonalSolver" end time: Nov 23 09:24 CET
 "TridiagonalSolver" time elapsed: 00:00:00
 ----------------------------------------------------------
 
@@ -510,7 +597,7 @@ Test Passed.
 10/10 Test: PDEGreeks
 Command: "/Users/patrikliba/CLionProjects/CppFM/build/test_pde_greeks"
 Directory: /Users/patrikliba/CLionProjects/CppFM/build
-"PDEGreeks" start time: Nov 06 07:33 CET
+"PDEGreeks" start time: Nov 23 09:24 CET
 Output:
 ----------------------------------------------------------
 Running main() from /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest-src/googletest/src/gtest_main.cc
@@ -519,88 +606,16 @@ Running main() from /Users/patrikliba/CLionProjects/CppFM/build/_deps/googletest
 [----------] 4 tests from PDEGreeksTest
 [ RUN      ] PDEGreeksTest.AllGreeksMatchAnalytical
 TEST 1: PDE Greeks for European Call:
-/Users/patrikliba/CLionProjects/CppFM/tests/test_pde_greeks.cpp:137: Failure
-The difference between greeksCall.value and BlackScholesFormulas::callPrice(S0, K, r, sigma, T) is 0.0029016943500632664, which exceeds OPTION_TOL, where
-greeksCall.value evaluates to 10.453485266535628,
-BlackScholesFormulas::callPrice(S0, K, r, sigma, T) evaluates to 10.450583572185565, and
-OPTION_TOL evaluates to 0.001.
-
-/Users/patrikliba/CLionProjects/CppFM/tests/test_pde_greeks.cpp:140: Failure
-The difference between greeksCall.vega and BlackScholesFormulas::vega(S0, K, r, sigma, T) is 0.1685168018573151, which exceeds OPTION_TOL, where
-greeksCall.vega evaluates to 37.692551493551107,
-BlackScholesFormulas::vega(S0, K, r, sigma, T) evaluates to 37.524034691693792, and
-OPTION_TOL evaluates to 0.001.
-
-/Users/patrikliba/CLionProjects/CppFM/tests/test_pde_greeks.cpp:141: Failure
-The difference between greeksCall.theta and BlackScholesFormulas::theta(S0, K, r, sigma, T, Option::Type::Call) is 0.01852048871969636, which exceeds OPTION_TOL, where
-greeksCall.theta evaluates to -6.4325480351578932,
-BlackScholesFormulas::theta(S0, K, r, sigma, T, Option::Type::Call) evaluates to -6.4140275464381968, and
-OPTION_TOL evaluates to 0.001.
-
-/Users/patrikliba/CLionProjects/CppFM/tests/test_pde_greeks.cpp:142: Failure
-The difference between greeksCall.rho and BlackScholesFormulas::rho(S0, K, r, sigma, T, Option::Type::Call) is 0.03571662336472059, which exceeds OPTION_TOL, where
-greeksCall.rho evaluates to 53.268198168741066,
-BlackScholesFormulas::rho(S0, K, r, sigma, T, Option::Type::Call) evaluates to 53.232481545376345, and
-OPTION_TOL evaluates to 0.001.
-
-/Users/patrikliba/CLionProjects/CppFM/tests/test_pde_greeks.cpp:143: Failure
-The difference between greeksCall.vanna and BlackScholesFormulas::vanna(S0, K, r, sigma, T) is 0.023363293637417959, which exceeds OPTION_TOL, where
-greeksCall.vanna evaluates to -0.25806696655028549,
-BlackScholesFormulas::vanna(S0, K, r, sigma, T) evaluates to -0.28143026018770345, and
-OPTION_TOL evaluates to 0.001.
-
-/Users/patrikliba/CLionProjects/CppFM/tests/test_pde_greeks.cpp:144: Failure
-The difference between greeksCall.volga and BlackScholesFormulas::volga(S0, K, r, sigma, T) is 6.370221301138665, which exceeds OPTION_TOL, where
-greeksCall.volga evaluates to 16.220280407708287,
-BlackScholesFormulas::volga(S0, K, r, sigma, T) evaluates to 9.8500591065696224, and
-OPTION_TOL evaluates to 0.001.
-
 
 TEST 2: PDE Greeks for European Put:
-/Users/patrikliba/CLionProjects/CppFM/tests/test_pde_greeks.cpp:150: Failure
-The difference between greeksPut.value and BlackScholesFormulas::putPrice(S0, K, r, sigma, T) is 0.001327272479887398, which exceeds OPTION_TOL, where
-greeksPut.value evaluates to 5.572198749777086,
-BlackScholesFormulas::putPrice(S0, K, r, sigma, T) evaluates to 5.5735260222569734, and
-OPTION_TOL evaluates to 0.001.
-
-/Users/patrikliba/CLionProjects/CppFM/tests/test_pde_greeks.cpp:153: Failure
-The difference between greeksPut.vega and BlackScholesFormulas::vega(S0, K, r, sigma, T) is 0.076567674878120329, which exceeds OPTION_TOL, where
-greeksPut.vega evaluates to 37.447467016815672,
-BlackScholesFormulas::vega(S0, K, r, sigma, T) evaluates to 37.524034691693792, and
-OPTION_TOL evaluates to 0.001.
-
-/Users/patrikliba/CLionProjects/CppFM/tests/test_pde_greeks.cpp:154: Failure
-The difference between greeksPut.theta and BlackScholesFormulas::theta(S0, K, r, sigma, T, Option::Type::Put) is 0.0059875679363261547, which exceeds OPTION_TOL, where
-greeksPut.theta evaluates to -1.6518928559982999,
-BlackScholesFormulas::theta(S0, K, r, sigma, T, Option::Type::Put) evaluates to -1.6578804239346261, and
-OPTION_TOL evaluates to 0.001.
-
-/Users/patrikliba/CLionProjects/CppFM/tests/test_pde_greeks.cpp:155: Failure
-The difference between greeksPut.rho and BlackScholesFormulas::rho(S0, K, r, sigma, T, Option::Type::Put) is 0.02187080911997441, which exceeds OPTION_TOL, where
-greeksPut.rho evaluates to -41.868590095575087,
-BlackScholesFormulas::rho(S0, K, r, sigma, T, Option::Type::Put) evaluates to -41.890460904695061, and
-OPTION_TOL evaluates to 0.001.
-
-/Users/patrikliba/CLionProjects/CppFM/tests/test_pde_greeks.cpp:156: Failure
-The difference between greeksPut.vanna and BlackScholesFormulas::vanna(S0, K, r, sigma, T) is 0.012505258199707159, which exceeds OPTION_TOL, where
-greeksPut.vanna evaluates to -0.26892500198799629,
-BlackScholesFormulas::vanna(S0, K, r, sigma, T) evaluates to -0.28143026018770345, and
-OPTION_TOL evaluates to 0.001.
-
-/Users/patrikliba/CLionProjects/CppFM/tests/test_pde_greeks.cpp:157: Failure
-The difference between greeksPut.volga and BlackScholesFormulas::volga(S0, K, r, sigma, T) is 4.3887467264634576, which exceeds OPTION_TOL, where
-greeksPut.volga evaluates to 5.4613123801061647,
-BlackScholesFormulas::volga(S0, K, r, sigma, T) evaluates to 9.8500591065696224, and
-OPTION_TOL evaluates to 0.001.
-
-[  FAILED  ] PDEGreeksTest.AllGreeksMatchAnalytical (177 ms)
+[       OK ] PDEGreeksTest.AllGreeksMatchAnalytical (67025 ms)
 [ RUN      ] PDEGreeksTest.DeltaIsPositiveForCall
-[       OK ] PDEGreeksTest.DeltaIsPositiveForCall (17 ms)
+[       OK ] PDEGreeksTest.DeltaIsPositiveForCall (6559 ms)
 [ RUN      ] PDEGreeksTest.GammaIsPositive
-[       OK ] PDEGreeksTest.GammaIsPositive (17 ms)
+[       OK ] PDEGreeksTest.GammaIsPositive (6545 ms)
 [ RUN      ] PDEGreeksTest.VegaIsPositive
-[       OK ] PDEGreeksTest.VegaIsPositive (35 ms)
-[----------] 4 tests from PDEGreeksTest (249 ms total)
+[       OK ] PDEGreeksTest.VegaIsPositive (13466 ms)
+[----------] 4 tests from PDEGreeksTest (93597 ms total)
 
 [----------] 1 test from PDEGreeksConvergence
 [ RUN      ] PDEGreeksConvergence.DeltaConvergesWithFinerGrid
@@ -608,18 +623,14 @@ OPTION_TOL evaluates to 0.001.
 [----------] 1 test from PDEGreeksConvergence (0 ms total)
 
 [----------] Global test environment tear-down
-[==========] 5 tests from 2 test suites ran. (249 ms total)
-[  PASSED  ] 4 tests.
-[  FAILED  ] 1 test, listed below:
-[  FAILED  ] PDEGreeksTest.AllGreeksMatchAnalytical
-
- 1 FAILED TEST
+[==========] 5 tests from 2 test suites ran. (93597 ms total)
+[  PASSED  ] 5 tests.
 <end of output>
-Test time =   0.25 sec
+Test time =  93.79 sec
 ----------------------------------------------------------
-Test Failed.
-"PDEGreeks" end time: Nov 06 07:33 CET
-"PDEGreeks" time elapsed: 00:00:00
+Test Passed.
+"PDEGreeks" end time: Nov 23 09:26 CET
+"PDEGreeks" time elapsed: 00:01:33
 ----------------------------------------------------------
 
-End testing: Nov 06 07:33 CET
+End testing: Nov 23 09:26 CET

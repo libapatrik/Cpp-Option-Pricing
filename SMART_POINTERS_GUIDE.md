@@ -10,6 +10,9 @@
 6. [std::weak_ptr](#stdweak_ptr)
 7. [When to Use Which?](#when-to-use-which)
 8. [Common Patterns in Your Codebase](#common-patterns)
+9. [std::vector](#stdvector)
+10. [operator() - Function Call Operator](#operator-function-call-operator)
+11. [operator[] - Subscript Operator](#operator-subscript-operator)
 
 ---
 
@@ -571,6 +574,16 @@ Do you need shared ownership?
 | `std::shared_ptr` | Shared    | Yes          | Multiple owners, shared resources    |
 | `std::weak_ptr`   | None      | Yes          | Break circular references, observers |
 
+### Container & Operator Summary Table
+
+| Feature | Complexity | Bounds Check | Use Case |
+| ------- | ---------- | ------------ | -------- |
+| `std::vector::operator[]` | O(1) | No | Fast array access |
+| `std::vector::at()` | O(1) | Yes (throws) | Safe array access |
+| `std::vector::push_back()` | O(1) amortized | N/A | Add element |
+| `operator()` | O(1) | N/A | Make objects callable |
+| `operator[]` | O(1) typically | Depends on impl | Array-like access |
+
 ### Your Codebase Analysis
 
 **Your codebase uses `std::unique_ptr` exclusively**, which is **excellent** because:
@@ -679,6 +692,50 @@ std::vector<std::unique_ptr<InterpolationScheme>> _termStructureInterpolators;
 **Pattern:** Store polymorphic objects in containers
 **Benefit:** Polymorphism, automatic cleanup, clear ownership
 
+### Pattern 6: Implementing `operator()` for Callable Objects
+
+```cpp
+class Comparator {
+    int _threshold;
+public:
+    Comparator(int threshold) : _threshold(threshold) {}
+    
+    bool operator()(int value) const {
+        return value > _threshold;
+    }
+};
+
+// Usage with STL
+std::vector<int> vec = {1, 5, 10, 15};
+Comparator gt5(5);
+auto it = std::find_if(vec.begin(), vec.end(), gt5);
+```
+
+**Pattern:** Implement `operator()` to make objects callable
+**Benefit:** Stateful predicates, reusable logic, STL compatibility
+
+### Pattern 7: Implementing `operator[]` for Container Access
+
+```cpp
+class SafeArray {
+    int* _data;
+    size_t _size;
+public:
+    // Non-const version (modification)
+    int& operator[](size_t index) {
+        return _data[index];
+    }
+    
+    // Const version (read-only)
+    const int& operator[](size_t index) const {
+        return _data[index];
+    }
+};
+```
+
+**Pattern:** Provide both const and non-const `operator[]`
+**Benefit:** Array-like access, const correctness, intuitive interface
+
 ---
 
 ## Best Practices
@@ -766,39 +823,76 @@ auto scheme = std::make_unique<FlatExtrapolation>();
 
 ---
 
-## Interview Quick Reference: Smart Pointers
+## Interview Quick Reference: Smart Pointers & Containers
 
 ### Essential Code Patterns
 
 ```cpp
 // ============================================
-// CREATION
+// SMART POINTERS - CREATION
 // ============================================
 auto uptr = std::make_unique<MyClass>(args);     // unique_ptr
 auto sptr = std::make_shared<MyClass>(args);     // shared_ptr
 std::weak_ptr<MyClass> wptr = sptr;            // weak_ptr
 
 // ============================================
-// USAGE
+// SMART POINTERS - USAGE
 // ============================================
 if (uptr) uptr->method();                        // unique_ptr
 if (sptr) sptr->method();                        // shared_ptr
 if (auto locked = wptr.lock()) locked->method(); // weak_ptr
 
 // ============================================
-// OWNERSHIP TRANSFER
+// SMART POINTERS - OWNERSHIP TRANSFER
 // ============================================
 auto uptr2 = std::move(uptr);                    // unique_ptr (move)
 auto sptr2 = sptr;                                // shared_ptr (copy, ref count++)
 
 // ============================================
-// OPERATIONS
+// SMART POINTERS - OPERATIONS
 // ============================================
 uptr.reset();                                     // Delete, set null
 sptr.reset();                                     // Decrease ref count
 MyClass* raw = uptr.get();                        // Get raw (don't delete!)
 size_t count = sptr.use_count();                  // Reference count
 if (wptr.expired()) { /* deleted */ }             // Check if valid
+
+// ============================================
+// VECTOR - OPERATIONS
+// ============================================
+std::vector<int> vec;
+vec.push_back(42);                                // Add element
+vec[0] = 10;                                      // Access/modify
+vec.size();                                       // Get size
+vec.capacity();                                   // Get capacity
+vec.reserve(100);                                 // Reserve memory
+vec.resize(50);                                   // Resize
+
+// ============================================
+// OPERATOR() - FUNCTOR
+// ============================================
+class Adder {
+    int _value;
+public:
+    Adder(int v) : _value(v) {}
+    int operator()(int x) const { return x + _value; }
+};
+Adder add5(5);
+int result = add5(10);                           // Calls operator()
+
+// ============================================
+// OPERATOR[] - SUBSCRIPT
+// ============================================
+class Array {
+    int* _data;
+    size_t _size;
+public:
+    int& operator[](size_t i) { return _data[i]; }
+    const int& operator[](size_t i) const { return _data[i]; }
+};
+Array arr(10);
+arr[0] = 42;                                      // Modify
+int val = arr[0];                                 // Read
 ```
 
 ---
@@ -824,6 +918,18 @@ if (wptr.expired()) { /* deleted */ }             // Check if valid
 **Q: When to use which?**
 
 > Default: `unique_ptr`. Shared ownership: `shared_ptr`. Break cycles: `weak_ptr`.
+
+**Q: How does `std::vector` work internally?**
+
+> Dynamic array with capacity management. Stores pointer, size, capacity. Doubles capacity when full for amortized O(1) push_back. Uses placement new for construction, explicit destructor calls.
+
+**Q: What is `operator()`?**
+
+> Function call operator makes objects callable. Implement `ReturnType operator()(Params...)`. Can maintain state, overload for different signatures. Used with STL algorithms.
+
+**Q: What is `operator[]`?**
+
+> Subscript operator provides array-like access. Implement `T& operator[](Index)` and `const T& operator[](Index) const`. Usually no bounds checking (use `at()` for that). Should be O(1).
 
 ---
 
@@ -1203,6 +1309,637 @@ struct ControlBlock {
 
 ---
 
+### 6. `std::vector` - Simplified Implementation
+
+```cpp
+template<typename T>
+class vector {
+private:
+    T* _data;              // Pointer to dynamically allocated array
+    size_t _size;          // Number of elements currently stored
+    size_t _capacity;      // Total capacity of allocated memory
+
+    void reallocate(size_t newCapacity) {
+        T* newData = static_cast<T*>(::operator new(newCapacity * sizeof(T)));
+        
+        // Move existing elements to new memory
+        size_t moveCount = _size < newCapacity ? _size : newCapacity;
+        for (size_t i = 0; i < moveCount; ++i) {
+            new (newData + i) T(std::move(_data[i]));  // Placement new + move
+            _data[i].~T();  // Destroy old element
+        }
+        
+        // Destroy remaining old elements if shrinking
+        for (size_t i = moveCount; i < _size; ++i) {
+            _data[i].~T();
+        }
+        
+        ::operator delete(_data);
+        _data = newData;
+        _capacity = newCapacity;
+        _size = moveCount;
+    }
+
+public:
+    // Default constructor
+    vector() : _data(nullptr), _size(0), _capacity(0) {}
+    
+    // Constructor with initial size
+    explicit vector(size_t count) : _size(count), _capacity(count) {
+        _data = static_cast<T*>(::operator new(_capacity * sizeof(T)));
+        for (size_t i = 0; i < _size; ++i) {
+            new (_data + i) T();  // Default construct each element
+        }
+    }
+    
+    // Copy constructor
+    vector(const vector& other) : _size(other._size), _capacity(other._capacity) {
+        _data = static_cast<T*>(::operator new(_capacity * sizeof(T)));
+        for (size_t i = 0; i < _size; ++i) {
+            new (_data + i) T(other._data[i]);  // Copy construct
+        }
+    }
+    
+    // Move constructor
+    vector(vector&& other) noexcept 
+        : _data(other._data), _size(other._size), _capacity(other._capacity) {
+        other._data = nullptr;
+        other._size = 0;
+        other._capacity = 0;
+    }
+    
+    // Destructor
+    ~vector() {
+        clear();
+        ::operator delete(_data);
+    }
+    
+    // Copy assignment
+    vector& operator=(const vector& other) {
+        if (this != &other) {
+            clear();
+            if (_capacity < other._size) {
+                reallocate(other._size);
+            }
+            _size = other._size;
+            for (size_t i = 0; i < _size; ++i) {
+                new (_data + i) T(other._data[i]);
+            }
+        }
+        return *this;
+    }
+    
+    // Move assignment
+    vector& operator=(vector&& other) noexcept {
+        if (this != &other) {
+            clear();
+            ::operator delete(_data);
+            _data = other._data;
+            _size = other._size;
+            _capacity = other._capacity;
+            other._data = nullptr;
+            other._size = 0;
+            other._capacity = 0;
+        }
+        return *this;
+    }
+    
+    // Subscript operator (non-const)
+    T& operator[](size_t index) {
+        return _data[index];
+    }
+    
+    // Subscript operator (const)
+    const T& operator[](size_t index) const {
+        return _data[index];
+    }
+    
+    // At with bounds checking
+    T& at(size_t index) {
+        if (index >= _size) {
+            throw std::out_of_range("Index out of range");
+        }
+        return _data[index];
+    }
+    
+    const T& at(size_t index) const {
+        if (index >= _size) {
+            throw std::out_of_range("Index out of range");
+        }
+        return _data[index];
+    }
+    
+    // Size
+    size_t size() const { return _size; }
+    
+    // Capacity
+    size_t capacity() const { return _capacity; }
+    
+    // Empty
+    bool empty() const { return _size == 0; }
+    
+    // Reserve
+    void reserve(size_t newCapacity) {
+        if (newCapacity > _capacity) {
+            reallocate(newCapacity);
+        }
+    }
+    
+    // Resize
+    void resize(size_t newSize) {
+        if (newSize > _capacity) {
+            reserve(newSize * 2);  // Common growth strategy
+        }
+        if (newSize > _size) {
+            // Construct new elements
+            for (size_t i = _size; i < newSize; ++i) {
+                new (_data + i) T();
+            }
+        } else {
+            // Destroy excess elements
+            for (size_t i = newSize; i < _size; ++i) {
+                _data[i].~T();
+            }
+        }
+        _size = newSize;
+    }
+    
+    // Push back
+    void push_back(const T& value) {
+        if (_size >= _capacity) {
+            reserve(_capacity == 0 ? 1 : _capacity * 2);  // Double capacity
+        }
+        new (_data + _size) T(value);  // Copy construct
+        ++_size;
+    }
+    
+    void push_back(T&& value) {
+        if (_size >= _capacity) {
+            reserve(_capacity == 0 ? 1 : _capacity * 2);
+        }
+        new (_data + _size) T(std::move(value));  // Move construct
+        ++_size;
+    }
+    
+    // Pop back
+    void pop_back() {
+        if (_size > 0) {
+            _data[_size - 1].~T();
+            --_size;
+        }
+    }
+    
+    // Clear
+    void clear() {
+        for (size_t i = 0; i < _size; ++i) {
+            _data[i].~T();
+        }
+        _size = 0;
+    }
+    
+    // Front
+    T& front() { return _data[0]; }
+    const T& front() const { return _data[0]; }
+    
+    // Back
+    T& back() { return _data[_size - 1]; }
+    const T& back() const { return _data[_size - 1]; }
+    
+    // Data (get raw pointer)
+    T* data() { return _data; }
+    const T* data() const { return _data; }
+};
+```
+
+**Key Points:**
+
+- **Dynamic allocation**: Uses `operator new`/`operator delete` for raw memory
+- **Placement new**: Constructs objects in-place using `new (ptr) T(...)`
+- **Explicit destruction**: Calls `~T()` before deallocating
+- **Growth strategy**: Doubles capacity when full (amortized O(1) push_back)
+- **Move semantics**: Efficiently transfers ownership
+- **Exception safety**: Proper cleanup in destructor
+
+**Interview Answer:**
+
+> "`vector` uses dynamic array with capacity management. Stores pointer, size, capacity. Doubles capacity when full for amortized O(1) push_back. Uses placement new for construction, explicit destructor calls. Move constructor transfers pointer ownership. Subscript operator provides O(1) access."
+
+---
+
+### 7. `operator()` - Function Call Operator Implementation
+
+The function call operator `operator()` allows objects to be called like functions. These are called **functors** or **function objects**.
+
+#### Basic Implementation
+
+```cpp
+class Adder {
+private:
+    int _value;
+public:
+    Adder(int value) : _value(value) {}
+    
+    // Function call operator
+    int operator()(int x) const {
+        return x + _value;
+    }
+};
+
+// Usage
+Adder add5(5);
+int result = add5(10);  // Calls operator(), returns 15
+```
+
+#### Template Functor (Generic)
+
+```cpp
+template<typename T>
+class Multiplier {
+private:
+    T _factor;
+public:
+    Multiplier(T factor) : _factor(factor) {}
+    
+    T operator()(T x) const {
+        return x * _factor;
+    }
+};
+
+// Usage
+Multiplier<double> times2(2.0);
+double result = times2(3.5);  // Returns 7.0
+```
+
+#### Multiple Parameters
+
+```cpp
+class Calculator {
+public:
+    // Overload operator() for different arities
+    int operator()(int a, int b) const {
+        return a + b;
+    }
+    
+    int operator()(int a, int b, int c) const {
+        return a + b + c;
+    }
+    
+    double operator()(double a, double b) const {
+        return a * b;
+    }
+};
+
+// Usage
+Calculator calc;
+int sum = calc(1, 2);           // Calls first operator()
+int sum3 = calc(1, 2, 3);       // Calls second operator()
+double prod = calc(2.5, 3.0);   // Calls third operator()
+```
+
+#### Stateful Functor
+
+```cpp
+class Counter {
+private:
+    mutable int _count;  // mutable allows modification in const methods
+public:
+    Counter() : _count(0) {}
+    
+    int operator()() const {
+        return ++_count;  // Increment and return
+    }
+    
+    void reset() {
+        _count = 0;
+    }
+    
+    int getCount() const {
+        return _count;
+    }
+};
+
+// Usage
+Counter counter;
+int a = counter();  // Returns 1
+int b = counter();  // Returns 2
+int c = counter();  // Returns 3
+```
+
+#### Lambda Equivalent
+
+```cpp
+// Lambda (C++11)
+auto add5 = [value = 5](int x) { return x + value; };
+int result = add5(10);  // Returns 15
+
+// Equivalent functor
+class Add5 {
+    int value = 5;
+public:
+    int operator()(int x) const { return x + value; }
+};
+```
+
+#### Use Case: STL Algorithms
+
+```cpp
+class GreaterThan {
+private:
+    int _threshold;
+public:
+    GreaterThan(int threshold) : _threshold(threshold) {}
+    
+    bool operator()(int value) const {
+        return value > _threshold;
+    }
+};
+
+// Usage with STL algorithms
+std::vector<int> vec = {1, 5, 10, 15, 20};
+GreaterThan gt10(10);
+auto it = std::find_if(vec.begin(), vec.end(), gt10);
+// Finds first element > 10
+```
+
+#### Advanced: Generic Callable Wrapper
+
+```cpp
+template<typename T>
+class Function {
+private:
+    T _func;
+public:
+    Function(T func) : _func(func) {}
+    
+    template<typename... Args>
+    auto operator()(Args&&... args) -> decltype(_func(std::forward<Args>(args)...)) {
+        return _func(std::forward<Args>(args)...);
+    }
+};
+
+// Usage
+Function<int(*)(int, int)> add([](int a, int b) { return a + b; });
+int result = add(3, 4);  // Returns 7
+```
+
+**Key Points:**
+
+- **Callable objects**: Makes objects behave like functions
+- **State preservation**: Can maintain state between calls
+- **Overloading**: Can have multiple `operator()` with different signatures
+- **STL compatibility**: Works with algorithms expecting callables
+- **Lambda alternative**: Lambdas are syntactic sugar for functors
+
+**Interview Answer:**
+
+> "`operator()` makes objects callable. Implement `ReturnType operator()(Params...)`. Can maintain state, overload for different signatures. Used with STL algorithms. Lambdas are syntactic sugar for functors with `operator()`."
+
+---
+
+### 8. `operator[]` - Subscript Operator Implementation
+
+The subscript operator `operator[]` provides array-like access to container elements.
+
+#### Basic Implementation
+
+```cpp
+class Array {
+private:
+    int* _data;
+    size_t _size;
+public:
+    Array(size_t size) : _size(size) {
+        _data = new int[_size];
+    }
+    
+    ~Array() {
+        delete[] _data;
+    }
+    
+    // Non-const version (allows modification)
+    int& operator[](size_t index) {
+        return _data[index];
+    }
+    
+    // Const version (read-only)
+    const int& operator[](size_t index) const {
+        return _data[index];
+    }
+    
+    size_t size() const { return _size; }
+};
+
+// Usage
+Array arr(10);
+arr[0] = 42;        // Calls non-const operator[]
+int val = arr[0];   // Calls const operator[]
+```
+
+#### With Bounds Checking
+
+```cpp
+class SafeArray {
+private:
+    int* _data;
+    size_t _size;
+public:
+    SafeArray(size_t size) : _size(size) {
+        _data = new int[_size];
+    }
+    
+    ~SafeArray() {
+        delete[] _data;
+    }
+    
+    int& operator[](size_t index) {
+        if (index >= _size) {
+            throw std::out_of_range("Index out of bounds");
+        }
+        return _data[index];
+    }
+    
+    const int& operator[](size_t index) const {
+        if (index >= _size) {
+            throw std::out_of_range("Index out of bounds");
+        }
+        return _data[index];
+    }
+};
+```
+
+#### 2D Array (Matrix)
+
+```cpp
+class Matrix {
+private:
+    double* _data;
+    size_t _rows;
+    size_t _cols;
+    
+    size_t index(size_t row, size_t col) const {
+        return row * _cols + col;
+    }
+public:
+    Matrix(size_t rows, size_t cols) : _rows(rows), _cols(cols) {
+        _data = new double[_rows * _cols];
+    }
+    
+    ~Matrix() {
+        delete[] _data;
+    }
+    
+    // Return proxy for row access
+    class RowProxy {
+    private:
+        Matrix& _matrix;
+        size_t _row;
+    public:
+        RowProxy(Matrix& matrix, size_t row) : _matrix(matrix), _row(row) {}
+        
+        double& operator[](size_t col) {
+            return _matrix._data[_matrix.index(_row, col)];
+        }
+    };
+    
+    class ConstRowProxy {
+    private:
+        const Matrix& _matrix;
+        size_t _row;
+    public:
+        ConstRowProxy(const Matrix& matrix, size_t row) 
+            : _matrix(matrix), _row(row) {}
+        
+        const double& operator[](size_t col) const {
+            return _matrix._data[_matrix.index(_row, col)];
+        }
+    };
+    
+    RowProxy operator[](size_t row) {
+        return RowProxy(*this, row);
+    }
+    
+    ConstRowProxy operator[](size_t row) const {
+        return ConstRowProxy(*this, row);
+    }
+};
+
+// Usage
+Matrix mat(3, 4);
+mat[1][2] = 3.14;        // Set element at row 1, col 2
+double val = mat[1][2];  // Get element
+```
+
+#### Associative Container Style
+
+```cpp
+template<typename Key, typename Value>
+class SimpleMap {
+private:
+    struct Pair {
+        Key key;
+        Value value;
+    };
+    std::vector<Pair> _pairs;
+public:
+    // Return reference (creates if doesn't exist)
+    Value& operator[](const Key& key) {
+        // Find existing pair
+        for (auto& pair : _pairs) {
+            if (pair.key == key) {
+                return pair.value;
+            }
+        }
+        // Not found, create new
+        _pairs.push_back({key, Value()});
+        return _pairs.back().value;
+    }
+    
+    // Const version (read-only, throws if not found)
+    const Value& operator[](const Key& key) const {
+        for (const auto& pair : _pairs) {
+            if (pair.key == key) {
+                return pair.value;
+            }
+        }
+        throw std::out_of_range("Key not found");
+    }
+};
+
+// Usage
+SimpleMap<std::string, int> map;
+map["one"] = 1;        // Creates entry
+int val = map["one"];  // Returns 1
+```
+
+#### String-like Container
+
+```cpp
+class MyString {
+private:
+    char* _data;
+    size_t _length;
+public:
+    MyString(const char* str) {
+        _length = strlen(str);
+        _data = new char[_length + 1];
+        strcpy(_data, str);
+    }
+    
+    ~MyString() {
+        delete[] _data;
+    }
+    
+    // Character access
+    char& operator[](size_t index) {
+        return _data[index];
+    }
+    
+    const char& operator[](size_t index) const {
+        return _data[index];
+    }
+    
+    size_t length() const { return _length; }
+};
+
+// Usage
+MyString str("Hello");
+str[0] = 'h';        // Modify first character
+char c = str[1];     // Read second character
+```
+
+#### Key Differences: `operator[]` vs `at()`
+
+```cpp
+class Container {
+    // operator[] - No bounds checking (faster)
+    T& operator[](size_t index) {
+        return _data[index];  // Undefined behavior if out of bounds
+    }
+    
+    // at() - With bounds checking (safer)
+    T& at(size_t index) {
+        if (index >= _size) {
+            throw std::out_of_range("Index out of range");
+        }
+        return _data[index];
+    }
+};
+```
+
+**Key Points:**
+
+- **Two versions**: Non-const (modifiable) and const (read-only)
+- **Return reference**: Usually returns `T&` for modification
+- **No bounds checking**: `operator[]` typically doesn't check (use `at()` for safety)
+- **Proxy pattern**: Can return proxy objects for multi-dimensional access
+- **Performance**: `operator[]` should be O(1) for containers
+
+**Interview Answer:**
+
+> "`operator[]` provides array-like access. Implement `T& operator[](Index)` and `const T& operator[](Index) const`. Usually no bounds checking (use `at()` for that). Return reference for modification. Can use proxy pattern for multi-dimensional access. Should be O(1) for containers."
+
+---
+
 ## Summary
 
 ### Key Takeaways
@@ -1212,6 +1949,9 @@ struct ControlBlock {
 3. **`std::shared_ptr`**: Shared ownership, use when needed
 4. **`std::make_shared`**: Efficient factory function for `shared_ptr`
 5. **`std::weak_ptr`**: Break circular references, non-owning
+6. **`std::vector`**: Dynamic array with capacity management, amortized O(1) push_back
+7. **`operator()`**: Makes objects callable (functors), maintains state
+8. **`operator[]`**: Provides array-like access, typically O(1), no bounds checking
 
 ### Your Codebase Uses
 

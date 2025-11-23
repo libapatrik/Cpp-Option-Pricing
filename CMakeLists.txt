@@ -48,8 +48,6 @@ add_executable(CppFM main.cpp
         PDEs/Solver.h
         PDEs/PDEGreeksCalculator.cpp
         PDEs/PDEGreeksCalculator.h
-        InterpolationSchemes.cpp
-        InterpolationSchemes.h
         Smart_Pointers.h
 )
 

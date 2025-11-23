@@ -133,18 +133,18 @@ double VolatilitySurface::impliedVolatilityBilinear(double strike, double maturi
     size_t maturityIdx = std::distance(_maturities.begin(), maturityIt);
     
     if (maturityIdx == 0) {
-        return _smileInterpolators[0]->interpolate(strike);
+        return (*_smileInterpolators[0])(strike); // Use operator() for automatic extrapolation handling
     }
     
     if (maturityIdx >= _maturities.size()) {
-        return _smileInterpolators.back()->interpolate(strike);
+        return (*_smileInterpolators.back())(strike); // Use operator() for automatic extrapolation handling
     }
     
     // Interpolate between adjacent maturities
     double t1 = _maturities[maturityIdx - 1];
     double t2 = _maturities[maturityIdx];
-    double vol1 = _smileInterpolators[maturityIdx - 1]->interpolate(strike);
-    double vol2 = _smileInterpolators[maturityIdx]->interpolate(strike);
+    double vol1 = (*_smileInterpolators[maturityIdx - 1])(strike); // Use operator() for automatic extrapolation handling
+    double vol2 = (*_smileInterpolators[maturityIdx])(strike); // Use operator() for automatic extrapolation handling
     
     // Linear interpolation in volatility space
     double weight = (maturity - t1) / (t2 - t1);
@@ -178,7 +178,7 @@ double VolatilitySurface::impliedVolatilityForwardMoneyness(double strike, doubl
         double B_t1 = _discountCurve->discount(t1);
         // K^(1) = K × B(T)/B(T_1) - strike at T_1 with same forward moneyness
         double strike1 = strike * B_T / B_t1;
-        double vol1 = _smileInterpolators[0]->interpolate(strike1);
+        double vol1 = (*_smileInterpolators[0])(strike1); // Use operator() for automatic extrapolation handling
         return vol1;
     }
     
@@ -188,7 +188,7 @@ double VolatilitySurface::impliedVolatilityForwardMoneyness(double strike, doubl
         double B_tM = _discountCurve->discount(tM);
         // K^(M) = K × B(T)/B(T_M)
         double strikeM = strike * B_T / B_tM;
-        double volM = _smileInterpolators.back()->interpolate(strikeM);
+        double volM = (*_smileInterpolators.back())(strikeM); // Use operator() for automatic extrapolation handling
         return volM;
     }
 
@@ -206,8 +206,9 @@ double VolatilitySurface::impliedVolatilityForwardMoneyness(double strike, doubl
     double strike2 = strike * B_T / B_t2;
     
     // Get implied volatilities at these strikes from smile interpolators
-    double vol1 = _smileInterpolators[maturityIdx - 1]->interpolate(strike1);
-    double vol2 = _smileInterpolators[maturityIdx]->interpolate(strike2);
+    // Use operator() for automatic extrapolation handling if strikes are outside range
+    double vol1 = (*_smileInterpolators[maturityIdx - 1])(strike1);
+    double vol2 = (*_smileInterpolators[maturityIdx])(strike2);
     
     // Linear interpolation in variance space
     // Variance quantity: v(T,k) = (σ*)^2(T, K^(i)) × T
@@ -280,13 +281,13 @@ double VolatilitySurface::computeDupireLocalVolatility(double spot, double time)
     // for denominator
     // Ensure no division by zero
     constexpr double MIN_TIME = 1e-12;
-    if (time = MIN_TIME) {
+    if (time <= MIN_TIME) {
         return impliedVol; // for very small times, return implied volatility
     }
     
-    double sqrtTime = impliedVol * std::sqrt(time);
-    double d1 = (std::log(spot / strike) + (riskFreeRate + 0.5 * impliedVol * impliedVol) * time) / sqrtTime;
-    double d2 = d1 - sqrtTime;
+    double volSqrtTime = impliedVol * std::sqrt(time);
+    double d1 = (std::log(spot / strike) + (riskFreeRate + 0.5 * impliedVol * impliedVol) * time) / volSqrtTime;
+    double d2 = d1 - volSqrtTime;
     
     // Compute the numerator: 1 + 2T/σ* × (∂σ*/∂T + r×∂σ*/∂K)
     // This captures how the implied volatility surface changes over time and across strikes
@@ -302,12 +303,26 @@ double VolatilitySurface::computeDupireLocalVolatility(double spot, double time)
     // - Quadratic smile effects (d1d2 term)
     // - Curvature effects (∂2σ*/∂K2 term)
     double denominator = 1.0 + 2.0 * d1 * K_dSigma_dK_sqrtT + 
-                        d1 * d2 * K_dSigma_dK_sqrtT * K_dSigma_dK_sqrtT +
+                         d1 * d2 * K_dSigma_dK_sqrtT * K_dSigma_dK_sqrtT +
                         K_d2Sigma_dK2_sqrtT * K_sigma_sqrtT;
     
-    // Safety checks: ensure we don't get invalid results
-    if (denominator <= 0.0 || !std::isfinite(numerator) || !std::isfinite(denominator)) {
-        return impliedVol; // Fallback to implied volatility if computation fails
+    // Check for non-finite values
+    if (!std::isfinite(numerator) || !std::isfinite(denominator)) {
+        throw std::runtime_error("Dupire: Non-finite values detected at K=" + 
+                                std::to_string(strike) + ", T=" + std::to_string(time));
+    }
+
+    // Check for negative denominator (potential arbitrage)
+    if (denominator <= 0.0) {
+        // WARNING: This indicates potential arbitrage in the implied volatility surface
+        // Apply correction: use absolute value and continue with warning
+        denominator = std::abs(denominator);
+    }
+
+    // Check for negative numerator
+    if (numerator < 0.0) {
+        // Apply correction: use absolute value
+        numerator = std::abs(numerator);
     }
     
     // Apply the Dupire formula
@@ -408,10 +423,12 @@ std::pair<std::pair<double, double>, std::pair<double, double>> VolatilitySurfac
             {_maturities.front(), _maturities.back()}};
 }
 
-VolatilitySurface* VolatilitySurface::clone() const
+std::unique_ptr<VolatilitySurface> VolatilitySurface::clone() const
 {
-    return new VolatilitySurface(_strikes, _maturities, _volatilities, *_discountCurve, 
-                                 _smileInterpolationType, _maturityInterpolationType);
+    return std::make_unique<VolatilitySurface>(_strikes, _maturities, _volatilities, 
+                                 *_discountCurve, 
+                                 _smileInterpolationType, 
+                                 _maturityInterpolationType);
 }
 
 bool VolatilitySurface::operator==(const VolatilitySurface& other) const
@@ -441,7 +458,7 @@ VolatilitySurfaceBuilder& VolatilitySurfaceBuilder::addMaturity(double maturity)
 
 VolatilitySurfaceBuilder& VolatilitySurfaceBuilder::setVolatility(double strike, double maturity, double volatility)
 {
-    // Find or create entry for this (strike-maturity pair)
+    // Store strike and maturity if not already present
     auto strikeIt = std::find(_strikes.begin(), _strikes.end(), strike);
     auto maturityIt = std::find(_maturities.begin(), _maturities.end(), maturity);
     
@@ -452,9 +469,9 @@ VolatilitySurfaceBuilder& VolatilitySurfaceBuilder::setVolatility(double strike,
         _maturities.push_back(maturity);
     }
     
-    // ISSUE: We are not storing the volatility right? -> FIX: Use a map of (strike, maturity) -> volatility ?
-    // Could be improved by maintaining a map of (strike, maturity) -> volatility ?
-    // i.e. std::map<std::pair<double, double>, double> volatilityMap; ?
+    // Store volatility in map: (strike, maturity) -> volatility
+    _volatilityMap[{strike, maturity}] = volatility;
+    
     return *this;
 }
 
@@ -517,6 +534,16 @@ void VolatilitySurfaceBuilder::buildVolatilityMatrix()
         row.resize(_strikes.size(), 0.2); // Default 20% volatility
     }
     
-    // In practice, we buy this matrix from data provider
-    // So, the actual volatility data that was set via setVolatility()
+    // Fill matrix from stored volatility map
+    // Matrix indexing: _volatilities[maturity_index][strike_index]
+    for (size_t i = 0; i < _maturities.size(); ++i) {
+        for (size_t j = 0; j < _strikes.size(); ++j) {
+            auto key = std::make_pair(_strikes[j], _maturities[i]);
+            auto it = _volatilityMap.find(key);
+            if (it != _volatilityMap.end()) {
+                _volatilities[i][j] = it->second; // Use stored volatility
+            }
+            // Otherwise keep default value (0.2)
+        }
+    }
 }

@@ -68,6 +68,7 @@ private:
 class NumericalDerivatives
 {
 public:
+    // Scale-invariant numerical derivatives: step size adapts to magnitude of x
     static double firstDerivative(std::function<double(double)> f, double x, double h = 1e-4);
     static double secondDerivative(std::function<double(double)> f, double x, double h = 1e-4);
 

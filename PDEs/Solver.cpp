@@ -199,8 +199,6 @@ std::vector<double> ThetaMethodSolver::solve()
     return _solution;  // Returns copy of the solution vector
 }
 
-/// TODO: Run checks on the test_pde_greeks.cpp; WTG accurate Greeks
-/// TODO: Does it run with LogSpaced grid?
 std::vector<double> ThetaMethodSolver::timeStep(const std::vector<double>& u_old, double t_old, double t_new)
 {
     /**
@@ -272,6 +270,32 @@ std::vector<double> ThetaMethodSolver::timeStep(const std::vector<double>& u_old
          *   β = -2a/Δx² + c          (coefficient of u[i])
          *   γ = a/Δx² + b/(2Δx)      (coefficient of u[i+1])
          *   δ = d                    (source term)
+         *
+         * MORE DERIVATIONS FOR NON-UNIFORM GRIDS:
+         *   L(u) = a·∂²u/∂x² + b·∂u/∂x + c·u
+                 = a·[coeff_{i-1}·u_{i-1} + coeff_i·u_i + coeff_{i+1}·u_{i+1}]
+                   + b·[coeff'_{i-1}·u_{i-1} + coeff'_i·u_i + coeff'_{i+1}·u_{i+1}]
+                   + c·u_i
+            
+         *  Second derivative coefficients:
+                Coefficient of u_{i-1}: 2a/(h_minus * (h_plus + h_minus))
+                Coefficient of u_i: -2a/(h_plus * h_minus)
+                Coefficient of u_{i+1}: 2a/(h_plus * (h_plus + h_minus))
+         * First derivative coefficients (central difference, non-uniform):
+                Coefficient of u_{i-1}: -b*h_plus / (h_minus * (h_plus + h_minus))
+                Coefficient of u_i: b*(h_plus - h_minus) / (h_plus * h_minus)
+                Coefficient of u_{i+1}: b*h_minus / (h_plus * (h_plus + h_minus))
+         *  u_{i-1} 
+         *  alpha = 2a/(h_minus * h_sum) - b*h_plus/(h_minus * h_sum)
+                  = (2a - b*h_plus) / (h_minus * h_sum)
+
+         *  u_i
+            beta = -2a/(h_plus * h_minus) + b*(h_plus - h_minus)/(h_plus * h_minus) + c
+                 = (-2a + b*(h_plus - h_minus))/(h_plus * h_minus) + c
+
+         *  u_{i+1}
+            gamma = 2a/(h_plus * h_sum) + b*h_minus/(h_plus * h_sum)
+                  = (2a + b*h_minus) / (h_plus * h_sum)
          */
         double alpha = (2.0 * a - b * h_plus) / (h_minus * h_sum);
         double beta = (-2.0 * a + b * (h_plus - h_minus)) / (h_plus * h_minus) + c;

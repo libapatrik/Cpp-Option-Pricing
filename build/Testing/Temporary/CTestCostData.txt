@@ -1,18 +1,13 @@
-VolatilitySurfaceConstruction 0 0
-VolatilitySurfaceInterpolation 1 0.00849475
-VolatilitySurfaceDupire 0 0
-VolatilitySurfaceBlackScholes 0 0
-VolatilitySurfaceGreeks 0 0
-VolatilitySurfaceIntegration 0 0
+VolatilitySurfaceConstruction 7 0.0269651
+VolatilitySurfaceInterpolation 8 0.0236962
+VolatilitySurfaceDupire 7 0.029052
+VolatilitySurfaceBlackScholes 7 0.026954
+VolatilitySurfaceGreeks 7 0.0272002
+VolatilitySurfaceIntegration 7 0.0282894
 PDESolver 0 0
-PDEStability 1 0.0639922
-TridiagonalSolver 1 0.00796667
-PDEGreeks 0 0
+PDEStability 1 0
+TridiagonalSolver 3 0.0636061
+PDEGreeks 2 46.8947
 ---
-VolatilitySurfaceConstruction
-VolatilitySurfaceDupire
-VolatilitySurfaceBlackScholes
-VolatilitySurfaceGreeks
-VolatilitySurfaceIntegration
 PDESolver
-PDEGreeks
+PDEStability

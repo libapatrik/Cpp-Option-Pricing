@@ -1,5 +1,5 @@
 #include "Utils.h"
-#include<cmath>
+#include <cmath>
 #include <stdexcept>
 
 // Standard normal CDF
@@ -39,6 +39,8 @@ std::vector<double> ThomasAlgorithm::solve(
         }
         return {rhs[0] / diag[0]};
     }
+
+    // Diagonal dominance, M-matrices etc.
     
     // ========================================================================
     // THOMAS ALGORITHM (General Implementation)
@@ -105,14 +107,21 @@ std::vector<double> ThomasAlgorithm::solve(
 
 double NumericalDerivatives::firstDerivative(std::function<double(double)> f, double x, double h)
 {
+    // Scale-invariant step size: h_scaled = h * max(|x|, 1.0)
+    // This ensures relative perturbation is consistent across different magnitudes
+    double h_scaled = h * std::max(std::abs(x), 1.0);
+    
     // Central difference: f'(x) = [f(x+h) - f(x-h)] / (2h)
-    return (f(x + h) - f(x - h)) / (2.0 * h);
+    return (f(x + h_scaled) - f(x - h_scaled)) / (2.0 * h_scaled);
 }
 
 double NumericalDerivatives::secondDerivative(std::function<double(double)> f, double x, double h)
 {
+    // Scale-invariant step size
+    double h_scaled = h * std::max(std::abs(x), 1.0);
+    
     // Central second difference: f''(x) = [f(x+h) - 2f(x) + f(x-h)] / h^2
-    return (f(x + h) - 2.0 * f(x) + f(x - h)) / (h * h);
+    return (f(x + h_scaled) - 2.0 * f(x) + f(x - h_scaled)) / (h_scaled * h_scaled);
 }
 
 

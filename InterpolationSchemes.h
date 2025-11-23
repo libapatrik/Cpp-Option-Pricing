@@ -10,6 +10,14 @@
 #include <utility>
 
 
+/**
+ *  InterpolationScheme has a constructor that only require which extrapolation you want [ExtrapolationType]
+ *  When calling the extrapolation() method, the data member _extrapolationType will determine how to extrapolation
+ *  You need one protected method per extrapolation type
+ */
+
+// Extrapolation type enum
+enum class ExtrapolationType { Flat, Linear, Quadratic };
 
 // Forward declaration
 class ExtrapolationScheme;
@@ -28,30 +36,33 @@ class ExtrapolationScheme;
 class InterpolationScheme
 {
 public:
+    // Constructor with extrapolation type 
+    InterpolationScheme(const std::vector<double>& xData, 
+                        const std::vector<double>& yData,
+                        ExtrapolationType extraType = ExtrapolationType::Quadratic);
     virtual ~InterpolationScheme() = default;
     
     // Core interface
     virtual double interpolate(double x) const = 0;
     virtual double derivative(double x) const = 0;
     virtual double secondDerivative(double x) const = 0;
-    // Pair of (min, max) x values
-    virtual std::pair<double, double> getRange() const = 0;
     virtual std::unique_ptr<InterpolationScheme> clone() const = 0;
     
-    // Extrapolation strategy, we use setter to set the choice of the extrapolation scheme
-    // Default: QuadraticExtrapolation
-    /**
-     *  auto interp = std::make_unique<LinearInterpolation>(xData, yData, std::move(scheme)); // user specifies the scheme
-     *  transfers the ownership of the unique_ptr from the caller to _extrapolationScheme without copying. 
-     */
-    void setExtrapolationScheme(std::unique_ptr<ExtrapolationScheme> scheme);  
-    
-
     double operator()(double x) const; // Unified interface: routes to interpolate or extrapolate automatically
+    std::pair<double, double> getRange() const; // Common implementation for all derived classes
 
-    
 protected:
+    std::vector<double> _xData;
+    std::vector<double> _yData;
     std::unique_ptr<ExtrapolationScheme> _extrapolationScheme;
+    
+    ExtrapolationType _extrapolationType;
+    
+    // Common validation helper
+    void validateData() const;
+    
+    // Common interval finding using binary search
+    size_t findInterval(double x) const;
 };
 
 
@@ -62,26 +73,15 @@ protected:
 class LinearInterpolation : public InterpolationScheme
 {
 public:
-    LinearInterpolation(const std::vector<double>& xData, const std::vector<double>& yData);
-    
-    // Constructor with extrapolation choice
+    // Constructor with extrapolation type (default: Quadratic for backward compatibility)
     LinearInterpolation(const std::vector<double>& xData, 
-                       const std::vector<double>& yData,
-                       std::unique_ptr<ExtrapolationScheme> extrapolationScheme);
+                        const std::vector<double>& yData,
+                        ExtrapolationType extraType = ExtrapolationType::Quadratic);
 
     double interpolate(double x) const override;
     double derivative(double x) const override;
     double secondDerivative(double x) const override;
     std::unique_ptr<InterpolationScheme> clone() const override;
-    std::pair<double, double> getRange() const override;
-
-private:
-    std::vector<double> _xData;
-    std::vector<double> _yData;
-    double _xMin;
-    double _xMax;
-    
-    size_t findInterval(double x) const;
 };
 
 // ============================================================================
@@ -98,29 +98,19 @@ class CubicSplineInterpolation : public InterpolationScheme
 {
 public:
     enum class BoundaryType { Natural, Clamped, Periodic }; // for future direction
-    CubicSplineInterpolation(const std::vector<double>& xData,
-                             const std::vector<double>& yData,
-                             BoundaryType boundaryType = BoundaryType::Natural);
     
-    // Constructor with extrapolation choice
+    // Constructor with extrapolation type (default: Quadratic for backward compatibility)
     CubicSplineInterpolation(const std::vector<double>& xData,
                              const std::vector<double>& yData,
-                             BoundaryType boundaryType,
-                             std::unique_ptr<ExtrapolationScheme> extrapolationScheme);
+                             BoundaryType boundaryType = BoundaryType::Natural,
+                             ExtrapolationType extraType = ExtrapolationType::Quadratic);
 
     double interpolate(double x) const override;
     double derivative(double x) const override;
     double secondDerivative(double x) const override;
     std::unique_ptr<InterpolationScheme> clone() const override;
-    std::pair<double, double> getRange() const override;
-
-
 
 private:
-    std::vector<double> _xData;
-    std::vector<double> _yData;
-    double _xMin;
-    double _xMax;
     BoundaryType _boundaryType;
 
     // Pre-computed coefficients from lecture notes (1.26-7)
@@ -131,8 +121,8 @@ private:
 
     void computeSplineCoefficients();
     void solveThomasAlgorithm();
-    size_t findInterval(double x) const;
 };
+
 
 // ============================================================================
 // BASE CLASS: ExtrapolationScheme
@@ -168,7 +158,7 @@ class LinearExtrapolation : public ExtrapolationScheme
 public:
     std::unique_ptr<ExtrapolationScheme> clone() const override;
     void initialize(const InterpolationScheme& interp) override;
-    double extrapolate(double x, const InterpolationScheme& interp) const override;
+    double extrapolate(double x, const InterpolationScheme& interp) const override;  // avoid circular reference!
 
 private:
     double _yMin, _yMax;

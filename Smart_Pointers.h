@@ -2,7 +2,7 @@
 
 // unique_ptr 
 // Wrapper around a raw pointer
-
+#include <algorithm>
 template<class T>
 class unique_ptr
 {
@@ -48,20 +48,19 @@ private:
 public: 
 	// constructor
 	move_operator(move_operator&& other) noexcept // && rvalue reference, 
-		: _rawPtr(other._rawPtr)
-	{
-		other._rawPtr = nullptr;
+		: _rawPtr(std::move(other._rawPtr))
+ 	{
 	}
-	// Why noexcept? 
+	// Why noexcept? I declare and define a method that will not throw error.
 	// Enables optimizations. Containers like std::vector will use move instead of copy when possible, and won't fall back to copy if move throws.
 
 	// move assignment operator
-	move_operator& operator=(move_operator&& other) noexcept
+	move_operator& operator=(move_operator&& other) noexcept   // & lvalue and && rvalue
 	{
 		if (this != &other) {         // self-assignment check; i.e. do not move to the same house again
 			delete _rawPtr;           // clean the house
-			_rawPtr = other._rawPtr;  // move the house i.e. transfer/steal ownership (no duplications)
-			other._rawPtr = nullptr;  // leave the other house empty; i.e. the source is empty but valid (i.e. valid pointer, but no ownership)
+			_rawPtr = std::move(other._rawPtr);  // move the house i.e. transfer/steal ownership (no duplications)
+			//other._rawPtr = nullptr;  // leave the other house empty; i.e. the source is empty but valid (i.e. valid pointer, but no ownership)
 		}
 		return *this;
 	}
@@ -69,7 +68,7 @@ public:
 	// deletes
 	move_operator(const move_operator& other) = delete;
 	move_operator& operator=(const move_operator& other) = delete;
- }
+ };
 
 // Learning about operators
 

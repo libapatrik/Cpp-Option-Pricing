@@ -8,15 +8,63 @@
 // ============================================================================
 // InterpolationScheme Base Class Implementation
 // ============================================================================
-
-void InterpolationScheme::setExtrapolationScheme(std::unique_ptr<ExtrapolationScheme> scheme)
-{   // Allows change of the extrapolation scheme after construction
-    // Reject the null; want to non-null setter
-    if (!scheme) {
-        throw std::invalid_argument("Extrapolation scheme cannot be null");
+InterpolationScheme::InterpolationScheme(const std::vector<double>& xData, const std::vector<double>& yData, ExtrapolationType extraType)
+    : _xData(xData), _yData(yData), _extrapolationType(extraType)
+{
+    // Validate input data
+    validateData();
+    
+    // Create extrapolation scheme based on enum (but don't initialize yet)
+    // Initialization happens in derived class constructors after their setup is complete
+    switch (extraType) {
+        case ExtrapolationType::Flat:
+            _extrapolationScheme = std::make_unique<FlatExtrapolation>();
+            break;
+        case ExtrapolationType::Linear:
+            _extrapolationScheme = std::make_unique<LinearExtrapolation>();
+            break;
+        case ExtrapolationType::Quadratic:
+            _extrapolationScheme = std::make_unique<QuadraticExtrapolation>();
+            break;
     }
-    _extrapolationScheme = std::move(scheme);   // Move the scheme to the member variable _extrapolationScheme
-    _extrapolationScheme->initialize(*this);    // Initialize the extrapolation scheme
+}
+
+void InterpolationScheme::validateData() const
+{
+    if (_xData.size() != _yData.size()) {
+        throw std::invalid_argument("InterpolationScheme: xData and yData must have same size");
+    }
+    
+    if (_xData.size() < 2) {
+        throw std::invalid_argument("InterpolationScheme: At least 2 data points required");
+    }
+
+    if (!std::is_sorted(_xData.begin(), _xData.end())) {
+        throw std::invalid_argument("InterpolationScheme: xData must be sorted in ascending order");
+    }
+}
+
+std::pair<double, double> InterpolationScheme::getRange() const
+{
+    return {_xData.front(), _xData.back()};
+}
+
+size_t InterpolationScheme::findInterval(double x) const
+{
+    // Returns index i such that x is in [xData[i], xData[i+1])
+    // Uses binary search: O(log n) complexity
+    auto it = std::upper_bound(_xData.begin(), _xData.end(), x);
+    
+    if (it == _xData.begin()) {
+        return 0;
+    }
+
+    size_t idx = std::distance(_xData.begin(), it) -1;
+    // Clamp to valid range
+    if (idx >= _xData.size() - 1) {
+        idx = _xData.size() - 2;
+    }
+    return idx;
 }
 
 double InterpolationScheme::operator()(double x) const
@@ -28,7 +76,7 @@ double InterpolationScheme::operator()(double x) const
         // Always use extrapolation strategy
         // If no custom scheme is set, default QuadraticExtrapolation is used
         return _extrapolationScheme->extrapolate(x, *this);   // *this passes the interpolation object
-        // Why? Extrapolation needs to query ('ask for information') the interpolation object to get the boundary values and derivaites
+        // Why? Extrapolation needs to query ('ask for information') the interpolation object to get the boundary values and derivatives
     } else {
         return interpolate(x);
     }
@@ -38,46 +86,17 @@ double InterpolationScheme::operator()(double x) const
 // LinearInterpolation Implementation
 // ============================================================================
 
-LinearInterpolation::LinearInterpolation(const std::vector<double>& xData, const std::vector<double>& yData)
-    : _xData(xData)
-    , _yData(yData)
-    , _xMin(0.0)
-    , _xMax(0.0)
-{
-    // Validate input data
-    if (_xData.size() != _yData.size()) {
-        throw std::invalid_argument("LinearInterpolation: xData and yData must have same size");
-    }
-    
-    if (_xData.size() < 2) {
-        throw std::invalid_argument("LinearInterpolation: At least 2 data points required");
-    }
-
-    if (!std::is_sorted(_xData.begin(), _xData.end())) {
-        throw std::invalid_argument("LinearInterpolation: xData must be sorted in ascending order");
-    }
-
-    _xMin = _xData.front();
-    _xMax = _xData.back();
-    
-    // Initialize with default QuadraticExtrapolation strategy
-    _extrapolationScheme = std::make_unique<QuadraticExtrapolation>();
-    _extrapolationScheme->initialize(*this);
-}
-
 LinearInterpolation::LinearInterpolation(const std::vector<double>& xData, 
                                          const std::vector<double>& yData,
-                                         std::unique_ptr<ExtrapolationScheme> extrapolationScheme)
-    : LinearInterpolation(xData, yData)  // Delegate to main constructor
+                                         ExtrapolationType extraType)
+    : InterpolationScheme(xData, yData, extraType)
 {
-    setExtrapolationScheme(std::move(extrapolationScheme));
+    // Initialize extrapolation scheme now that setup is complete
+    _extrapolationScheme->initialize(*this);
 }
 
 double LinearInterpolation::interpolate(double x) const
 {
-    // This method now assumes x is within range [_xMin, _xMax]
-    // Bounds checking is done at the higher level (operator())
-
     size_t idx = findInterval(x);
     if (idx >= _xData.size() - 1) {
         return _yData.back();
@@ -117,34 +136,15 @@ double LinearInterpolation::secondDerivative(double x) const
 
 std::unique_ptr<InterpolationScheme> LinearInterpolation::clone() const
 {
-    auto cloned = std::make_unique<LinearInterpolation>(_xData, _yData);
-    
-    // Clone extrapolation scheme 
-    cloned->setExtrapolationScheme(_extrapolationScheme->clone());
-    
+    auto cloned = std::make_unique<LinearInterpolation>(_xData, _yData, _extrapolationType);
+    // _extrapolationScheme is already initialized in the constructor
+    // But we need to clone it to preserve the state
+    cloned->_extrapolationScheme = _extrapolationScheme->clone();
+    cloned->_extrapolationScheme->initialize(*cloned);
     return cloned;
 }
 
-std::pair<double, double> LinearInterpolation::getRange() const
-{
-    return {_xMin, _xMax};
-}
 
-size_t LinearInterpolation::findInterval(double x) const
-{
-    // Returns index i such that x is in [xData[i], xData[i+1])
-    // Special cases:
-    //   - If x < xData[0], returns 0 (first interval)
-    //   - If x >= xData[n-1], returns n-2 (last interval)
-    // Uses binary search: O(log n) complexity
-    auto it = std::upper_bound(_xData.begin(), _xData.end(), x);
-
-    if (it == _xData.begin()) {
-        return 0;
-    }
-
-    return std::distance(_xData.begin(), it) - 1;
-}
 
 // ============================================================================
 // CubicSplineInterpolation Implementation
@@ -152,43 +152,15 @@ size_t LinearInterpolation::findInterval(double x) const
 
 CubicSplineInterpolation::CubicSplineInterpolation(const std::vector<double>& xData, 
                                                    const std::vector<double>& yData, 
-                                                   BoundaryType boundaryType)
-    : _xData(xData)
-    , _yData(yData)
-    , _xMin(0.0)
-    , _xMax(0.0)
+                                                   BoundaryType boundaryType,
+                                                   ExtrapolationType extraType)
+    : InterpolationScheme(xData, yData, extraType)
     , _boundaryType(boundaryType)
 {
-    // Validate input data
-    if (_xData.size() != _yData.size()) {
-        throw std::invalid_argument("CubicSplineInterpolation: xData and yData must have same size");
-    }
-    
-    if (_xData.size() < 2) {
-        throw std::invalid_argument("CubicSplineInterpolation: At least 2 data points required");
-    }
-
-    if (!std::is_sorted(_xData.begin(), _xData.end())) {
-        throw std::invalid_argument("CubicSplineInterpolation: xData must be sorted in ascending order");
-    }
-
-    _xMin = _xData.front();
-    _xMax = _xData.back();
-
     computeSplineCoefficients();
     
-    // Initialize with default QuadraticExtrapolation strategy
-    _extrapolationScheme = std::make_unique<QuadraticExtrapolation>();
+    // Initialize extrapolation scheme now that spline setup is complete
     _extrapolationScheme->initialize(*this);
-}
-
-CubicSplineInterpolation::CubicSplineInterpolation(const std::vector<double>& xData, 
-                                                   const std::vector<double>& yData,
-                                                   BoundaryType boundaryType,
-                                                   std::unique_ptr<ExtrapolationScheme> extrapolationScheme)
-    : CubicSplineInterpolation(xData, yData, boundaryType)  // Delegate to main constructor
-{
-    setExtrapolationScheme(std::move(extrapolationScheme));
 }
 
 void CubicSplineInterpolation::computeSplineCoefficients()
@@ -326,8 +298,7 @@ double CubicSplineInterpolation::derivative(double x) const
         idx = _xData.size() - 2;
     }
 
-    double x0 = _xData[idx];
-    double dx = x - x0;  // (x - x_j)
+    double dx = x - _xData[idx];  // (x - x_j)
     double dx2 = dx * dx;
 
     // Use pre-computed coefficients
@@ -351,9 +322,8 @@ double CubicSplineInterpolation::secondDerivative(double x) const
         idx = _xData.size() - 2;
     }
 
-    double x0 = _xData[idx];
-    double dx = x - x0;  // (x - x_j)
-
+    double dx = x - _xData[idx];  // (x - x_j)
+    
     // Use pre-computed coefficients
     double alpha_j = _alpha[idx];
     double beta_j = _beta[idx];
@@ -364,32 +334,14 @@ double CubicSplineInterpolation::secondDerivative(double x) const
 
 std::unique_ptr<InterpolationScheme> CubicSplineInterpolation::clone() const
 {
-    auto cloned = std::make_unique<CubicSplineInterpolation>(_xData, _yData, _boundaryType);
-    
-    // Clone extrapolation scheme (always present)
-    cloned->setExtrapolationScheme(_extrapolationScheme->clone());
-    
+    auto cloned = std::make_unique<CubicSplineInterpolation>(_xData, _yData, _boundaryType, _extrapolationType);
+    // _extrapolationScheme is already initialized in the constructor
+    // But we need to clone it to preserve the state
+    cloned->_extrapolationScheme = _extrapolationScheme->clone();
+    cloned->_extrapolationScheme->initialize(*cloned);
     return cloned;
 }
 
-std::pair<double, double> CubicSplineInterpolation::getRange() const
-{
-    return {_xMin, _xMax};
-}
-
-size_t CubicSplineInterpolation::findInterval(double x) const
-{
-    // upper_bound returns the first element greater than x
-    // For x in [xData[i], xData[i+1]), we want to return i
-    auto it = std::upper_bound(_xData.begin(), _xData.end(), x);
-
-    // Handle edge case: if x <= xData[0], return interval 0
-    if (it == _xData.begin()) {
-        return 0;
-    }
-
-    return std::distance(_xData.begin(), it) - 1;
-}
 
 // ============================================================================
 // ExtrapolationScheme Implementations
@@ -442,11 +394,9 @@ double LinearExtrapolation::extrapolate(double x, const InterpolationScheme& int
     auto [xMin, xMax] = interp.getRange();
     
     if (x < xMin) {
-        double dx = x - xMin;
-        return _yMin + _dyMin * dx;            // use the boundary values and the derivative at the boundary
+        return _yMin + _dyMin * (x - xMin);
     } else {
-        double dx = x - xMax;
-        return _yMax + _dyMax * dx;           // use the boundary values and the derivative at the boundary
+        return _yMax + _dyMax * (x - xMax);
     }
 }
 
@@ -482,12 +432,19 @@ void QuadraticExtrapolation::initialize(const InterpolationScheme& interp)
 double QuadraticExtrapolation::extrapolate(double x, const InterpolationScheme& interp) const
 {
     auto [xMin, xMax] = interp.getRange();
-    
+    double result;
+
     if (x < xMin) {
         double dx = x - xMin;
-        return _yMin + _dyMin * dx + 0.5 * _d2yMin * dx * dx;   // use the boundary values and the derivative and the second derivative at the boundary
+        result = _yMin + _dyMin * dx + 0.5 * _d2yMin * dx * dx;
     } else {
         double dx = x - xMax;
-        return _yMax + _dyMax * dx + 0.5 * _d2yMax * dx * dx;   // use the boundary values and the derivative and the second derivative at the boundary
+        result = _yMax + _dyMax * dx + 0.5 * _d2yMax * dx * dx;
     }
+
+    /// TODO: Add fallbacks for min and max vols?
+    const double MIN_VOL = 0.01;   // 1%
+    const double MAX_VOL = 2.0;    // 200%
+
+    return std::clamp(result, MIN_VOL, MAX_VOL);   // return the clamped value
 }

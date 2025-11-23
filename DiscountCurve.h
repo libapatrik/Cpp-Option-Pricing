@@ -11,9 +11,21 @@ public:
     virtual double rate() const = 0;  // Virtual getter for rate information
 
     virtual double instantaneousRate(double time, double eps=1e-6) const {
-        double discount_t = discount(time);
+        // Use central difference for second-order accuracy: r(t) = -d/dt[log(B(t))]
+        // Central difference has O(eps^2) error vs forward difference O(eps)
+        
+        // Handle boundary case at t=0
+        if (time < eps) {
+            // Use forward difference at t=0 (no choice)
+            double discount_t = discount(time);
+            double discount_t_plus = discount(time + eps);
+            return -std::log(discount_t_plus / discount_t) / eps;
+        }
+        
+        // Central difference for interior points
         double discount_t_plus = discount(time + eps);
-        return -std::log(discount_t_plus / discount_t) / eps;
+        double discount_t_minus = discount(time - eps);
+        return -std::log(discount_t_plus / discount_t_minus) / (2.0 * eps);
     }
 
     virtual ~DiscountCurve() = default;

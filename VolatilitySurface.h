@@ -9,6 +9,8 @@
 #include "DiscountCurve.h"
 #include <vector>
 #include <memory>
+#include <map>
+#include <utility>
 
 /**
  * VolatilitySurface class for market data interpolation
@@ -28,7 +30,7 @@ public:
      * @param maturityInterpolationType Maturity interpolation: Bilinear or ForwardMoneyness
      */
     enum class SmileInterpolationType { Linear, CubicSpline };
-    enum class MaturityInterpolationType { Bilinear,          // Simple linear interpolation in volatility space
+    enum class MaturityInterpolationType { Bilinear,          /// TODO: Fix naming: Simple linear interpolation in volatility space
                                            ForwardMoneyness   // Variance interpolation with constant forward moneyness (recommended)
     };
     
@@ -64,7 +66,7 @@ public:
     std::pair<std::pair<double, double>, std::pair<double, double>> getBounds() const;
 
     // Pointer to new VolatilitySurface instance
-    VolatilitySurface* clone() const;        // Clone method for polymorphic copying
+    std::unique_ptr<VolatilitySurface> clone() const;        // Clone method for polymorphic copying
 
     // True if surfaces are equal
     bool operator==(const VolatilitySurface& other) const;
@@ -84,8 +86,8 @@ private:
     std::unique_ptr<DiscountCurve> _discountCurve;
     
     // Interpolation objects for different dimensions
-    std::vector<std::unique_ptr<InterpolationScheme>> _smileInterpolators;
-    std::vector<std::unique_ptr<InterpolationScheme>> _termStructureInterpolators;
+    std::vector<std::unique_ptr<InterpolationScheme>> _smileInterpolators;            // 1 per maturity interpolate across strikes
+    std::vector<std::unique_ptr<InterpolationScheme>> _termStructureInterpolators;    // 1 per strike interpolate acrsso maturities
     // An "is-a" relation does not apply to unique_ptr; only for class-to-class
 
     void validateInputData() const; // validate strikes, maturities, volatilities matrix
@@ -127,6 +129,7 @@ private:
     std::vector<double> _strikes;
     std::vector<double> _maturities;
     std::vector<std::vector<double>> _volatilities;
+    std::map<std::pair<double, double>, double> _volatilityMap; // member to store (strike, maturity) -> volatility pairs
     VolatilitySurface::SmileInterpolationType _smileInterpolationType = VolatilitySurface::SmileInterpolationType::CubicSpline;
     VolatilitySurface::MaturityInterpolationType _maturityInterpolationType = VolatilitySurface::MaturityInterpolationType::ForwardMoneyness;
     std::unique_ptr<DiscountCurve> _discountCurve;

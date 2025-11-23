@@ -73,19 +73,19 @@ double BlackScholesModel::diffusion(double time, double assetPrice) const
 // DupireModel Implementation
 // ============================================================================
 DupireModel::DupireModel(double spot, const VolatilitySurface& volSurface)
-	: Model(spot), _volSurfacePtr(volSurface.clone())
+	: Model(spot), _volSurfacePtr(volSurface.clone().release())
 {
 /* DupireModel volSurface.clone() makes independent copy of the VolatilitySurface
  * DupireModel has its own VolatilitySurface copy, independent of the original VolatilitySurface
  * Risk-free rate is extracted from the VolatilitySurface's DiscountCurve
- * NOTE: unique_ptr constructor accepts raw pointer from clone()
- * and takes ownership automatically - no manual delete needed!
+ * NOTE: clone() returns unique_ptr<VolatilitySurface>, we release() to get raw pointer
+ * and unique_ptr<const VolatilitySurface> constructor takes ownership
  */
 }
 
 
 DupireModel::DupireModel(const DupireModel& model)
-	: Model(model), _volSurfacePtr(model._volSurfacePtr->clone())
+	: Model(model), _volSurfacePtr(model._volSurfacePtr->clone().release())
 {
 }
 
@@ -99,15 +99,8 @@ DupireModel& DupireModel::operator=(const DupireModel& model)
 	if (this != &model)
 	{
 		Model::operator=(model);
-		// // Exception-safe assignment: create new object first
-		// VolatilitySurface* newVolSurface = model._volSurfacePtr->clone();
-		//
-		// // Only delete old pointer if new one was created successfully
-		// if (_volSurfacePtr) {
-		// 	delete _volSurfacePtr;
-		// }
-		// _volSurfacePtr = newVolSurface;
-		_volSurfacePtr.reset(model._volSurfacePtr->clone()); // handles delete and assignment
+		// Exception-safe assignment: clone() returns unique_ptr, release() to get raw pointer
+		_volSurfacePtr.reset(model._volSurfacePtr->clone().release()); // handles delete and assignment
 	}
 	return *this;
 }
