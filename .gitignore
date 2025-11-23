@@ -1,43 +1,93 @@
-
-# IDE - CLion / IntelliJ IDEA
+# ============================================
+# IDE Configuration Files
+# ============================================
+# CLion / IntelliJ IDEA
 .idea/
 *.iml
-.cache/
 
+# Language Server Protocol / clangd
+.cache/
+compile_commands.json
+
+# ============================================
+# Build Artifacts
+# ============================================
 # Build directories
 build/
 cmake-build-debug/
 cmake-build-release/
+out/
 
-# Compiled files
+# Compiled object files
 *.o
+*.obj
+
+# Static libraries
 *.a
+*.lib
+ß
+# Shared librariesß
 *.so
 *.dylib
-*.exe
 *.dll
 
-# CMake
+# Executables
+*.exe
+*.out
+*.app
+
+# ============================================
+# CMake Generated Files
+# ============================================
 CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
 Makefile
 *.cmake
 !CMakeLists.txt
-
-# Testing
+CTestTestfile.cmake
 Testing/
 
-# OS-specific files
-.DS_Store
-Thumbs.db
+# ============================================
+# Testing Output
+# ============================================
+Testing/
+*.gcov
+*.gcda
+*.gcno
 
-# Editor backup files
+# ============================================
+# OS-Specific Files
+# ============================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# ============================================
+# Editor Backup Files
+# ============================================
 *~
 *.swp
 *.swo
+*.bak
+*.orig
 
-# Temporary files
+# ============================================
+# Temporary Files
+# ============================================
 *.tmp
 *.log
+*.cache
+*.pid
+*.seed
+*.pid.lock
 
