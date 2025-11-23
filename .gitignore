@@ -25,8 +25,8 @@ out/
 # Static libraries
 *.a
 *.lib
-ß
-# Shared librariesß
+
+# Shared libraries
 *.so
 *.dylib
 *.dll
