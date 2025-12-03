@@ -366,7 +366,7 @@ std::pair<double, double> BKPathSimulator2D::nextStep(size_t timeIndex, double a
    // double X_next = X_t + drift + correlation_term + diffusion;
    
    /// CAUTION: Add drift term for option pricing; remove drift for the "historical simulation" wrt Andersen.
-   double drift = r * dt;
+    double drift = r * dt;
     double term1 = (rho/sigma_v) * (V_next - V_t - kappa * vbar * dt);
     double term2 = (kappa * rho / sigma_v - 0.5) * integratedV;
     double term3 = std::sqrt(1 - rho * rho) * std::sqrt(integratedV) * Z;
@@ -432,7 +432,7 @@ std::pair<double, double> TGPathSimulator2D::nextStep(size_t timeIndex, double a
     
     // Apply TG scheme to get V(t+Δ)
     double V_next = stepVarianceTG(variance, dt, Z_V);
-    
+
     // ========================================================================
     // STEP 2-3: Generate INDEPENDENT Z for X discretization (Eq. 33)
     // ========================================================================

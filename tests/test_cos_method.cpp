@@ -18,7 +18,7 @@
 /**
  *  NOTES:
  *  (1) Newton's Method Comparison: Original vs. Optimized
- *  (2) Maximum error when recovering f(x) from φ(ω) by Fourier-cosine expansion (PDF Recovery) - Table 1 in Fang & Oosterlee (2008)
+ *  (2) Maximum error when recovering f(x) from φ(ω) by Fourier-cosine expansion (PDF Recovery)
  *  (3)
  *  
            

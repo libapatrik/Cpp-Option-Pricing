@@ -139,20 +139,6 @@ TEST_F(NewtonMethodsTest, NewtonMethodComparison) {
             EXPECT_LT(error_diff, 1e-10) << "Methods should agree to machine precision";
         }
     }
-    
-    double avg_speedup = total_speedup / count;
-    
-    std::cout << "\n" << std::string(95, '-') << std::endl;
-    std::cout << "SUMMARY STATISTICS:" << std::endl;
-    std::cout << "  Average Speedup:           " << std::fixed << std::setprecision(2) << avg_speedup << "x" << std::endl;
-    std::cout << "  Max Error Difference:      " << std::scientific << std::setprecision(2) << max_error_diff << std::endl;
-    std::cout << "  Total Test Cases:          " << count << std::endl;
-    std::cout << "\n✓ Both methods produce IDENTICAL results (bit-for-bit)" << std::endl;
-    std::cout << "✓ Optimized method is " << std::fixed << std::setprecision(1) 
-              << avg_speedup << "x faster on average" << std::endl;
-    std::cout << "✓ Speedup from coefficient caching eliminates redundant ChF evaluations" << std::endl;
 }
-
-
 
 

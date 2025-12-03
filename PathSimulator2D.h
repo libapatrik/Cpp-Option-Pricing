@@ -21,6 +21,7 @@
  *  TODO:
  *  1. COS-method: given ChF recover CDF + PDF
  *  2. Newton method to invert CDF to get integrated variance sample
+ *  3. Antithetic sampling
  */
 
 /** 

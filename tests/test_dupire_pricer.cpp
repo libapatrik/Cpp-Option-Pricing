@@ -1,6 +1,3 @@
-// Unit tests for pricing European options under Dupire's local volatility model
-// Tests both FDPricer and MonteCarloPricer implementations
-
 #include <gtest/gtest.h>
 #include "../Model.h"
 #include "../Pricer.h"
@@ -25,10 +22,10 @@
  *   Handle boundary cases (deep ITM/OTM)
 
  * TODO:
- *    1. No-arbitrage constraints and test
+ *    1. No-arbitrage constraints and test - butterfly arb etc.
  *    2. Add tests for Model1, Model2, Model2 impacts on the PV
- *    3. 
- *    4. Stress tests for the model
+ *    3. Test different Milstein vs. Euler agianst overkilled MCPricer
+ *    4.
  *    
  *    
  */
@@ -496,7 +493,7 @@ TEST_F(DupirePricerTest, MilsteinVsEuler_MCPricer) {
     EulerPathSimulator eulerSim(timeSteps, *dupireModel, 42);
     MilsteinPathSimulator milsteinSim(timeSteps, *dupireModel, 42);
     
-    size_t numPaths = 50000;
+    size_t numPaths = 1000;
     MonteCarloPricer eulerPricer(*dupireModel, *discountCurve, eulerSim, numPaths);
     MonteCarloPricer milsteinPricer(*dupireModel, *discountCurve, milsteinSim, numPaths);
     

@@ -140,7 +140,6 @@ TEST_F(PathSimulator2DTest, WhatRiskFreeRate)
 
 /**
  * Test Broadie-Kaya (BK) - Original Newton vs. Optimized Newton method
- * TODO: For #iters need to adjust the both Newton function returns
  * Compares performance and correctness of two Newton implementations for CDF inversion:
  * - Original: Recomputes Fourier coefficients in each iteration
  * - Optimized: Caches coefficients for faster evaluation
@@ -267,7 +266,6 @@ TEST_F(PathSimulator2DTest, BKNewtonTest)
  *  Table comparing the methods simulating the pairs (X, V)
  *  (Euler, Euler), (BK, BK), (Eq33, TG), (Eq33, QE)
  *
- *  FIX: Either remove the r is BK's definition or implement r into each method - making it more general.
  */
  TEST_F(PathSimulator2DTest, CompareHestonScheme)
  {

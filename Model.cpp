@@ -255,7 +255,7 @@ std::pair<double, double> HestonModel::diffusion2D(double time, double assetPric
 bool HestonModel::satisfiesFellerCondition() const
 {
 	// Feller condition: 2κv̄ ≥ σ_v²
-	// If satisfied, the CIR process for variance stays strictly positive
+	// If satisfied, the CIR process for variance stays positive
 	return (2.0 * _kappa * _vbar) >= (_sigma_v * _sigma_v);
 }
 
@@ -296,7 +296,7 @@ void HestonModel::validateParameters() const
 	// ========================================================================
 	// Feller condition: 2κv̄ ≥ σ_v²
 	// If violated, variance process V(t) can reach zero with positive probability
-	// Some discretization schemes (e.g., BK/QE, BK/TG) can handle this gracefully
+
 	
 	if (!satisfiesFellerCondition()) {
 		std::cerr << "WARNING [HestonModel]: Feller condition NOT satisfied!\n"
