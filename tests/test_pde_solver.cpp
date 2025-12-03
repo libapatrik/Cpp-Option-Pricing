@@ -49,8 +49,9 @@ TEST(PDESolverTest, HeatEquation_AnalyticalSolution)
     // Boundary conditions: u(0,t) = u(1,t) = 0
     DirichletBC bc(0.0, 0.0);
 
-    // Grid
-    Grid grid(0.0, L, 101, T, 100);
+    // Grid: For CFL stability with explicit method, need μ = α*dt/dx² ≤ 0.5
+    // With dx = 0.01, need dt ≤ 0.0005, so N_t ≥ 200
+    Grid grid(0.0, L, 101, T, 250);  // Increased time steps for stability
 
     std::cout << "Grid: " << grid.numSpotPoints() << " spatial points, "
               << grid.numTimeSteps() << " time steps" << std::endl;
@@ -179,8 +180,12 @@ TEST(PDESolverTest, BlackScholes_EuropeanCall)
 
     DirichletBC bc(lower_bc, upper_bc);
 
-    // Grid
-    Grid grid(0.0, S_max, 201, T, 200);
+    // Grid: For CFL stability with explicit method:
+    // max_a = 0.5*σ²*S_max² = 0.5*0.04*90000 = 1800
+    // dx = S_max/200 = 1.5
+    // Need dt ≤ 0.5*dx²/max_a = 0.5*2.25/1800 ≈ 0.000625
+    // So N_t ≥ T/0.000625 = 1600
+    Grid grid(0.0, S_max, 201, T, 2000);  // Increased time steps for stability
 
     std::cout << "Grid: " << grid.numSpotPoints() << " spatial points, "
               << grid.numTimeSteps() << " time steps" << std::endl;

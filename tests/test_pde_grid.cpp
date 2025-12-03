@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "../PDE_Reference/Grid.h"
+#include "../PDEs/Grid.h"
 #include <cmath>
 
 // ============================================================================
@@ -148,19 +148,19 @@ TEST(PDEGridTest, TimeGridUniformity) {
 TEST(PDEGridTest, InvalidSpotRange) {
     // S_min < 0
     EXPECT_THROW(
-        PDEGrid grid(-1.0, 100.0, 101, 1.0, 100),
+        Grid grid(-1.0, 100.0, 101, 1.0, 100),
         std::invalid_argument
     );
     
     // S_max <= S_min
     EXPECT_THROW(
-        PDEGrid grid(100.0, 50.0, 101, 1.0, 100),
+        Grid grid(100.0, 50.0, 101, 1.0, 100),
         std::invalid_argument
     );
     
     // S_max == S_min
     EXPECT_THROW(
-        PDEGrid grid(50.0, 50.0, 101, 1.0, 100),
+        Grid grid(50.0, 50.0, 101, 1.0, 100),
         std::invalid_argument
     );
 }
@@ -168,13 +168,13 @@ TEST(PDEGridTest, InvalidSpotRange) {
 TEST(PDEGridTest, InvalidGridDimensions) {
     // Too few spatial points
     EXPECT_THROW(
-        PDEGrid grid(0.0, 100.0, 2, 1.0, 100),
+        Grid grid(0.0, 100.0, 2, 1.0, 100),
         std::invalid_argument
     );
     
     // Zero time steps
     EXPECT_THROW(
-        PDEGrid grid(0.0, 100.0, 101, 1.0, 0),
+        Grid grid(0.0, 100.0, 101, 1.0, 0),
         std::invalid_argument
     );
 }
@@ -182,13 +182,13 @@ TEST(PDEGridTest, InvalidGridDimensions) {
 TEST(PDEGridTest, InvalidTimeRange) {
     // Negative T_max
     EXPECT_THROW(
-        PDEGrid grid(0.0, 100.0, 101, -1.0, 100),
+        Grid grid(0.0, 100.0, 101, -1.0, 100),
         std::invalid_argument
     );
     
     // Zero T_max
     EXPECT_THROW(
-        PDEGrid grid(0.0, 100.0, 101, 0.0, 100),
+        Grid grid(0.0, 100.0, 101, 0.0, 100),
         std::invalid_argument
     );
 }

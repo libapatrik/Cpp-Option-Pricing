@@ -42,7 +42,7 @@ TEST(PDEStabilityTest, ExplicitEuler_StabilityCondition)
               << std::setw(12) << "Status" << std::endl;
     std::cout << std::string(83, '-') << std::endl;
 
-    // Test 1: Unstable (μ = 1.0, too large!)
+    // Test 1: Unstable (μ = 1.0, too large!) - should throw exception
     {
         size_t N_x = 101;
         double dx = L / (N_x - 1);
@@ -52,13 +52,15 @@ TEST(PDEStabilityTest, ExplicitEuler_StabilityCondition)
 
         Grid grid(0.0, L, N_x, T, N_t);
         ThetaMethodSolver solver(pde, grid, bc, ThetaMethodSolver::Scheme::Explicit);
-        solver.solve();
-
-        double max_error = 0.0;
-        for (size_t i = 0; i < N_x; ++i) {
-            double x = grid.spot(i);
-            double error = std::abs(solver.solution()[i] - u_exact(x));
-            max_error = std::max(max_error, error);
+        
+        // Solver should throw exception for unstable CFL condition
+        bool exception_thrown = false;
+        try {
+            solver.solve();
+        } catch (const std::runtime_error& e) {
+            exception_thrown = true;
+            std::string msg(e.what());
+            EXPECT_TRUE(msg.find("CFL") != std::string::npos) << "Exception should mention CFL condition";
         }
 
         std::cout << std::setw(10) << N_x
@@ -66,18 +68,18 @@ TEST(PDEStabilityTest, ExplicitEuler_StabilityCondition)
                   << std::setw(12) << std::fixed << std::setprecision(6) << dx
                   << std::setw(12) << dt_unstable
                   << std::setw(12) << mu
-                  << std::setw(15) << std::scientific << max_error
-                  << std::setw(12) << "UNSTABLE" << std::endl;
+                  << std::setw(15) << "N/A"
+                  << std::setw(12) << "PREVENTED" << std::endl;
 
-        EXPECT_GT(max_error, 1e10) << "Should be unstable with μ=1.0";
+        EXPECT_TRUE(exception_thrown) << "Should throw exception for μ=1.0 > 0.5";
     }
 
-    // Test 2: Marginally stable (μ = 0.5)
+    // Test 2: Marginally stable (μ = 0.49, just below limit)
     {
         size_t N_x = 101;
         double dx = L / (N_x - 1);
-        double dt_marginal = 0.5 * dx * dx / alpha;  // μ = 0.5
-        size_t N_t = static_cast<size_t>(T / dt_marginal);
+        double dt_marginal = 0.49 * dx * dx / alpha;  // μ = 0.49 (avoid floating point issues at boundary)
+        size_t N_t = static_cast<size_t>(T / dt_marginal) + 1;  // +1 to ensure dt is not too large
         double mu = alpha * dt_marginal / (dx * dx);
 
         Grid grid(0.0, L, N_x, T, N_t);
@@ -99,7 +101,7 @@ TEST(PDEStabilityTest, ExplicitEuler_StabilityCondition)
                   << std::setw(15) << std::scientific << max_error
                   << std::setw(12) << "MARGINAL" << std::endl;
 
-        EXPECT_LT(max_error, 0.01) << "Should be stable with μ=0.5";
+        EXPECT_LT(max_error, 0.01) << "Should be stable with μ=0.49";
     }
 
     // Test 3: Stable (μ = 0.25)

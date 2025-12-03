@@ -1,12 +1,20 @@
 cmake_minimum_required(VERSION 3.18)
+
+# Set CMake policies IMMEDIATELY after cmake_minimum_required   // must be set here! Order matters
+if(POLICY CMP0167)
+  cmake_policy(SET CMP0167 NEW)
+endif()
+
+
 project(CppFM)
 
 set(CMAKE_CXX_STANDARD 20)
 
-# Enable testing
-enable_testing()
+# ============================================================================
+# Dependencies
+# ============================================================================
 
-# Add Google Test using FetchContent
+# Google Test via FetchContent
 include(FetchContent)
 FetchContent_Declare(
   googletest
@@ -14,230 +22,139 @@ FetchContent_Declare(
   GIT_TAG v1.14.0
   DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
+
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+
+# Fetch and build googletest
 FetchContent_MakeAvailable(googletest)
 
-# Main executable
-add_executable(CppFM main.cpp
-        Model.cpp
-        Model.h
-        Utils.h
-        Utils.cpp
-        PathSimulator.h
-        PathSimulator.cpp
-        FinancialInstrument.h
-        FinancialInstrument.cpp
-        Pricer.cpp
-        Pricer.h
-        DiscountCurve.h
-        DiscountCurve.cpp
-        VolatilitySurface.cpp
-        VolatilitySurface.h
-        InterpolationSchemes.cpp
-        InterpolationSchemes.h
-        BlackScholesFormulas.cpp
-        BlackScholesFormulas.h
-        PDEs/PDE.cpp
-        PDEs/PDE.h
-        PDEs/Grid.cpp
-        PDEs/Grid.h
-        PDEs/BoundaryConditions.cpp
-        PDEs/BoundaryConditions.h
-        PDEs/Solver.cpp
-        PDEs/Solver.h
-        PDEs/PDEGreeksCalculator.cpp
-        PDEs/PDEGreeksCalculator.h
-        Smart_Pointers.h
-)
+# Make Google Test headers available for IDE indexing
+# This helps CLion find the headers for code completion and error checking
+include_directories(${googletest_SOURCE_DIR}/googletest/include)
+include_directories(${googletest_SOURCE_DIR}/googlemock/include)
 
-# Test executables
-add_executable(test_volatility_surface_construction tests/test_volatility_surface_construction.cpp
-        tests/test_utils.h
-        Model.cpp
-        Model.h
-        Utils.h
-        Utils.cpp
-        PathSimulator.h
-        PathSimulator.cpp
-        FinancialInstrument.h
-        FinancialInstrument.cpp
-        Pricer.cpp
-        Pricer.h
-        DiscountCurve.h
-        DiscountCurve.cpp
-        VolatilitySurface.cpp
-        VolatilitySurface.h
-        InterpolationSchemes.cpp
-        InterpolationSchemes.h
-        BlackScholesFormulas.cpp
-        BlackScholesFormulas.h
-        tests/test_volatility_surface_construction.cpp
-)
+# Boost
+set(Boost_ROOT "/opt/homebrew/opt/boost")
+find_package(Boost REQUIRED)
 
-add_executable(test_interpolation tests/test_interpolation.cpp
-        tests/test_utils.h
-        InterpolationSchemes.cpp
-        InterpolationSchemes.h
-        Utils.cpp
-        Utils.h
-)
+# Enable testing
+enable_testing()
 
-add_executable(test_dupire tests/test_dupire.cpp
-        tests/test_utils.h
-        Model.cpp
-        Model.h
-        Utils.h
-        Utils.cpp
-        PathSimulator.h
-        PathSimulator.cpp
-        FinancialInstrument.h
-        FinancialInstrument.cpp
-        Pricer.cpp
-        Pricer.h
-        DiscountCurve.h
-        DiscountCurve.cpp
-        VolatilitySurface.cpp
-        VolatilitySurface.h
-        InterpolationSchemes.cpp
-        InterpolationSchemes.h
-        BlackScholesFormulas.cpp
-        BlackScholesFormulas.h
-        tests/test_volatility_surface_construction.cpp
-)
-
-add_executable(test_black_scholes tests/test_black_scholes.cpp
-        tests/test_utils.h
-        Model.cpp
-        Model.h
-        Utils.h
-        Utils.cpp
-        PathSimulator.h
-        PathSimulator.cpp
-        FinancialInstrument.h
-        FinancialInstrument.cpp
-        Pricer.cpp
-        Pricer.h
-        DiscountCurve.h
-        DiscountCurve.cpp
-        VolatilitySurface.cpp
-        VolatilitySurface.h
-        InterpolationSchemes.cpp
-        InterpolationSchemes.h
-        BlackScholesFormulas.cpp
-        BlackScholesFormulas.h
-        tests/test_volatility_surface_construction.cpp
-)
-
-add_executable(test_greeks tests/test_greeks.cpp
-        tests/test_utils.h
-        Model.cpp
-        Model.h
-        Utils.h
-        Utils.cpp
-        PathSimulator.h
-        PathSimulator.cpp
-        FinancialInstrument.h
-        FinancialInstrument.cpp
-        Pricer.cpp
-        Pricer.h
-        DiscountCurve.h
-        DiscountCurve.cpp
-        VolatilitySurface.cpp
-        VolatilitySurface.h
-        InterpolationSchemes.cpp
-        InterpolationSchemes.h
-        BlackScholesFormulas.cpp
-        BlackScholesFormulas.h
-        tests/test_volatility_surface_construction.cpp
-)
-
-add_executable(test_integration tests/test_integration.cpp
-        tests/test_utils.h
-        Model.cpp
-        Model.h
-        Utils.h
-        Utils.cpp
-        PathSimulator.h
-        PathSimulator.cpp
-        FinancialInstrument.h
-        FinancialInstrument.cpp
-        Pricer.cpp
-        Pricer.h
-        DiscountCurve.h
-        DiscountCurve.cpp
-        VolatilitySurface.cpp
-        VolatilitySurface.h
-        InterpolationSchemes.cpp
-        InterpolationSchemes.h
-        BlackScholesFormulas.cpp
-        BlackScholesFormulas.h
-        tests/test_volatility_surface_construction.cpp
-)
-
-add_executable(test_pde_solver tests/test_pde_solver.cpp
-        PDEs/PDE.cpp
-        PDEs/PDE.h
-        PDEs/Grid.cpp
-        PDEs/Grid.h
-        PDEs/BoundaryConditions.cpp
-        PDEs/BoundaryConditions.h
-        PDEs/Solver.cpp
-        PDEs/Solver.h
-        Utils.cpp
-        Utils.h
-        InterpolationSchemes.cpp
-        InterpolationSchemes.h
-)
-
-add_executable(test_pde_stability tests/test_pde_stability.cpp
-        PDEs/PDE.cpp
-        PDEs/PDE.h
-        PDEs/Grid.cpp
-        PDEs/Grid.h
-        PDEs/BoundaryConditions.cpp
-        PDEs/BoundaryConditions.h
-        PDEs/Solver.cpp
-        PDEs/Solver.h
-        Utils.cpp
-        Utils.h
-        InterpolationSchemes.cpp
-        InterpolationSchemes.h
-)
-
-add_executable(test_tridiagonal_solver tests/test_tridiagonal_solver.cpp
-        Utils.cpp
-        Utils.h
-)
-
-# PDE Greeks Test
-add_executable(test_pde_greeks tests/test_pde_greeks.cpp
-    PDEs/PDEGreeksCalculator.cpp
-    PDEs/Solver.cpp
-    PDEs/PDE.cpp
-    PDEs/Grid.cpp
-    PDEs/BoundaryConditions.cpp
+# ============================================================================
+# Core Library
+# ============================================================================
+add_library(CppFM_lib STATIC
+    # Core Models
+    Model.cpp
+    Model.h
     Utils.cpp
-        InterpolationSchemes.cpp
+    Utils.h
+    
+    # Path Simulators
+    PathSimulator.cpp
+    PathSimulator.h
+    PathSimulator2D.cpp
+    PathSimulator2D.h
+    
+    # Financial Instruments
+    FinancialInstrument.cpp
+    FinancialInstrument.h
+    Pricer.cpp
+    Pricer.h
+    
+    # Market Data
+    DiscountCurve.cpp
+    DiscountCurve.h
+    VolatilitySurface.cpp
+    VolatilitySurface.h
+    InterpolationSchemes.cpp
+    InterpolationSchemes.h
     BlackScholesFormulas.cpp
+    BlackScholesFormulas.h
+    
+    # PDE Solver
+    PDEs/PDE.cpp
+    PDEs/PDE.h
+    PDEs/Grid.cpp
+    PDEs/Grid.h
+    PDEs/BoundaryConditions.cpp
+    PDEs/BoundaryConditions.h
+    PDEs/Solver.cpp
+    PDEs/Solver.h
+    PDEs/PDEGreeksCalculator.cpp
+    PDEs/PDEGreeksCalculator.h
 )
 
-# Link test executables with Google Test
-target_link_libraries(test_volatility_surface_construction gtest_main)
-target_link_libraries(test_interpolation gtest_main)
-target_link_libraries(test_dupire gtest_main)
-target_link_libraries(test_black_scholes gtest_main)
-target_link_libraries(test_greeks gtest_main)
-target_link_libraries(test_integration gtest_main)
-target_link_libraries(test_pde_solver gtest_main)
-target_link_libraries(test_pde_stability gtest_main)
-target_link_libraries(test_tridiagonal_solver gtest_main)
-target_link_libraries(test_pde_greeks gtest_main)
+# Link Boost to the library
+# Use PUBLIC SYSTEM to:
+#   1. Propagate Boost headers to targets linking CppFM_lib
+#   2. Suppress warnings from Boost headers (-isystem)
+target_include_directories(CppFM_lib SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 
-# Add tests to CTest
+# ============================================================================
+# Main Executable
+# ============================================================================
+add_executable(CppFM main.cpp)
+target_link_libraries(CppFM CppFM_lib)
+
+# ============================================================================
+# Test Executables
+# ============================================================================
+
+# Volatility Surface Tests
+add_executable(test_volatility_surface_construction tests/test_volatility_surface_construction.cpp tests/test_utils.h)
+target_link_libraries(test_volatility_surface_construction CppFM_lib gtest_main)
+
+add_executable(test_interpolation tests/test_interpolation.cpp tests/test_utils.h)
+target_link_libraries(test_interpolation CppFM_lib gtest_main)
+
+add_executable(test_dupire tests/test_dupire.cpp tests/test_utils.h)
+target_link_libraries(test_dupire CppFM_lib gtest_main)
+
+add_executable(test_dupire_pricer tests/test_dupire_pricer.cpp tests/test_utils.h)
+target_link_libraries(test_dupire_pricer CppFM_lib gtest_main)
+
+add_executable(test_black_scholes tests/test_black_scholes.cpp tests/test_utils.h)
+target_link_libraries(test_black_scholes CppFM_lib gtest_main)
+
+add_executable(test_greeks tests/test_greeks.cpp tests/test_utils.h)
+target_link_libraries(test_greeks CppFM_lib gtest_main)
+
+add_executable(test_integration tests/test_integration.cpp tests/test_utils.h)
+target_link_libraries(test_integration CppFM_lib gtest_main)
+
+# PDE Solver Tests
+add_executable(test_pde_solver tests/test_pde_solver.cpp)
+target_link_libraries(test_pde_solver CppFM_lib gtest_main)
+
+add_executable(test_pde_stability tests/test_pde_stability.cpp)
+target_link_libraries(test_pde_stability CppFM_lib gtest_main)
+
+add_executable(test_tridiagonal_solver tests/test_tridiagonal_solver.cpp)
+target_link_libraries(test_tridiagonal_solver CppFM_lib gtest_main)
+
+add_executable(test_pde_greeks tests/test_pde_greeks.cpp)
+target_link_libraries(test_pde_greeks CppFM_lib gtest_main)
+
+add_executable(test_cos_method tests/test_cos_method.cpp)
+target_link_libraries(test_cos_method CppFM_lib gtest_main)
+
+add_executable(test_newton_methods tests/test_newton_methods.cpp)
+target_link_libraries(test_newton_methods CppFM_lib gtest_main)
+
+add_executable(test_heston_model tests/test_heston_model.cpp)
+target_link_libraries(test_heston_model CppFM_lib gtest_main)
+
+add_executable(test_heston_scheme tests/test_heston_scheme.cpp)
+target_link_libraries(test_heston_scheme CppFM_lib gtest_main)
+# ============================================================================
+# CTest Configuration
+# ============================================================================
 add_test(NAME VolatilitySurfaceConstruction COMMAND test_volatility_surface_construction)
 add_test(NAME VolatilitySurfaceInterpolation COMMAND test_interpolation)
 add_test(NAME VolatilitySurfaceDupire COMMAND test_dupire)
+add_test(NAME DupirePricer COMMAND test_dupire_pricer)
 add_test(NAME VolatilitySurfaceBlackScholes COMMAND test_black_scholes)
 add_test(NAME VolatilitySurfaceGreeks COMMAND test_greeks)
 add_test(NAME VolatilitySurfaceIntegration COMMAND test_integration)
@@ -245,3 +162,7 @@ add_test(NAME PDESolver COMMAND test_pde_solver)
 add_test(NAME PDEStability COMMAND test_pde_stability)
 add_test(NAME TridiagonalSolver COMMAND test_tridiagonal_solver)
 add_test(NAME PDEGreeks COMMAND test_pde_greeks)
+add_test(NAME COSMethod COMMAND test_cos_method)
+add_test(NAME NewtonMethods COMMAND test_newton_methods)
+add_test(NAME HestonModel COMMAND test_heston_model)
+add_test(NAME HestonScheme COMMAND test_heston_scheme)
