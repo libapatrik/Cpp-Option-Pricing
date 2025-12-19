@@ -1,0 +1,94 @@
+# ============================================
+# IDE Configuration Files
+# ============================================
+# CLion / IntelliJ IDEA
+.idea/
+*.iml
+
+# Language Server Protocol / clangd
+.cache/
+compile_commands.json
+
+# ============================================
+# Build Artifacts
+# ============================================
+# Build directories
+build/
+build_test/
+cmake-build-debug/
+cmake-build-release/
+out/
+
+# Compiled object files
+*.o
+*.obj
+
+# Static libraries
+*.a
+*.lib
+
+# Shared libraries
+*.so
+*.dylib
+*.dll
+
+# Executables
+*.exe
+*.out
+*.app
+
+# ============================================
+# CMake Generated Files
+# ============================================
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+CTestTestfile.cmake
+Testing/
+
+# ============================================
+# Testing Output
+# ============================================
+Testing/
+*.gcov
+*.gcda
+*.gcno
+
+# ============================================
+# OS-Specific Files
+# ============================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# ============================================
+# Editor Backup Files
+# ============================================
+*~
+*.swp
+*.swo
+*.bak
+*.orig
+
+# ============================================
+# Temporary Files
+# ============================================
+*.tmp
+*.log
+*.cache
+*.pid
+*.seed
+*.pid.lock
+

@@ -1,0 +1,968 @@
+//
+// Created by Patrik  Liba on 27/11/2025.
+//
+
+#include "PathSimulator2D.h"
+#include "Utils.h"
+#include <cmath>
+#include <stdexcept>
+
+// ============================================================================
+// PathSimulator2D Base Class Implementation
+// ============================================================================
+
+PathSimulator2D::PathSimulator2D(const std::vector<double> &timeSteps,
+                                 const Model2D &model, size_t randomSeed)
+    : _timeSteps(timeSteps), _modelPtr(model.clone()), _randomSeed(randomSeed),
+      _randomEngine(randomSeed), _antitheticMode(false), _cacheIndex(0) {
+  // _modelPtr should point to a COPY of model (use clone() method)
+  // This ensures PathSimulator2D owns its model and model can be destroyed
+  // safely
+
+  // Call a method that does SANITY CHECKS on timeSteps
+  // timeSteps init value is zero
+  // TimeSteps is strictly increasing sequence
+  if (!timeStepsSanityCheck())
+    throw std::runtime_error("The Time Steps are not correct!"); // exception
+
+  // Reserve space for random cache (estimate: 2 randoms per time step)
+  _randomCache.reserve(timeSteps.size() * 4);
+}
+
+PathSimulator2D::~PathSimulator2D() {
+  // Delete the model pointer - the 'new' called by clone() is deleted here
+  if (_modelPtr) { // Check if Null before deleting pointer
+    delete _modelPtr;
+    _modelPtr = nullptr; // Prevent double deletion
+  }
+}
+
+bool PathSimulator2D::timeStepsSanityCheck() const {
+  // required more logic
+  if (_timeSteps.empty())
+    return false;
+  if (_timeSteps[0] < 0.0)
+    return false;
+  for (size_t i = 1; i < _timeSteps.size(); ++i) {
+    if (!std::isfinite(_timeSteps[i]))
+      return false; // finiteness
+    if (_timeSteps[i] <= _timeSteps[i - 1])
+      return false; // increasing
+  }
+  return true;
+}
+
+/**
+ *  PATH-WISE IMPLEMENTATION
+ */
+// (X, V) put them together
+std::pair<std::vector<double>, std::vector<double>>
+PathSimulator2D::paths() const {
+  /**
+   * Path generation with PATH-LEVEL antithetic sampling
+   *
+   * For proper antithetic sampling:
+   * - Path 1: Generate with fresh randoms, cache them
+   * - Path 2: Replay cached randoms negated
+   * - Path 3: Generate fresh again
+   * - etc.
+   */
+
+  // Setup for current path
+  if (_antitheticMode) {
+    // Antithetic mode: replay cached randoms (negated)
+    _cacheIndex = 0;
+  } else {
+    // Fresh mode: clear cache for new path
+    _randomCache.clear();
+  }
+
+  // Initialisation stage : Path[0] = S0, Variance[0] = V0
+  std::vector<double> assetPath;
+  std::vector<double> variancePath;
+
+  assetPath.push_back(_modelPtr->initValue()); // S_0
+
+  // For 2D models like Heston, we need V_0
+  // Since Model2D interface doesn't have auxInitValue(), we downcast to
+  // HestonModel
+  const HestonModel *hestonPtr = dynamic_cast<const HestonModel *>(_modelPtr);
+  if (!hestonPtr) {
+    throw std::runtime_error(
+        "PathSimulator2D currently only supports HestonModel");
+  }
+  variancePath.push_back(hestonPtr->v0());
+
+  // Iteration stage : Path[i] to Path[i+1]
+  for (size_t idx = 0; idx < _timeSteps.size() - 1; ++idx) {
+    auto [S_next, V_next] = nextStep(idx, assetPath[idx], variancePath[idx]);
+    assetPath.push_back(S_next);
+    variancePath.push_back(V_next);
+  }
+
+  // Toggle antithetic mode for next path
+  _antitheticMode = !_antitheticMode;
+
+  return {assetPath, variancePath};
+}
+
+std::pair<double, double> PathSimulator2D::generateCorrelatedNormals() const {
+  /**
+   * Generate correlated standard normals with PATH-LEVEL antithetic sampling
+   *
+   * NOTE: This method is used ONLY by Euler scheme (Equations 6-7).
+   *
+   * Algorithm:
+   * 1. If antithetic mode: replay cached Z_V, Z_perp (negated)
+   * 2. Otherwise: generate fresh and cache them
+   * 3. Apply Cholesky: Z_X = ρ·Z_V + √(1-ρ²)·Z_perp
+   */
+
+  double Z_V, Z_perp;
+
+  if (_antitheticMode) {
+    // Replay cached values (negated)
+    Z_V = -_randomCache[_cacheIndex++];
+    Z_perp = -_randomCache[_cacheIndex++];
+  } else {
+    // Generate fresh normals
+    std::uniform_real_distribution<double> uniform(0.0, 1.0);
+    double U1 = uniform(_randomEngine);
+    double U2 = uniform(_randomEngine);
+
+    Z_V = Utils::inverseNormalCDF(U1);
+    Z_perp = Utils::inverseNormalCDF(U2);
+
+    // Cache for antithetic path
+    _randomCache.push_back(Z_V);
+    _randomCache.push_back(Z_perp);
+  }
+
+  // Apply correlation structure
+  double rho = _modelPtr->correlation();
+  double Z_X = rho * Z_V + std::sqrt(1.0 - rho * rho) * Z_perp;
+
+  return {Z_V, Z_X};
+}
+
+double PathSimulator2D::generateUniform() const {
+  std::uniform_real_distribution<double> uniform(0.0, 1.0);
+  return uniform(_randomEngine);
+}
+
+double PathSimulator2D::generateStandardNormalSLV()
+    const { // ! Need to refactor without antithetic sampling
+  return Utils::inverseNormalCDF(generateUniform());
+}
+
+double PathSimulator2D::generateStandardNormal() const {
+  /**
+   * Generate a single standard normal with PATH-LEVEL antithetic sampling
+   *
+   * Used by TG, QE, and BK schemes for independent normal generation
+   *
+   * If antithetic mode: replay cached value (negated)
+   * Otherwise: generate fresh and cache it
+   */
+
+  if (_antitheticMode) {
+    // Replay cached value (negated)
+    return -_randomCache[_cacheIndex++];
+  } else {
+    // Generate fresh normal
+    std::uniform_real_distribution<double> uniform(0.0, 1.0);
+    double U = uniform(_randomEngine);
+    double Z = Utils::inverseNormalCDF(U);
+
+    // Cache for antithetic path
+    _randomCache.push_back(Z);
+
+    return Z;
+  }
+}
+
+// ============================================================================
+// Step Log Price Eq. 33 - Correlation-Preserving Discretization for X
+// ============================================================================
+
+double PathSimulator2D::stepLogPriceEq33(double X_t, double V_t, double V_next,
+                                         double dt, double Z, double gamma1,
+                                         double gamma2) const {
+  /**
+   * Correlation-Preserving Discretization for X (Andersen Eq. 33)
+   *
+   * Notation: X(t) = ln(S(t)) is the log-price
+   *
+   * X̂(t + Δ) = X̂(t) + K₀ + K₁V̂(t) + K₂V̂(t+Δ) + √(K₃V̂(t) + K₄V̂(t+Δ)) · Z
+   *
+   * where Z is a standard Gaussian independent of V̂, and:
+   *   K₀ = -(ρκθ/ε)Δ
+   *   K₁ = γ₁Δ(κρ/ε - 1/2) - ρ/ε
+   *   K₂ = γ₂Δ(κρ/ε - 1/2) + ρ/ε
+   *   K₃ = γ₁Δ(1 - ρ²)
+   *   K₄ = γ₂Δ(1 - ρ²)
+   *
+   * This scheme preserves the correlation ρ/ε · V(t+Δ) between X(t+Δ) and
+   * V(t+Δ)
+   */
+
+  const HestonModel *hestonPtr = dynamic_cast<const HestonModel *>(_modelPtr);
+  if (!hestonPtr) {
+    throw std::runtime_error("stepLogPriceEq33 requires HestonModel");
+  }
+
+  double r = hestonPtr->riskFreeRate(); // r: risk-free rate
+  double kappa = hestonPtr->kappa();
+  double vbar = hestonPtr->vbar();       // θ
+  double sigma_v = hestonPtr->sigma_v(); // ε
+  double rho = hestonPtr->rho();         // ρ
+
+  // ========================================================================
+  // Compute K₀, K₁, K₂, K₃, K₄ coefficients (Andersen paper)
+  // ========================================================================
+
+  double K0 =
+      -(rho * kappa * vbar / sigma_v) * dt; // interest rate could go here.
+
+  double K1 = gamma1 * dt * (kappa * rho / sigma_v - 0.5) - rho / sigma_v;
+
+  double K2 = gamma2 * dt * (kappa * rho / sigma_v - 0.5) + rho / sigma_v;
+
+  double K3 = gamma1 * dt * (1.0 - rho * rho);
+
+  double K4 = gamma2 * dt * (1.0 - rho * rho);
+
+  // ========================================================================
+  // Apply Equation 33
+  // ========================================================================
+
+  double drift = r * dt;
+
+  double variance_coeff = K3 * V_t + K4 * V_next;
+  double term1 = std::sqrt(std::max(variance_coeff, 0.0)) *
+                 Z; // Ensure non-negative argument
+
+  double X_next = X_t + drift + K0 + K1 * V_t + K2 * V_next + term1;
+
+  return X_next; // X(t+Δ) = ln(S(t+Δ))
+}
+
+// ============================================================================
+// Shared Variance Discretization Methods (DRY Principle)
+// ============================================================================
+
+double PathSimulator2D::stepVarianceTG(double V_t, double dt,
+                                       double Z_V) const {
+  /**
+   * Truncated Gaussian (TG) Scheme for Variance (Andersen Eq. 13)
+   *
+   * CIR process: dV = κ(θ - V)dt + σ_v√V dW_V
+   *
+   * TG scheme: V̂(t+Δ) = [V̂(t) + κ(θ - V̂(t))Δ + σ_v√(V̂(t))√Δ·Z_V]⁺
+   *
+   * where [x]⁺ = max(x, 0) is the positive part (truncation)
+   *
+   * Used by: TGPathSimulator2D, BKTGPathSimulator2D
+   */
+
+  const HestonModel *hestonPtr = static_cast<const HestonModel *>(_modelPtr);
+  double kappa = hestonPtr->kappa();
+  double vbar = hestonPtr->vbar();
+  double sigma_v = hestonPtr->sigma_v();
+
+  double sqrtDt = std::sqrt(dt);
+
+  // Apply truncation to current variance
+  double V_plus = std::max(V_t, 0.0);
+
+  // Drift term: κ(θ - V⁺)Δ
+  double drift = kappa * (vbar - V_plus) * dt;
+
+  // Diffusion term: σ_v√(V⁺)√Δ·Z_V
+  double diffusion = sigma_v * std::sqrt(V_plus) * sqrtDt * Z_V;
+
+  // Update with truncation
+  double V_next = std::max(V_t + drift + diffusion, 0.0); // Eq. 13
+
+  return V_next;
+}
+
+double PathSimulator2D::stepVarianceQE(double V_t, double dt, double Z_V,
+                                       double psi_c) const {
+  /**
+   * Quadratic Exponential (QE) Scheme for Variance
+   *
+   * CIR process: dV = κ(θ - V)dt + σ_v√V dW_V
+   *
+   * QE scheme switches between quadratic and exponential approximations
+   * based on ψ = s²/m² where:
+   *   m = E[V(t+Δ) | V(t)]
+   *   s² = Var[V(t+Δ) | V(t)]
+   *
+   * If ψ ≤ ψ_c: Quadratic scheme
+   * If ψ > ψ_c: Exponential scheme
+   *
+   * Used by: QEPathSimulator2D, BKQEPathSimulator2D
+   */
+
+  const HestonModel *hestonPtr = static_cast<const HestonModel *>(_modelPtr);
+  double kappa = hestonPtr->kappa();
+  double vbar = hestonPtr->vbar();
+  double sigma_v = hestonPtr->sigma_v();
+
+  // ========================================================================
+  // Compute moments of V(t+Δ) conditional on V(t)
+  // ========================================================================
+
+  double exp_kappa_dt = std::exp(-kappa * dt);
+
+  // Mean: m = E[V(t+Δ) | V(t)] = θ + (V(t) - θ)e^(-κΔt)
+  double m = vbar + (V_t - vbar) * exp_kappa_dt;
+
+  // Variance: s² = Var[V(t+Δ) | V(t)]
+  //           = V(t)·σ²/κ·(e^(-κΔt) - e^(-2κΔt)) + θ·σ²/(2κ)·(1 - e^(-κΔt))²
+  double s2 = V_t * sigma_v * sigma_v / kappa *
+                  (exp_kappa_dt - exp_kappa_dt * exp_kappa_dt) +
+              vbar * sigma_v * sigma_v / (2.0 * kappa) * (1.0 - exp_kappa_dt) *
+                  (1.0 - exp_kappa_dt);
+
+  // Scaled variance: ψ = s²/m²
+  double psi = s2 / (m * m); // Eq. 19
+
+  // ========================================================================
+  // 3.2.3 Switching rule
+  // ========================================================================
+
+  // CRITICAL: Generate ALL randoms upfront to ensure consistent consumption
+  // This prevents cache misalignment when branch decisions differ between
+  // fresh and antithetic paths due to different variance values.
+  double Z_u = generateStandardNormal();
+  double U_V = Utils::stdNormCdf(Z_u); // Always generate, even if unused
+
+  if (psi <= psi_c) {
+    // ? How does this mix-in with Ant-sampling?
+    // --------------------------------------------------------------------
+    // Quadratic scheme (ψ ≤ ψ_c): V ~ a(b + Z_V)²
+    // --------------------------------------------------------------------
+    // Note: U_V is generated but not used (ensures consistent random
+    // consumption)
+
+    double psi_inv = 2.0 / psi;
+    double temp = std::max(0.0, psi_inv - 1.0); // Numerical guard
+    double b_squared = temp + std::sqrt(psi_inv) * std::sqrt(temp); // Eq. 27
+    double a = m / (1.0 + b_squared);                               // Eq. 28
+    double b = std::sqrt(b_squared);
+
+    double V_next = a * (b + Z_V) * (b + Z_V);
+    return std::max(V_next, 0.0); // Ensure non-negativity
+  } else {
+    // --------------------------------------------------------------------
+    // Exponential scheme (ψ > ψ_c): V ~ exponential/point mass mixture
+    // --------------------------------------------------------------------
+    double p = (psi - 1.0) / (psi + 1.0);
+    double beta = (1.0 - p) / m;
+
+    if (U_V <= p) { // Eq. 25
+      // Point mass at 0
+      return 0.0;
+    } else {
+      // Exponential: V = (1/β)·ln((1-p)/(1-U))
+      double V_next = std::log((1.0 - p) / (1.0 - U_V)) / beta;
+      return V_next;
+    }
+  }
+}
+
+// ============================================================================
+// Euler Path Simulator 2D - Full Truncation Scheme for Heston Model
+// ============================================================================
+
+EulerPathSimulator2D::EulerPathSimulator2D(const std::vector<double> &timeSteps,
+                                           const Model2D &model,
+                                           size_t randomSeed)
+    : PathSimulator2D(timeSteps, model, randomSeed) {}
+
+std::pair<double, double>
+EulerPathSimulator2D::nextStep(size_t timeIndex, double assetPrice,
+                               double variance) const {
+  /**
+   * Full Truncation Euler Scheme (Equations 6-7)
+   * Uses CORRELATED Brownian motions for V and X directly.
+   */
+
+  // Get time step size Δ = t_{i+1} - t_i
+  double dt = _timeSteps[timeIndex + 1] - _timeSteps[timeIndex];
+  double sqrtDt = std::sqrt(dt);
+
+  // Get Heston model parameters
+  const HestonModel *hestonPtr = dynamic_cast<const HestonModel *>(_modelPtr);
+  if (!hestonPtr) {
+    throw std::runtime_error("EulerPathSimulator2D requires HestonModel");
+  }
+  double r = hestonPtr->riskFreeRate();  // r: risk-free rate
+  double kappa = hestonPtr->kappa();     // κ: mean reversion speed
+  double vbar = hestonPtr->vbar();       // v̄: long-term variance mean
+  double sigma_v = hestonPtr->sigma_v(); // σ_v: volatility of volatility
+
+  // Generate correlated standard normals (Z_V, Z_X) with correlation ρ
+  // Both Z_V and Z_X are used in this scheme
+  auto [Z_V, Z_X] = generateCorrelatedNormals();
+
+  // FULL TRUNCATION SCHEME: Apply x⁺ = max(x, 0) to variance
+  double V_plus = std::max(variance, 0.0);
+
+  // VARIANCE UPDATE (Equation 7):
+  // V̂(t + Δ) = V̂(t) + κ(θ - V̂(t)⁺)Δ + ε√(V̂(t)⁺)Z_V√Δ
+  double term1V = kappa * (vbar - V_plus) * dt;
+  double term2V = sigma_v * std::sqrt(V_plus) * Z_V * sqrtDt;
+  double V_next =
+      std::max(variance + term1V + term2V,
+               0.0); // FULL TRUNCATION SCHEME: Apply x+ = max(x, 0) to variance
+
+  // LOG-PRICE UPDATE (Equation 6):
+  // Notation: X(t) = ln(S(t)) is the log-price
+  // X̂(t + Δ) = X̂(t) - (1/2)V̂(t)⁺Δ + √(V̂(t)⁺)·Z_X·√Δ
+  // Therefore: S(t+Δ) = S(t)·exp(-(1/2)V⁺(t)Δ + √(V⁺(t))·Z_X·√Δ)   //
+  // exponentiate
+  double drift = r * dt;
+  double term1X = -0.5 * V_plus * dt;
+  double term2X = std::sqrt(V_plus) * Z_X * sqrtDt;
+  double S_next =
+      assetPrice * std::exp(drift + term1X + term2X); // S(t+Δ) = S(t)·exp(ΔX)
+
+  return {S_next, V_next};
+}
+
+// ============================================================================
+// BK Scheme Base - Equation 11 (Exact SDE Representation)
+// ============================================================================
+
+BKSchemeBase::BKSchemeBase(const std::vector<double> &timeSteps,
+                           const Model2D &model, size_t randomSeed)
+    : PathSimulator2D(timeSteps, model, randomSeed) {}
+
+std::pair<double, double> BKSchemeBase::nextStep(size_t timeIndex,
+                                                 double assetPrice,
+                                                 double variance) const {
+  /**
+   * Common nextStep for all BK variants
+   *
+   * Algorithm:
+   * 1. Generate V(t+Δ) and ∫V using variant-specific method
+   * 2. Generate independent normal Z for asset price
+   * 3. Apply Equation 11 (same for all variants)
+   */
+
+  double dt = _timeSteps[timeIndex + 1] - _timeSteps[timeIndex];
+
+  // ========================================================================
+  // STEP 1: Get V_next and integratedV from subclass
+  // ========================================================================
+  auto [V_next, integratedV] = generateIntegratedVariance(variance, dt);
+
+  // ========================================================================
+  // STEP 2: Generate independent Z for asset price
+  // ========================================================================
+  double Z = generateStandardNormal();
+
+  // ========================================================================
+  // STEP 3: Apply Equation 11 (common to all BK variants)
+  // ========================================================================
+  double X_t = std::log(assetPrice);
+  double X_next = stepLogPriceEq11(X_t, variance, V_next, integratedV, dt, Z);
+  double S_next = std::exp(X_next);
+
+  return {S_next, V_next};
+}
+
+double BKSchemeBase::stepLogPriceEq11(double X_t, double V_t, double V_next,
+                                      double integratedV, double dt,
+                                      double Z) const {
+  /**
+   * Broadie-Kaya Equation 11 (Exact SDE Representation)
+   *
+   * From Andersen (2008) Equation 11:
+   * X(t+Δ) = X(t) + r·Δt + (ρ/ε)(V(t+Δ) - V(t) - κθΔ)
+   *                      + (κρ/ε - 1/2)∫V(s)ds
+   *                      + √(1-ρ²)·√(∫V)·Z
+   *
+   * Shared by ALL BK variants (exact and approximate)
+   */
+
+  const HestonModel *hestonPtr = dynamic_cast<const HestonModel *>(_modelPtr);
+  if (!hestonPtr) {
+    throw std::runtime_error("stepLogPriceEq11 requires HestonModel");
+  }
+
+  double r = hestonPtr->riskFreeRate();
+  double kappa = hestonPtr->kappa();
+  double vbar = hestonPtr->vbar();
+  double sigma_v = hestonPtr->sigma_v();
+  double rho = hestonPtr->rho();
+
+  // BK Equation 11 decomposition:
+  double drift = r * dt;
+  double term1 = (rho / sigma_v) * (V_next - V_t - kappa * vbar * dt);
+  double term2 = (kappa * rho / sigma_v - 0.5) * integratedV;
+  double term3 = std::sqrt(1.0 - rho * rho) * std::sqrt(integratedV) * Z;
+
+  double X_next = X_t + drift + term1 + term2 + term3;
+
+  return X_next;
+}
+
+// ============================================================================
+// BK Approximate Scheme - Equations 32 & 33
+// ============================================================================
+
+BKApproximateScheme::BKApproximateScheme(const std::vector<double> &timeSteps,
+                                         const Model2D &model,
+                                         size_t randomSeed, double gamma1,
+                                         double gamma2)
+    : BKSchemeBase(timeSteps, model, randomSeed), _gamma1(gamma1),
+      _gamma2(gamma2) {}
+
+std::pair<double, double>
+BKApproximateScheme::generateIntegratedVariance(double V_t, double dt) const {
+  /**
+   * Implements approximation (32): ∫V ≈ γ₁V(t) + γ₂V(t+Δ)
+   *
+   * Uses trapezoidal rule by default (γ₁ = γ₂ = 0.5)
+   * This leads to efficient computation via Equation 33
+   */
+
+  // Generate V(t+Δ) using subclass-specific method (TG or QE)
+  double V_next = generateNextVariance(V_t, dt);
+
+  // Apply approximation (32)
+  double integratedV = _gamma1 * V_t + _gamma2 * V_next;
+  integratedV *= dt; // Scale by time step
+
+  return {V_next, integratedV};
+}
+
+// ============================================================================
+// BKExact - Exact CIR + Exact ∫V (Original Broadie-Kaya)
+// ============================================================================
+
+BKExactPathSimulator2D::BKExactPathSimulator2D(
+    const std::vector<double> &timeSteps, const Model2D &model,
+    size_t randomSeed, NewtonMethod newtonMethod)
+    : BKSchemeBase(timeSteps, model, randomSeed), _newtonMethod(newtonMethod) {}
+
+std::pair<double, double>
+BKExactPathSimulator2D::generateIntegratedVariance(double V_t,
+                                                   double dt) const {
+  /**
+   * BKExact: Original Broadie-Kaya - bypasses approximation (32)
+   *
+   * 1. Sample V(t+Δ) exactly from non-central χ² (CIR distribution)
+   * 2. Sample ∫[t,t+Δ] V(s)ds exactly using COS method + Newton inversion
+   *
+   * Most accurate but slowest method
+   */
+
+  const HestonModel *hestonPtr = dynamic_cast<const HestonModel *>(_modelPtr);
+  if (!hestonPtr) {
+    throw std::runtime_error("BKExact requires HestonModel");
+  }
+
+  double kappa = hestonPtr->kappa();
+  double vbar = hestonPtr->vbar();
+  double sigma_v = hestonPtr->sigma_v();
+
+  // ========================================================================
+  // STEP 1: Sample V(t+Δ) exactly using CIR distribution (with antithetic
+  // sampling)
+  // ========================================================================
+  // Generate uniform via antithetic mechanism: Z → Φ(Z) → Uniform(0,1)
+  double Z_cir = generateStandardNormal();
+  double u_cir = Utils::stdNormCdf(Z_cir); // Forward CDF: Normal → Uniform
+
+  // Use existing CIR sampler from Utils with pre-generated uniform
+  double V_next =
+      CIRSampler::sampleCIR(kappa, vbar, sigma_v, V_t, 0.0, dt, u_cir);
+
+  // ========================================================================
+  // STEP 2: Sample integrated variance ∫[t,t+Δ] V(s)ds exactly
+  // ========================================================================
+
+  // Define the characteristic function for integrated variance
+  auto chf = [&](double omega) -> std::complex<double> {
+    return ChFIntegratedVariance::compute(omega, kappa, vbar, sigma_v, V_t,
+                                          V_next, dt);
+  };
+
+  // Truncation bounds for COS method [a, b]
+  double V_avg = 0.5 * (V_t + V_next);
+  double expected_intV = V_avg * dt;
+  double std_intV = sigma_v * std::sqrt(V_avg * dt * dt * dt / 3.0);
+
+  double a = std::max(0.0, expected_intV - 10.0 * std_intV);
+  double b = expected_intV + 10.0 * std_intV;
+  size_t N = 128;
+
+  // ========================================================================
+  // Generate uniform for CDF inversion via antithetic mechanism
+  // ========================================================================
+  // CRITICAL: Use generateStandardNormal() to ensure antithetic sampling works!
+  // The uniform is obtained via Φ(Z) where Φ is the standard normal CDF.
+  // For antithetic paths: Z₂ = -Z₁ → U₂ = Φ(-Z₁) = 1 - Φ(Z₁) = 1 - U₁
+
+  double Z_u = generateStandardNormal();
+  double u = Utils::stdNormCdf(Z_u); // Use existing forward CDF
+
+  // Invert CDF to get sample of integrated variance
+  double integratedV;
+  if (_newtonMethod == NewtonMethod::Original) {
+    integratedV = Transforms::invertCDF(a, b, N, chf, u).first;
+  } else {
+    integratedV = Transforms::invertCDF_Optimized(a, b, N, chf, u).first;
+  }
+
+  integratedV = std::max(0.0, integratedV);
+
+  return {V_next, integratedV};
+}
+
+// ============================================================================
+// TG Path Simulator 2D (Truncated Gaussian Scheme)
+// ============================================================================
+
+TGPathSimulator2D::TGPathSimulator2D(const std::vector<double> &timeSteps,
+                                     const Model2D &model, size_t randomSeed,
+                                     double gamma1, double gamma2)
+    : PathSimulator2D(timeSteps, model, randomSeed), _gamma1(gamma1),
+      _gamma2(gamma2) {
+  // Validate γ₁ + γ₂ should typically equal 1 for proper approximation
+  if (std::abs(_gamma1 + _gamma2 - 1.0) > 1e-10) {
+    // Warning: non-standard choice, but allow flexibility
+  }
+}
+
+TGPathSimulator2D::~TGPathSimulator2D() {
+  // Base class destructor handles cleanup
+}
+
+std::pair<double, double> TGPathSimulator2D::nextStep(size_t timeIndex,
+                                                      double assetPrice,
+                                                      double variance) const {
+  /**
+   * TG Scheme:
+   *
+   * Step 1: Generate V̂(t+Δ) using TG scheme (Eq. 13)
+   * Step 2: Draw uniform U ~ Uniform(0,1), independent of V̂(t+Δ)
+   * Step 3: Set Z = Φ^(-1)(U) using Moro's algorithm
+   * Step 4: Compute X̂(t+Δ) from Equation 33
+   *
+   * Key insight: Correlation between X and V is preserved through the
+   * K coefficients in Eq. 33, NOT through correlated random numbers!
+   */
+
+  // Get time step size Δ = t_{i+1} - t_i
+  double dt = _timeSteps[timeIndex + 1] - _timeSteps[timeIndex];
+
+  // Get Heston model parameters
+  const HestonModel *hestonPtr = dynamic_cast<const HestonModel *>(_modelPtr);
+  if (!hestonPtr) {
+    throw std::runtime_error("TGPathSimulator2D requires HestonModel");
+  }
+
+  // ========================================================================
+  // STEP 1: Generate V(t+Δ) using TG scheme (Andersen Eq. 13)
+  // ========================================================================
+
+  // Generate standard normal for variance using Moro's inverse CDF
+  // This supports antithetic sampling automatically
+  double Z_V = generateStandardNormal();
+
+  // Apply TG scheme to get V(t+Δ) using shared implementation
+  double V_next = PathSimulator2D::stepVarianceTG(variance, dt, Z_V);
+
+  // ========================================================================
+  // STEP 2-3: Generate INDEPENDENT Z for X discretization (Eq. 33)
+  // ========================================================================
+
+  // Generate independent standard normal for asset price
+  // This also supports antithetic sampling
+  double Z = generateStandardNormal();
+
+  // ========================================================================
+  // STEP 4: Compute X(t+Δ) using correlation-preserving scheme (Eq. 33)
+  // ========================================================================
+  // Notation: X(t) = ln(S(t)) is the log-price
+  // The correlation between X and V is preserved through K₁ and K₂ coefficients
+
+  double X_t = std::log(assetPrice); // X(t) = ln(S(t))
+  double X_next = PathSimulator2D::stepLogPriceEq33(X_t, variance, V_next, dt,
+                                                    Z, _gamma1, _gamma2);
+  double S_next = std::exp(X_next); // S(t+Δ) = exp(X(t+Δ))
+
+  return {S_next, V_next};
+}
+
+// ============================================================================
+// QE Path Simulator 2D
+// ============================================================================
+
+QEPathSimulator2D::QEPathSimulator2D(const std::vector<double> &timeSteps,
+                                     const Model2D &model, size_t randomSeed,
+                                     double psi_c, double gamma1, double gamma2)
+    : PathSimulator2D(timeSteps, model, randomSeed), _psi_c(psi_c),
+      _gamma1(gamma1), _gamma2(gamma2) {
+  // Validate γ₁ + γ₂ should typically equal 1 for proper approximation
+  if (std::abs(_gamma1 + _gamma2 - 1.0) > 1e-10) {
+    // Warning: non-standard choice, but allow flexibility
+  }
+}
+
+QEPathSimulator2D::~QEPathSimulator2D() {
+  // Base class destructor handles destruction
+}
+
+std::pair<double, double> QEPathSimulator2D::nextStep(size_t timeIndex,
+                                                      double assetPrice,
+                                                      double variance) const {
+  /**
+   * QE Scheme:
+   *
+   * Step 1: Generate V̂(t+Δ) using QE scheme (Eq. 23/26)
+   * Step 2: Draw uniform U ~ Uniform(0,1), independent of V̂(t+Δ)
+   * Step 3: Set Z = Φ^(-1)(U) using Moro's algorithm
+   * Step 4: Compute X̂(t+Δ) from Equation 33
+   *
+   * Key insight: Correlation between X and V is preserved through the
+   * K coefficients in Eq. 33, NOT through correlated random numbers!
+   */
+
+  // Get time step size Δ = t_{i+1} - t_i
+  double dt = _timeSteps[timeIndex + 1] - _timeSteps[timeIndex];
+
+  // Get Heston model parameters
+  const HestonModel *hestonPtr = dynamic_cast<const HestonModel *>(_modelPtr);
+  if (!hestonPtr) {
+    throw std::runtime_error("QEPathSimulator2D requires HestonModel");
+  }
+
+  // ========================================================================
+  // STEP 1: Generate V(t+Δ) using QE scheme (Andersen Eq. 23/26)
+  // ========================================================================
+
+  // Generate standard normal for variance using Moro's inverse CDF
+  // This supports antithetic sampling automatically
+  double Z_V = generateStandardNormal();
+
+  // Apply QE scheme to get V(t+Δ) using shared implementation
+  double V_next = PathSimulator2D::stepVarianceQE(variance, dt, Z_V, _psi_c);
+
+  // ========================================================================
+  // STEP 2-3: Generate INDEPENDENT Z for X discretization (Eq. 33)
+  // ========================================================================
+
+  // Generate independent standard normal for asset price
+  // This also supports antithetic sampling
+  double Z = generateStandardNormal();
+
+  // ========================================================================
+  // STEP 4: Compute X(t+Δ) using correlation-preserving scheme (Eq. 33)
+  // ========================================================================
+  // Notation: X(t) = ln(S(t)) is the log-price
+  // The correlation between X and V is preserved through K1 and K2 coefficients
+
+  double X_t = std::log(assetPrice); // X(t) = ln(S(t))
+  double X_next = PathSimulator2D::stepLogPriceEq33(X_t, variance, V_next, dt,
+                                                    Z, _gamma1, _gamma2);
+  double S_next = std::exp(X_next); // S(t+Δ) = exp(X(t+Δ))
+
+  return {S_next, V_next};
+}
+
+// ============================================================================
+// BKTG - TG Variance + Approximation (32)
+// ============================================================================
+
+BKTGPathSimulator2D::BKTGPathSimulator2D(const std::vector<double> &timeSteps,
+                                         const Model2D &model,
+                                         size_t randomSeed, double gamma1,
+                                         double gamma2)
+    : BKApproximateScheme(timeSteps, model, randomSeed, gamma1, gamma2) {}
+
+double BKTGPathSimulator2D::generateNextVariance(double V_t, double dt) const {
+  /**
+   * BKTG: Differs from BKQE ONLY in variance generation
+   * Uses Truncated Gaussian (TG) scheme via shared implementation
+   */
+  double Z_V = generateStandardNormal();
+  return PathSimulator2D::stepVarianceTG(V_t, dt, Z_V);
+}
+
+// ============================================================================
+// BKQE - QE Variance + Approximation (32)
+// ============================================================================
+
+BKQEPathSimulator2D::BKQEPathSimulator2D(const std::vector<double> &timeSteps,
+                                         const Model2D &model,
+                                         size_t randomSeed, double psi_c,
+                                         double gamma1, double gamma2)
+    : BKApproximateScheme(timeSteps, model, randomSeed, gamma1, gamma2),
+      _psi_c(psi_c) {}
+
+double BKQEPathSimulator2D::generateNextVariance(double V_t, double dt) const {
+  /**
+   * BKQE: Differs from BKTG ONLY in variance generation
+   * Uses Quadratic-Exponential (QE) scheme via shared implementation
+   */
+  double Z_V = generateStandardNormal();
+  return PathSimulator2D::stepVarianceQE(V_t, dt, Z_V, _psi_c);
+}
+
+// ============================================================================
+// Heston Stochastic Local Volatility (SLV) Simulator
+// Reference: van der Stoep et al. (2013) "The Heston SLV Model"
+// ============================================================================
+
+HestonSLVPathSimulator2D::HestonSLVPathSimulator2D(
+    const HestonModel &model, const VolatilitySurface &volSurface,
+    const std::vector<double> &timeSteps, // ensure lifetime
+    size_t numPaths, size_t numBins, size_t randomSeed)
+    : PathSimulator2D(timeSteps, model, randomSeed),
+      _volSurfacePtr(volSurface.clone().release()), _numPaths(numPaths),
+      _numBins(numBins), _psiC(1.5)
+// Validate SLV-specific
+{
+  // Validate SLV-specific parameters
+  if (_numPaths == 0) {
+    throw std::runtime_error("Number of paths must be positive");
+  }
+  if (_numBins == 0 || _numBins > _numPaths) {
+    throw std::runtime_error("Number of bins must be in (0, numPaths]");
+  }
+  // timeSteps validation done by base class
+}
+
+HestonSLVPathSimulator2D::~HestonSLVPathSimulator2D() {
+  // delete _modelPtr; // deleted by base class
+  delete _volSurfacePtr;
+}
+
+const HestonModel *HestonSLVPathSimulator2D::getHestonModel() const {
+  const HestonModel *hestonPtr = dynamic_cast<const HestonModel *>(_modelPtr);
+  if (!hestonPtr) {
+    throw std::runtime_error("This simulator requires HestonModel2D");
+  }
+  return hestonPtr;
+}
+
+
+// HestonSLVPathSimulator2D::nextStep - not used, throws error
+std::pair<double, double> HestonSLVPathSimulator2D::nextStep(
+    size_t /*timeIndex*/, double /*assetPrice*/, double /*variance*/) const {
+  throw std::runtime_error(
+      "HestonSLVPathSimulator2D::nextStep() not supported - use simulateAllPaths() instead");
+}
+
+// ============================================================================
+// HestonSLVPathSimulator2D::simulateAllPaths - SLV Monte Carlo simulation
+// ============================================================================
+std::vector<std::pair<double, double>> HestonSLVPathSimulator2D::simulateAllPaths() const {
+  /**
+   * HESTON SLV MONTE CARLO SIMULATION
+   * =================================
+   * Algorithm from van der Stoep et al. (2013):
+   * 1. Generate paths under Heston dynamics
+   * 2. At each time step, apply leverage function L(S,t)
+   * 3. L(S,t) calibrates local vol to match market implied vol surface
+   *
+   * This is a simplified implementation - full SLV requires:
+   * - Particle method or binning for leverage function estimation
+   * - Calibration to the volatility surface
+   *
+   * For now, we simulate pure Heston and return terminal values.
+   */
+
+  const HestonModel* heston = getHestonModel();
+  double S0 = heston->initValue();  // S_0 from base class ModelBase
+  double V0 = heston->v0();         // Initial variance from HestonModel
+
+  std::vector<std::pair<double, double>> terminalValues(_numPaths);
+
+  // Use QE scheme for variance (more stable for low variance)
+  for (size_t p = 0; p < _numPaths; ++p) {
+    double S = S0;
+    double V = V0;
+
+    for (size_t i = 0; i < _timeSteps.size() - 1; ++i) {
+      double t = _timeSteps[i];
+      double dt = _timeSteps[i + 1] - t;
+
+      // Generate correlated Brownian increments
+      double Z1 = generateStandardNormal();
+      double rho = heston->correlation();
+      double dW_S = Z1 * std::sqrt(dt);
+
+      // QE scheme for variance
+      double Z_V = generateStandardNormal();
+      V = stepVarianceQE(V, dt, Z_V, _psiC);
+
+      // Euler for spot with local vol adjustment
+      // In full SLV: sigma_local = L(S,t) * sqrt(V)
+      // Simplified: just use sqrt(V)
+      // drift2D returns (mu_S, mu_V); mu_S = r*S for Heston
+      double mu_S = heston->drift2D(t, S, V).first;
+      double r = mu_S / S;  // Extract risk-free rate from drift
+      S = S * std::exp((r - 0.5 * V) * dt + std::sqrt(V) * dW_S);
+    }
+
+    terminalValues[p] = {S, V};
+  }
+
+  return terminalValues;
+}
+
+// ============================================================================
+// HestonSLVPathSimulator2D::simulateAllPathsFull - Full path history
+// ============================================================================
+std::vector<std::vector<std::pair<double, double>>>
+HestonSLVPathSimulator2D::simulateAllPathsFull() const {
+  /**
+   * Returns full path history: [path_index][time_index] -> (S, V)
+   */
+
+  const HestonModel* heston = getHestonModel();
+  double S0 = heston->initValue();  // S_0 from base class ModelBase
+  double V0 = heston->v0();         // Initial variance from HestonModel
+
+  size_t numSteps = _timeSteps.size();
+  std::vector<std::vector<std::pair<double, double>>> allPaths(
+      _numPaths, std::vector<std::pair<double, double>>(numSteps));
+
+  for (size_t p = 0; p < _numPaths; ++p) {
+    double S = S0;
+    double V = V0;
+    allPaths[p][0] = {S, V};
+
+    for (size_t i = 0; i < numSteps - 1; ++i) {
+      double t = _timeSteps[i];
+      double dt = _timeSteps[i + 1] - t;
+
+      // Generate correlated Brownian increments
+      double Z1 = generateStandardNormal();
+      double dW_S = Z1 * std::sqrt(dt);
+
+      // QE scheme for variance
+      double Z_V = generateStandardNormal();
+      V = stepVarianceQE(V, dt, Z_V, _psiC);
+
+      // Euler for spot
+      // drift2D returns (mu_S, mu_V); mu_S = r*S for Heston
+      double mu_S = heston->drift2D(t, S, V).first;
+      double r = mu_S / S;  // Extract risk-free rate from drift
+      S = S * std::exp((r - 0.5 * V) * dt + std::sqrt(V) * dW_S);
+
+      allPaths[p][i + 1] = {S, V};
+    }
+  }
+
+  return allPaths;
+}
+
