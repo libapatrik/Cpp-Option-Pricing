@@ -25,8 +25,8 @@
  *  NOTE: MC-Optimization: How much better can we make the MC simulation?
  *        Control variates (CV) vs. Antithetic sampling (AS) vs. Quasi-MC
  *        CV +AS, CV + QMC works, but AS + QMC doesn't work well
- *        FIX: Multilevel MC + CV + AS (per level)
- *        3. DONE: Antithetic sampling - easy fix
+ *        Multilevel MC + CV + AS (per level)
+ *        3. DONE: Antithetic sampling
  *        4. TODO: Control variates choice on top of antithetic sampling
  *
  *
@@ -572,7 +572,6 @@ private:
 
   // Helper to cast _modelPtr to HestonModel*
   const HestonModel *getHestonModel() const;
-  // ? Polymorphic base pointer
   /** What does this do?
    *   * Allows PathSimulator2D to work with any Model2D subclass
    * (polymorphism). But Model2D only provide generic methods like drift2D(),

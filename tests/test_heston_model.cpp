@@ -7,6 +7,29 @@
 #include <vector>
 #include <tuple>
 
+
+
+/** ? In practice the Feller condition is almost never satisfied, so how can we price this?
+ * * Recall Grzelak: in lecture metnioned: "even if the Feller condition is not satisfied we use these methods" - but Euler breaks, so how exactly?
+ *
+ *
+ *  OBSERVATIONS:
+ *   1. Feller violated -> More zero-variance occurrences, especially with Euler
+ *   2. BK Scheme handles all cases
+ * ! 3. TG and QE perform well even when Feller is violated - interesting
+ *   4. Euler scheme shows large biased when Feller is violated
+ *   5. Higher  κ (speed of mean reversion) -> better behaved variance process.
+ *
+ *
+ *   From the tests: QE seems robust wrt to Feller condition
+ *   So, even if the Feller condition is not satisfied, we are able to provide good-enough approximate prices (relative to Broadie-Kaya)
+ */
+
+
+
+
+
+
 /**
  * Test fixture for Heston Model tests
  */
@@ -53,17 +76,13 @@ protected:
  *  - Smaller κ higher vol-of-vol increase chance of hitting zero variance
  *  - TODO: Do cases for different schemes used for Heston path simulation
  *  - NOTE: Grzelak mentions that  κ = 1/2 is standard (source videos)
- */
-
-/**
- * EXERCISE: Investigate how Feller condition affects option prices
+ *
+ *
  * 
- * Feller condition: 2κθ ≥ σ²_v ensures variance stays positive (in continuous limit)
- * 
- * Test Setup:
+ * Test Setup:    Fixed θ, κ tweaked
  * - Model1 (Violated):  2κθ = 0.08 < σ²_v = 0.36  (κ=1.0, θ=0.04, σ_v=0.6)
  * - Model2 (Satisfied): 2κθ = 0.32 > σ²_v = 0.09  (κ=4.0, θ=0.04, σ_v=0.3)
- * - Model3 (Near):      2κθ = 0.20 ≈ σ²_v = 0.16  (κ=2.5, θ=0.04, σ_v=0.4)
+ * - Model3 (Near):      2κθ = 0.168 ≈ σ²_v = 0.16  (κ=2.1, θ=0.04, σ_v=0.4)
  * - Model4 (Equality):  2κθ = 0.16 = σ²_v = 0.16  (κ=2.0, θ=0.04, σ_v=0.4)
  * 
  * We compare prices across different discretization schemes:
@@ -78,20 +97,29 @@ protected:
      const size_t seed = 42;
      const double T = 1.0;  // 1 year maturity
      const double K = 100.0;  // ATM strike
-     std::vector<double> timeSteps = {0.0, 0.25, 0.5, 0.75, 1.0};
-     
+     std::vector<double> timeSteps = {0.0, 0.25, 0.5, 0.75, 1.0};  // Euler discr error = Δt=0.25, errors expected to be large
+     // When Feller is violated the Euler will need finer steps to reduce the negative variance occurences
+     // std::vector<double> timesSteps = {0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0}; // Check for finer mesh
+     // Noting, BK is exact.
+
      // Lambda to price a call option via Monte Carlo
      auto priceCall = [&](PathSimulator2D& simulator) -> std::pair<double, int> {
          double payoffSum = 0.0;
          int zeroVarianceCount = 0;
+         int pathsWithZero = 0; // to count how many times 1 path hits 0
          
          for (size_t i = 0; i < numPaths; ++i) {
              auto [assetPath, variancePath] = simulator.paths();
-             
+             bool pathHitZero = false;
+
              // Count how many times variance hits zero (or near-zero)
              for (double v : variancePath) {
-                 if (v < 1e-10) zeroVarianceCount++;
+                 if (v < 1e-10) {
+                     zeroVarianceCount++;
+                     pathHitZero = true;
+                 }
              }
+             if (pathHitZero) pathsWithZero++;
              
              // Call payoff at maturity
              double ST = assetPath.back();
@@ -161,6 +189,7 @@ protected:
                    << " │ " << std::setw(13) << zerosQE1 
                    << " │ " << std::setprecision(2) << std::showpos 
                    << (priceQE1 - priceBK1) / priceBK1 * 100 << "%\n\n" << std::noshowpos;
+
          
          EXPECT_FALSE(model1.satisfiesFellerCondition());
      }
@@ -215,7 +244,7 @@ protected:
      // Model 3: Feller NEAR BOUNDARY (slightly above)
      // =========================================================================
      {
-         double kappa3 = 2.5, theta3 = 0.04, sigma_v3 = 0.4;
+         double kappa3 = 2.1, theta3 = 0.04, sigma_v3 = 0.4;
          auto [lhs, rhs, diff] = fellerInfo(kappa3, theta3, sigma_v3);
          
          FlatDiscountCurve dc3(r);
@@ -225,7 +254,7 @@ protected:
          std::cout << "  Parameters: κ=" << kappa3 << ", θ=" << theta3 << ", σᵥ=" << sigma_v3 << "\n";
          std::cout << "  Feller: 2κθ = " << std::setprecision(4) << lhs 
                    << " ≈ σ²ᵥ = " << rhs << " (diff = " << std::showpos << diff << ")\n" << std::noshowpos;
-         std::cout << "  Status: barely SATISFIED may have numerical issues)\n\n";
+         std::cout << "  Status: barely SATISFIED (may have numerical issues)\n\n";
          
          EulerPathSimulator2D simEuler3(timeSteps, model3, seed);
          BKExactPathSimulator2D simBK3(timeSteps, model3, seed, NewtonMethod::Optimized);
@@ -302,27 +331,9 @@ protected:
          
          EXPECT_TRUE(model4.satisfiesFellerCondition());  // Boundary case: >= satisfied
      }
-     
-     std::cout << "═══════════════════════════════════════════════════════════════════════════════\n";
-     std::cout << "KEY OBSERVATIONS:\n";
-     std::cout << "  1. Feller violated → More zero-variance occurrences, especially with Euler\n";
-     std::cout << "  2. BK scheme handles all cases robustly (exact scheme)\n";
-     std::cout << "  3. TG and QE schemes perform well even when Feller is violated\n";
-     std::cout << "  4. Euler scheme shows large bias when Feller is violated\n";
-     std::cout << "  5. Higher κ (mean reversion) → Better behaved variance process\n";
-     std::cout << "═══════════════════════════════════════════════════════════════════════════════\n";
-     std::cout << std::endl;
  }
 
 
-/**
-*  OBSERVATIONS:
-*   1. Feller violated → More zero-variance occurrences, especially with Euler
-*   2. BK Scheme handles all cases 
-* ! 3. TG and QE perform well even when Feller is violated - interestting
-*   4. Euler scheme shows large biased when Feller is violated
-*   5. Heigher  κ (speed of mean reversion) -> better behaved variance process.
-*/
 
 
 
