@@ -103,7 +103,7 @@ protected:
      // Noting, BK is exact.
 
      // Lambda to price a call option via Monte Carlo
-     auto priceCall = [&](PathSimulator2D& simulator) -> std::pair<double, int> {
+     auto priceCall = [&](PathSimulator2D& simulator) -> std::tuple<double, int, int> {
          double payoffSum = 0.0;
          int zeroVarianceCount = 0;
          int pathsWithZero = 0; // to count how many times 1 path hits 0
@@ -129,7 +129,7 @@ protected:
          double avgPayoff = payoffSum / numPaths;
          double callPrice = avgPayoff * std::exp(-r * T);  // Discount to present
          
-         return {callPrice, zeroVarianceCount};
+         return {callPrice, zeroVarianceCount, pathsWithZero};
      };
      
      // Lambda to compute Feller value
@@ -168,25 +168,29 @@ protected:
          TGPathSimulator2D simTG1(timeSteps, model1, seed);
          QEPathSimulator2D simQE1(timeSteps, model1, seed);
          
-         auto [priceEuler1, zerosEuler1] = priceCall(simEuler1);
-         auto [priceBK1, zerosBK1] = priceCall(simBK1);
-         auto [priceTG1, zerosTG1] = priceCall(simTG1);
-         auto [priceQE1, zerosQE1] = priceCall(simQE1);
+         auto [priceEuler1, zerosEuler1, pathsZeroEuler1] = priceCall(simEuler1);
+         auto [priceBK1, zerosBK1, pathsZeroBK1] = priceCall(simBK1);
+         auto [priceTG1, zerosTG1, pathsZeroTG1] = priceCall(simTG1);
+         auto [priceQE1, zerosQE1, pathsZeroQE1] = priceCall(simQE1);
          
-         std::cout << "  Scheme    │ Call Price │ Zero-Var Hits │ Bias vs BK\n";
-         std::cout << "  ──────────┼────────────┼───────────────┼────────────\n";
+         std::cout << "  Scheme    │ Call Price │ Zero-Var Hits │ Paths w/Zero │ Bias vs BK\n";
+         std::cout << "  ──────────┼────────────┼───────────────┼──────────────┼────────────\n";
          std::cout << "  Euler     │ " << std::setw(10) << std::setprecision(4) << priceEuler1 
-                   << " │ " << std::setw(13) << zerosEuler1 
+                   << " │ " << std::setw(13) << zerosEuler1
+                   << " │ " << std::setw(12) << pathsZeroEuler1
                    << " │ " << std::setprecision(2) << std::showpos 
                    << (priceEuler1 - priceBK1) / priceBK1 * 100 << "%\n" << std::noshowpos;
          std::cout << "  BK *ref*  │ " << std::setw(10) << std::setprecision(4) << priceBK1 
-                   << " │ " << std::setw(13) << zerosBK1 << " │     -\n";
-         std::cout << "  TG        │ " << std::setw(10) << std::setprecision(4) << priceTG1 
-                   << " │ " << std::setw(13) << zerosTG1 
+                   << " │ " << std::setw(13) << zerosBK1
+                   << " │ " << std::setw(12) << pathsZeroBK1 << " │     -\n";
+         std::cout << "  TG        │ " << std::setw(10) << std::setprecision(4) << priceTG1
+                   << " │ " << std::setw(13) << zerosTG1
+                   << " │ " << std::setw(12) << pathsZeroTG1
                    << " │ " << std::setprecision(2) << std::showpos 
                    << (priceTG1 - priceBK1) / priceBK1 * 100 << "%\n" << std::noshowpos;
          std::cout << "  QE        │ " << std::setw(10) << std::setprecision(4) << priceQE1 
-                   << " │ " << std::setw(13) << zerosQE1 
+                   << " │ " << std::setw(13) << zerosQE1
+                   << " │ " << std::setw(12) << pathsZeroQE1
                    << " │ " << std::setprecision(2) << std::showpos 
                    << (priceQE1 - priceBK1) / priceBK1 * 100 << "%\n\n" << std::noshowpos;
 
@@ -215,25 +219,29 @@ protected:
          TGPathSimulator2D simTG2(timeSteps, model2, seed);
          QEPathSimulator2D simQE2(timeSteps, model2, seed);
          
-         auto [priceEuler2, zerosEuler2] = priceCall(simEuler2);
-         auto [priceBK2, zerosBK2] = priceCall(simBK2);
-         auto [priceTG2, zerosTG2] = priceCall(simTG2);
-         auto [priceQE2, zerosQE2] = priceCall(simQE2);
+         auto [priceEuler2, zerosEuler2, pathsZeroEuler2] = priceCall(simEuler2);
+         auto [priceBK2, zerosBK2, pathsZeroBK2] = priceCall(simBK2);
+         auto [priceTG2, zerosTG2, pathsZeroTG2] = priceCall(simTG2);
+         auto [priceQE2, zerosQE2, pathsZeroQE2] = priceCall(simQE2);
          
-         std::cout << "  Scheme    │ Call Price │ Zero-Var Hits │ Bias vs BK\n";
-         std::cout << "  ──────────┼────────────┼───────────────┼────────────\n";
+         std::cout << "  Scheme    │ Call Price │ Zero-Var Hits │ Paths w/Zero │ Bias vs BK\n";
+         std::cout << "  ──────────┼────────────┼───────────────┼──────────────┼────────────\n";
          std::cout << "  Euler     │ " << std::setw(10) << std::setprecision(4) << priceEuler2 
-                   << " │ " << std::setw(13) << zerosEuler2 
+                   << " │ " << std::setw(13) << zerosEuler2
+                   << " │ " << std::setw(9) << pathsZeroEuler2
                    << " │ " << std::setprecision(2) << std::showpos 
                    << (priceEuler2 - priceBK2) / priceBK2 * 100 << "%\n" << std::noshowpos;
          std::cout << "  BK *ref*  │ " << std::setw(10) << std::setprecision(4) << priceBK2 
-                   << " │ " << std::setw(13) << zerosBK2 << " │     -\n";
+                   << " │ " << std::setw(13) << zerosBK2
+                   << " │ " << std::setw(9) << pathsZeroBK2 << " │     -\n";
          std::cout << "  TG        │ " << std::setw(10) << std::setprecision(4) << priceTG2 
-                   << " │ " << std::setw(13) << zerosTG2 
+                   << " │ " << std::setw(13) << zerosTG2
+                   << " │ " << std::setw(9) << pathsZeroTG2
                    << " │ " << std::setprecision(2) << std::showpos 
                    << (priceTG2 - priceBK2) / priceBK2 * 100 << "%\n" << std::noshowpos;
          std::cout << "  QE        │ " << std::setw(10) << std::setprecision(4) << priceQE2 
-                   << " │ " << std::setw(13) << zerosQE2 
+                   << " │ " << std::setw(13) << zerosQE2
+                   << " │ " << std::setw(9) << pathsZeroQE2
                    << " │ " << std::setprecision(2) << std::showpos 
                    << (priceQE2 - priceBK2) / priceBK2 * 100 << "%\n\n" << std::noshowpos;
          
@@ -261,25 +269,29 @@ protected:
          TGPathSimulator2D simTG3(timeSteps, model3, seed);
          QEPathSimulator2D simQE3(timeSteps, model3, seed);
          
-         auto [priceEuler3, zerosEuler3] = priceCall(simEuler3);
-         auto [priceBK3, zerosBK3] = priceCall(simBK3);
-         auto [priceTG3, zerosTG3] = priceCall(simTG3);
-         auto [priceQE3, zerosQE3] = priceCall(simQE3);
+         auto [priceEuler3, zerosEuler3, pathsZeroEuler3] = priceCall(simEuler3);
+         auto [priceBK3, zerosBK3, pathsZeroBK3] = priceCall(simBK3);
+         auto [priceTG3, zerosTG3, pathsZeroTG3] = priceCall(simTG3);
+         auto [priceQE3, zerosQE3, pathsZeroQE3] = priceCall(simQE3);
          
-         std::cout << "  Scheme    │ Call Price │ Zero-Var Hits │ Bias vs BK\n";
-         std::cout << "  ──────────┼────────────┼───────────────┼────────────\n";
+         std::cout << "  Scheme    │ Call Price │ Zero-Var Hits │ Paths w/Zero │ Bias vs BK\n";
+         std::cout << "  ──────────┼────────────┼───────────────┼──────────────┼────────────\n";
          std::cout << "  Euler     │ " << std::setw(10) << std::setprecision(4) << priceEuler3 
-                   << " │ " << std::setw(13) << zerosEuler3 
+                   << " │ " << std::setw(13) << zerosEuler3
+                   << " │ " << std::setw(12) << pathsZeroEuler3
                    << " │ " << std::setprecision(2) << std::showpos 
                    << (priceEuler3 - priceBK3) / priceBK3 * 100 << "%\n" << std::noshowpos;
          std::cout << "  BK *ref*  │ " << std::setw(10) << std::setprecision(4) << priceBK3 
-                   << " │ " << std::setw(13) << zerosBK3 << " │     -\n";
+                   << " │ " << std::setw(13) << zerosBK3
+                   << " │ " << std::setw(12) << pathsZeroBK3  << " │     -\n";
          std::cout << "  TG        │ " << std::setw(10) << std::setprecision(4) << priceTG3 
-                   << " │ " << std::setw(13) << zerosTG3 
+                   << " │ " << std::setw(13) << zerosTG3
+                   << " │ " << std::setw(12) << pathsZeroTG3
                    << " │ " << std::setprecision(2) << std::showpos 
                    << (priceTG3 - priceBK3) / priceBK3 * 100 << "%\n" << std::noshowpos;
          std::cout << "  QE        │ " << std::setw(10) << std::setprecision(4) << priceQE3 
-                   << " │ " << std::setw(13) << zerosQE3 
+                   << " │ " << std::setw(13) << zerosQE3
+                   << " │ " << std::setw(12) << pathsZeroQE3
                    << " │ " << std::setprecision(2) << std::showpos 
                    << (priceQE3 - priceBK3) / priceBK3 * 100 << "%\n\n" << std::noshowpos;
          
@@ -307,25 +319,29 @@ protected:
          TGPathSimulator2D simTG4(timeSteps, model4, seed);
          QEPathSimulator2D simQE4(timeSteps, model4, seed);
          
-         auto [priceEuler4, zerosEuler4] = priceCall(simEuler4);
-         auto [priceBK4, zerosBK4] = priceCall(simBK4);
-         auto [priceTG4, zerosTG4] = priceCall(simTG4);
-         auto [priceQE4, zerosQE4] = priceCall(simQE4);
+         auto [priceEuler4, zerosEuler4, pathsZeroEuler4] = priceCall(simEuler4);
+         auto [priceBK4, zerosBK4, pathsZeroBK4] = priceCall(simBK4);
+         auto [priceTG4, zerosTG4, pathsZeroTG4] = priceCall(simTG4);
+         auto [priceQE4, zerosQE4, pathsZeroQE4] = priceCall(simQE4);
          
-         std::cout << "  Scheme    │ Call Price │ Zero-Var Hits │ Bias vs BK\n";
-         std::cout << "  ──────────┼────────────┼───────────────┼────────────\n";
+         std::cout << "  Scheme    │ Call Price │ Zero-Var Hits │ Paths w/Zero │ Bias vs BK\n";
+         std::cout << "  ──────────┼────────────┼───────────────┼──────────────┼────────────\n";
          std::cout << "  Euler     │ " << std::setw(10) << std::setprecision(4) << priceEuler4 
-                   << " │ " << std::setw(13) << zerosEuler4 
+                   << " │ " << std::setw(13) << zerosEuler4
+                   << " │ " << std::setw(9) << pathsZeroEuler4
                    << " │ " << std::setprecision(2) << std::showpos 
                    << (priceEuler4 - priceBK4) / priceBK4 * 100 << "%\n" << std::noshowpos;
          std::cout << "  BK *ref*  │ " << std::setw(10) << std::setprecision(4) << priceBK4 
-                   << " │ " << std::setw(13) << zerosBK4 << " │     -\n";
+                   << " │ " << std::setw(13) << zerosBK4
+                   << " │ " << std::setw(9) << pathsZeroBK4 << " │     -\n";
          std::cout << "  TG        │ " << std::setw(10) << std::setprecision(4) << priceTG4 
-                   << " │ " << std::setw(13) << zerosTG4 
+                   << " │ " << std::setw(13) << zerosTG4
+                   << " │ " << std::setw(9) << pathsZeroBK4
                    << " │ " << std::setprecision(2) << std::showpos 
                    << (priceTG4 - priceBK4) / priceBK4 * 100 << "%\n" << std::noshowpos;
          std::cout << "  QE        │ " << std::setw(10) << std::setprecision(4) << priceQE4 
-                   << " │ " << std::setw(13) << zerosQE4 
+                   << " │ " << std::setw(13) << zerosQE4
+                   << " │ " << std::setw(9) << pathsZeroQE4
                    << " │ " << std::setprecision(2) << std::showpos 
                    << (priceQE4 - priceBK4) / priceBK4 * 100 << "%\n\n" << std::noshowpos;
          
@@ -343,7 +359,7 @@ protected:
  * Test parameter validation
  * Validate the parameters
  * Impact of parameters on PV
- *  - Are some Heston schemes more robust? Take BK as reference.
+ *  - Are some Heston schemes more robust?
  */
 TEST_F(HestonModelTest, ParameterTest)
 {
