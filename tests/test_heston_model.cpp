@@ -48,22 +48,25 @@ protected:
         r = 0.05;       // Risk-free rate
 
         // Create discount curve
-        discountCurve = new FlatDiscountCurve(r);
-
+        // discountCurve = new FlatDiscountCurve(r);
+        discountCurve = std::make_unique<FlatDiscountCurve>(r);
         // Create Heston model
-        hestonModel = new HestonModel(S0, *discountCurve, v0, kappa, theta, sigma_v, rho);
+        // hestonModel = new HestonModel(S0, *discountCurve, v0, kappa, theta, sigma_v, rho);
+        hestonModel = std::make_unique<HestonModel>(S0, *discountCurve, v0, kappa, theta, sigma_v, rho);
     }
 
-    void TearDown() override
-    {
-        delete hestonModel;
-        delete discountCurve;
-    }
+    // void TearDown() override
+    // {
+    //     delete hestonModel;
+    //     delete discountCurve;
+    // }
 
     // Model parameters
     double S0, v0, kappa, theta, sigma_v, rho, r;
-    FlatDiscountCurve* discountCurve;
-    HestonModel* hestonModel;
+    // FlatDiscountCurve* discountCurve;
+    std::unique_ptr<HestonModel> hestonModel;
+    std::unique_ptr<FlatDiscountCurve> discountCurve;
+    // HestonModel* hestonModel;
 };
 
 /**
@@ -99,14 +102,14 @@ protected:
      const double K = 100.0;  // ATM strike
      std::vector<double> timeSteps = {0.0, 0.25, 0.5, 0.75, 1.0};  // Euler discr error = Δt=0.25, errors expected to be large
      // When Feller is violated the Euler will need finer steps to reduce the negative variance occurences
-     // std::vector<double> timesSteps = {0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0}; // Check for finer mesh
+     // std::vector<double> timeSteps = {0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0}; // Check for finer mesh
      // Noting, BK is exact.
 
      // Lambda to price a call option via Monte Carlo
      auto priceCall = [&](PathSimulator2D& simulator) -> std::tuple<double, int, int> {
          double payoffSum = 0.0;
          int zeroVarianceCount = 0;
-         int pathsWithZero = 0; // to count how many times 1 path hits 0
+         int pathsWithZero = 0; // unique 0 hits
          
          for (size_t i = 0; i < numPaths; ++i) {
              auto [assetPath, variancePath] = simulator.paths();
@@ -336,7 +339,7 @@ protected:
                    << " │ " << std::setw(9) << pathsZeroBK4 << " │     -\n";
          std::cout << "  TG        │ " << std::setw(10) << std::setprecision(4) << priceTG4 
                    << " │ " << std::setw(13) << zerosTG4
-                   << " │ " << std::setw(9) << pathsZeroBK4
+                   << " │ " << std::setw(9) << pathsZeroTG4
                    << " │ " << std::setprecision(2) << std::showpos 
                    << (priceTG4 - priceBK4) / priceBK4 * 100 << "%\n" << std::noshowpos;
          std::cout << "  QE        │ " << std::setw(10) << std::setprecision(4) << priceQE4 
