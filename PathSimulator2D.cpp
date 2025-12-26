@@ -868,16 +868,12 @@ std::vector<std::pair<double, double>> HestonSLVPathSimulator2D::simulateAllPath
   /**
    * HESTON SLV MONTE CARLO SIMULATION
    * =================================
-   * Algorithm from van der Stoep et al. (2013):
+   * Algorithm 1
    * 1. Generate paths under Heston dynamics
    * 2. At each time step, apply leverage function L(S,t)
    * 3. L(S,t) calibrates local vol to match market implied vol surface
    *
-   * This is a simplified implementation - full SLV requires:
-   * - Particle method or binning for leverage function estimation
-   * - Calibration to the volatility surface
-   *
-   * For now, we simulate pure Heston and return terminal values.
+   * WIP
    */
 
   const HestonModel* heston = getHestonModel();
