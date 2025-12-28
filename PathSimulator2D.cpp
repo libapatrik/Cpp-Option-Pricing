@@ -845,6 +845,78 @@ HestonSLVPathSimulator2D::~HestonSLVPathSimulator2D() {
   delete _volSurfacePtr;
 }
 
+size_t HestonSLVPathSimulator2D::findBinIndex(
+    double spot, const std::vector<BinData>& bins) const {
+
+  // Binary search for bin containing spot
+  size_t lo = 0, hi = bins.size() - 1;
+
+  while (lo < hi) {
+    size_t mid = (lo + hi) / 2;
+    if (spot < bins[mid].upperBound) {
+      hi = mid;
+    } else {
+      lo = mid + 1;
+    }
+  }
+  return lo;
+}
+
+double HestonSLVPathSimulator2D::interpolateConditionalExpectation(double spot, const std::vector<BinData> &bins) const {
+  size_t k = findBinIndex(spot, bins);
+
+  // Linear interpolation between bin midpoints
+  if (spot <= bins[0].midpoint) {
+    return bins[0].conditionalExpectation;
+  }
+  if (spot >= bins.back().midpoint) {
+    return bins.back().conditionalExpectation;
+  }
+
+  // Find adjacent bins for interpolating
+  size_t k_left = (spot < bins[k].midpoint && k > 0) ? k - 1 : k;
+  size_t k_right = k_left + 1;
+  if (k_right >= bins.size()) k_right = bins.size() - 1;
+
+  double t = (spot - bins[k_left].midpoint) / (bins[k_right].midpoint - bins[k_left].midpoint);
+
+  return (1 - t) * bins[k_left].conditionalExpectation + t * bins[k_right].conditionalExpectation;
+}
+
+// ! Equation 2.9
+double HestonSLVPathSimulator2D::leverageSquared(double spot, double time, const std::vector<BinData> &bins) const {
+  // L2(t, S) = σ^2_LV(t, S) / E[V|S]
+  double sigma_LV = _volSurfacePtr->localVolatility(spot, time);
+  double E_V_S = interpolateConditionalExpectation(spot, bins);
+
+  const double minExpectation = 1e-8;
+  E_V_S = std::max(minExpectation, E_V_S);
+
+  return (sigma_LV * sigma_LV) / E_V_S;
+
+}
+
+double HestonSLVPathSimulator2D::stepLogPriceSLV(double X_t, double V_t, double V_next, double leverageSq, double dt,
+  double Z) const {
+  const HestonModel* heston = getHestonModel();
+  double r = heston->riskFreeRate();
+  double kappa = heston->kappa();
+  double vbar = heston->vbar();
+  double sigma_v = heston->sigma_v();
+  double rho = heston->rho();
+
+  // Equation 3.18
+  double L = std::sqrt(leverageSq);
+  double L_V_dt = leverageSq * V_t * dt;
+
+  double drift = r * dt - 0.5 * L_V_dt;
+  double term1 = (rho / sigma_v) * L * (V_next - kappa * vbar * dt + V_t * (kappa * dt - 1));
+  double term2 = std::sqrt(1 - rho * rho) * std::sqrt(L_V_dt) * Z;
+
+  return X_t + drift + term1 + term2;
+
+}
+
 const HestonModel *HestonSLVPathSimulator2D::getHestonModel() const {
   const HestonModel *hestonPtr = dynamic_cast<const HestonModel *>(_modelPtr);
   if (!hestonPtr) {
@@ -862,7 +934,7 @@ std::pair<double, double> HestonSLVPathSimulator2D::nextStep(
 }
 
 // ============================================================================
-// HestonSLVPathSimulator2D::simulateAllPaths - SLV Monte Carlo simulation
+// HestonSLVPathSimulator2D::simulateAllPaths - SLV Monte Carlo simulation - for European options
 // ============================================================================
 std::vector<std::pair<double, double>> HestonSLVPathSimulator2D::simulateAllPaths() const {
   /**
@@ -887,78 +959,80 @@ std::vector<std::pair<double, double>> HestonSLVPathSimulator2D::simulateAllPath
     double S = S0;
     double V = V0;
 
+    // for each time step in batch mode; var -> Algo1 -> Lev -> Eq.3.18
     for (size_t i = 0; i < _timeSteps.size() - 1; ++i) {
       double t = _timeSteps[i];
       double dt = _timeSteps[i + 1] - t;
 
-      // Generate correlated Brownian increments
-      double Z1 = generateStandardNormal();
-      double rho = heston->correlation();
-      double dW_S = Z1 * std::sqrt(dt);
+      // variance step for ALL paths
 
-      // QE scheme for variance
-      double Z_V = generateStandardNormal();
-      V = stepVarianceQE(V, dt, Z_V, _psiC);
+      // current spot values
 
-      // Euler for spot with local vol adjustment
-      // In full SLV: sigma_local = L(S,t) * sqrt(V)
-      // Simplified: just use sqrt(V)
-      // drift2D returns (mu_S, mu_V); mu_S = r*S for Heston
-      double mu_S = heston->drift2D(t, S, V).first;
-      double r = mu_S / S;  // Extract risk-free rate from drift
-      S = S * std::exp((r - 0.5 * V) * dt + std::sqrt(V) * dW_S);
+      // bin paths and compute E[V|S]
+
+      // log-spot step for ALL paths using leverage
+
+
+
+      terminalValues[p] = {S, V};
     }
 
-    terminalValues[p] = {S, V};
+    return terminalValues;
   }
-
-  return terminalValues;
 }
 
-// ============================================================================
-// HestonSLVPathSimulator2D::simulateAllPathsFull - Full path history
-// ============================================================================
-std::vector<std::vector<std::pair<double, double>>>
-HestonSLVPathSimulator2D::simulateAllPathsFull() const {
-  /**
-   * Returns full path history: [path_index][time_index] -> (S, V)
-   */
+  // ============================================================================
+  // HestonSLVPathSimulator2D::simulateAllPathsFull - Full path history - for Asian, barrier, lookback options
+  // ============================================================================
+  std::vector<std::vector<std::pair<double, double>>> HestonSLVPathSimulator2D::simulateAllPathsFull() const {
+    /**
+     * Returns full path history: [path_index][time_index] -> (S, V)
+     */
 
-  const HestonModel* heston = getHestonModel();
-  double S0 = heston->initValue();  // S_0 from base class ModelBase
-  double V0 = heston->v0();         // Initial variance from HestonModel
+    const HestonModel* heston = getHestonModel();
+    double S0 = heston->initValue();  // S_0 from base class ModelBase
+    double V0 = heston->v0();         // Initial variance from HestonModel
 
-  size_t numSteps = _timeSteps.size();
-  std::vector<std::vector<std::pair<double, double>>> allPaths(
-      _numPaths, std::vector<std::pair<double, double>>(numSteps));
+    size_t numSteps = _timeSteps.size();
+    std::vector<std::vector<std::pair<double, double>>> allPaths(
+        _numPaths, std::vector<std::pair<double, double>>(numSteps));
 
-  for (size_t p = 0; p < _numPaths; ++p) {
-    double S = S0;
-    double V = V0;
-    allPaths[p][0] = {S, V};
+    for (size_t p = 0; p < _numPaths; ++p) {
+      double S = S0;
+      double V = V0;
+      allPaths[p][0] = {S, V};
 
-    for (size_t i = 0; i < numSteps - 1; ++i) {
-      double t = _timeSteps[i];
-      double dt = _timeSteps[i + 1] - t;
+      for (size_t i = 0; i < numSteps - 1; ++i) {
+        double t = _timeSteps[i];
+        double dt = _timeSteps[i + 1] - t;
 
-      // Generate correlated Brownian increments
-      double Z1 = generateStandardNormal();
-      double dW_S = Z1 * std::sqrt(dt);
+        // Generate correlated Brownian increments
+        double Z1 = generateStandardNormal();
+        double dW_S = Z1 * std::sqrt(dt);
 
-      // QE scheme for variance
-      double Z_V = generateStandardNormal();
-      V = stepVarianceQE(V, dt, Z_V, _psiC);
+        // QE scheme for variance
+        double Z_V = generateStandardNormal();
+        V = stepVarianceQE(V, dt, Z_V, _psiC);
 
-      // Euler for spot
-      // drift2D returns (mu_S, mu_V); mu_S = r*S for Heston
-      double mu_S = heston->drift2D(t, S, V).first;
-      double r = mu_S / S;  // Extract risk-free rate from drift
-      S = S * std::exp((r - 0.5 * V) * dt + std::sqrt(V) * dW_S);
+        // Euler for spot
+        // drift2D returns (mu_S, mu_V); mu_S = r*S for Heston
+        double mu_S = heston->drift2D(t, S, V).first;
+        double r = mu_S / S;  // Extract risk-free rate from drift
+        S = S * std::exp((r - 0.5 * V) * dt + std::sqrt(V) * dW_S);
 
-      allPaths[p][i + 1] = {S, V};
+        allPaths[p][i + 1] = {S, V}; // stores full trajectory
+      }
     }
+
+    return allPaths;
   }
 
-  return allPaths;
+
+
+
+std::vector<HestonSLVPathSimulator2D::BinData> HestonSLVPathSimulator2D::computeBins(
+  const std::vector<double> &spotValues, const std::vector<double> &varianceValues) const {
+
+  //
 }
 

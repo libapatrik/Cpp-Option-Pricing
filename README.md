@@ -2,38 +2,40 @@
 
 ## Table of Contents
 
-1. [Black-Scholes](#black-scholes)
-   - [Analytical Pricing](#bs-analytical-pricing)
-   - [Greeks](#bs-greeks)
+1. Black-Scholes
+   - Analytical Pricing
+   - Greeks
 
-2. [Dupire Local Volatility](#dupire-local-volatility)
-   - [Local Volatility Extraction](#local-volatility-extraction)
-   - [Finite Difference Pricing](#fd-pricing)
+2. Dupire Local Volatility
+   - Local Volatility Extraction
+   - Finite Difference Pricing
    
 
-3. [Heston Stochastic Volatility](#heston-stochastic-volatility)
-   - [Monte Carlo Schemes](#heston-mc-schemes)
+3. Heston Stochastic Volatility
+   - Replicating Andersen (2010)
 
-4. [Heston Stochastic Local Volatility](#heston-stochastic-local-volatility)
 
-5. [Market Data](#market-data)
-   - [Discount Curves](#discount-curves)
-   - [Volatility Surfaces](#volatility-surfaces)
-   - [Interpolation Schemes](#interpolation-schemes)
+4. Heston Stochastic Local Volatility
+   - Replicating Stoep et al. (2013)
 
-6. [PDE Framework](#pde-framework)
-   - [Grid Construction](#grid-construction)
-   - [Theta-Method Solvers](#theta-method-solvers)
-   - [Boundary Conditions](#boundary-conditions)
-   - [Greeks via Finite Differences](#fd-greeks)
+5. Market Data
+   - Discount Curves
+   - Volatility Surfaces
+   - Interpolation Schemes
 
-7. [Utilities](#utilities)
-   - [Thomas Algorithm](#thomas-algorithm)
-   - [Numerical Derivatives](#numerical-derivatives)
-   - [Newton Method](#newton)
-   - [COS Method](#cos)
-   - [CIR Sampling](#cir-sampling)
-   - [Characteristic Function of Integrated Variance Process](#chf-int-var)
+6. PDE Framework
+   - Grid Construction
+   - Theta-Method Solvers
+   - Boundary Conditions
+   - Greeks via Finite Differences
 
-8. [Building and Testing](#building-and-testing)
-   - [Test Suite](#test-suite)
+7. Utilities
+   - Thomas Algorithm
+   - Numerical Derivatives
+   - Newton Method
+   - COS Method
+   - CIR Sampling
+   - Characteristic Function of Integrated Variance Process
+
+8. Building and Testing
+   - Test Suite

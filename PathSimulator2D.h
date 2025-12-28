@@ -457,8 +457,7 @@ public:
    * Simulate and return full path history
    * @return [path_index][time_index] -> (S, V)
    */
-  std::vector<std::vector<std::pair<double, double>>>
-  simulateAllPathsFull() const;
+  std::vector<std::vector<std::pair<double, double>>> simulateAllPathsFull() const;
 
 private:
   // =========================================================================
@@ -534,6 +533,7 @@ private:
    * @param U_V Uniform(0,1) for QE switching
    * @return V_{t+dt}
    */
+  // ? Reuse this from before no?
   double stepVarianceQE_SLV(double V_t, double dt, double Z_V,
                             double U_V) const;
 
