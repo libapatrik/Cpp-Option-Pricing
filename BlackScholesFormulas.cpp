@@ -465,3 +465,96 @@ double BlackScholesFormulas::volga(double spot, double strike, double rate, doub
     // return (spot * normPdf(d1Val) * sqrtTime * d1Val * d2Val / volatility);  // volga/100? Or, no! Δ has no division.
     return vega(spot, strike, rate, volatility, maturity) * (d1Val * d2Val / volatility); // gives the same result
 }
+
+// ============================================================================
+// BS Implied Volatility - Newton-Raphson
+// ============================================================================
+
+/** GRZ Chapter 4
+ * Implied Volatility with flat rate
+ * Uses Newton-Raphson: σ_{n+1} = σ_n - (BS(σ_n) - Price) / Vega(σ_n)
+ */
+double BlackScholesFormulas::impliedVolatility(double spot, double strike, double rate, double maturity,
+                                               double marketPrice, Option::Type optionType,
+                                               double initialGuess, size_t maxIter, double tol)
+{
+    // Edge case: at or past maturity
+    if (maturity <= 0.0) {
+        return 0.0;
+    }
+
+    double sigma = initialGuess;
+    const double minVol = 1e-6;
+    const double maxVol = 5.0;
+
+    for (size_t i = 0; i < maxIter; ++i) {
+        double bsPrice = price(spot, strike, rate, sigma, maturity, optionType);
+        double vegaVal = vega(spot, strike, rate, sigma, maturity);
+
+        double diff = bsPrice - marketPrice;
+
+        // Check convergence
+        if (std::abs(diff) < tol) {
+            return sigma;
+        }
+
+        // Safeguard against zero vega
+        if (std::abs(vegaVal) < 1e-12) {
+            // Fallback to bisection step
+            if (diff > 0) {
+                sigma *= 0.5;
+            } else {
+                sigma *= 1.5;
+            }
+        } else {
+            // Newton-Raphson update
+            sigma -= diff / vegaVal;
+        }
+
+        // Keep within bounds
+        sigma = std::max(minVol, std::min(sigma, maxVol));
+    }
+
+    return sigma; // Return best guess if not converged
+}
+
+/**
+ * Implied Volatility with DiscountCurve
+ */
+double BlackScholesFormulas::impliedVolatility(double spot, double strike, const DiscountCurve& discountCurve,
+                                               double maturity, double marketPrice, Option::Type optionType,
+                                               double initialGuess, size_t maxIter, double tol)
+{
+    if (maturity <= 0.0) {
+        return 0.0;
+    }
+
+    double sigma = initialGuess;
+    const double minVol = 1e-6;
+    const double maxVol = 5.0;
+
+    for (size_t i = 0; i < maxIter; ++i) {
+        double bsPrice = price(spot, strike, discountCurve, sigma, maturity, optionType);
+        double vegaVal = vega(spot, strike, discountCurve, sigma, maturity);
+
+        double diff = bsPrice - marketPrice;
+
+        if (std::abs(diff) < tol) {
+            return sigma;
+        }
+
+        if (std::abs(vegaVal) < 1e-12) {
+            if (diff > 0) {
+                sigma *= 0.5;
+            } else {
+                sigma *= 1.5;
+            }
+        } else {
+            sigma -= diff / vegaVal;
+        }
+
+        sigma = std::max(minVol, std::min(sigma, maxVol));
+    }
+
+    return sigma;
+}
