@@ -58,52 +58,44 @@ message(STATUS "pybind11 found: ${pybind11_VERSION}")
 # Python Module Target
 # =============================================================================
 
-pybind11_add_module(cppfm
+pybind11_add_module(_core
     bindings.cpp
 )
 
 # Link against the core CppFM library
-target_link_libraries(cppfm PRIVATE CppFM_lib)
+target_link_libraries(_core PRIVATE CppFM_lib)
 
 # Include directories
-target_include_directories(cppfm PRIVATE
+target_include_directories(_core PRIVATE
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/PDEs
 )
 
 # C++20 standard
-target_compile_features(cppfm PRIVATE cxx_std_20)
+target_compile_features(_core PRIVATE cxx_std_20)
 
 # Compiler-specific optimizations
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|AppleClang|GNU")
-    target_compile_options(cppfm PRIVATE
+    target_compile_options(_core PRIVATE
         -O3
         -fvisibility=hidden
     )
 endif()
 
 # Output to python directory for easy import
-set_target_properties(cppfm PROPERTIES
+set_target_properties(_core PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
 # =============================================================================
-# Installation (optional)
+# Installation (for scikit-build-core)
 # =============================================================================
 
-# Install the Python module
-install(TARGETS cppfm
-    LIBRARY DESTINATION lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages
-)
+install(TARGETS _core LIBRARY DESTINATION .)
 
 # Print helpful message
 message(STATUS "")
 message(STATUS "=== Python Bindings Configuration ===")
-message(STATUS "Module will be built at: ${CMAKE_CURRENT_BINARY_DIR}/cppfm*.so")
-message(STATUS "")
-message(STATUS "After building, use in Python:")
-message(STATUS "  import sys")
-message(STATUS "  sys.path.insert(0, '${CMAKE_CURRENT_BINARY_DIR}')")
-message(STATUS "  import cppfm")
+message(STATUS "Module will be built at: ${CMAKE_CURRENT_BINARY_DIR}/_core*.so")
+message(STATUS "Install with: pip install .")
 message(STATUS "======================================")
-message(STATUS "")

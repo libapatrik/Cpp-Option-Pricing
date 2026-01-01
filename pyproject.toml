@@ -1,0 +1,47 @@
+[build-system]
+requires = ["scikit-build-core>=0.8", "pybind11>=2.11"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "cppfm"
+version = "0.1.0"
+description = "Quantitative finance library"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Patrik Liba"}
+]
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Financial Industry",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: C++",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Office/Business :: Financial :: Investment",
+]
+keywords = ["finance", "options", "heston", "volatility", "derivatives", "monte-carlo", "black-scholes"]
+
+[project.urls]
+Homepage = "https://github.com/libapatrik/Cpp-Option-Pricing"
+Repository = "https://github.com/libapatrik/Cpp-Option-Pricing"
+
+[project.optional-dependencies]
+dev = ["pytest", "numpy"]
+
+[tool.scikit-build]
+cmake.args = ["-DBUILD_PYTHON_BINDINGS=ON"]
+wheel.packages = ["python/cppfm"]
+wheel.install-dir = "cppfm"
+build-dir = "build/{wheel_tag}"
+
+[tool.scikit-build.cmake.define]
+BUILD_PYTHON_BINDINGS = "ON"

@@ -1,0 +1,10 @@
+include CMakeLists.txt
+include README.md
+include LICENSE
+
+recursive-include python *.cpp *.py CMakeLists.txt
+recursive-include PDEs *.h *.cpp
+
+include *.h
+include *.cpp
+exclude main.cpp
