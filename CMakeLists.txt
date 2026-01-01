@@ -10,6 +10,9 @@ project(CppFM)
 
 set(CMAKE_CXX_STANDARD 20)
 
+# Required for building shared libraries (e.g., Python bindings) that link static libs
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 # ============================================================================
 # Dependencies
 # ============================================================================
