@@ -18,6 +18,7 @@ compile_commands.json
 # Build directories
 build/
 build_test/
+build_python/
 cmake-build-debug/
 cmake-build-release/
 out/
@@ -90,4 +91,15 @@ Desktop.ini
 *.pid
 *.seed
 *.pid.lock
+
+# ============================================
+# Python
+# ============================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+.ipynb_checkpoints/
 

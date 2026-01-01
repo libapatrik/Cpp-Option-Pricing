@@ -84,9 +84,6 @@ add_library(CppFM_lib STATIC
     PDEs/Solver.h
     PDEs/PDEGreeksCalculator.cpp
     PDEs/PDEGreeksCalculator.h
-
-    # Utilities
-    Smart_Pointers.h
 )
 
 # Link Boost to the library
@@ -182,3 +179,21 @@ add_test(NAME HestonScheme COMMAND test_heston_scheme)
 add_test(NAME HestonSLV COMMAND test_heston_slv)
 add_test(NAME PDEGrid COMMAND test_pde_grid)
 add_test(NAME BesselFunction COMMAND test_bessel_function)
+
+# ============================================================================
+# Python Bindings - to use in QFB
+# ============================================================================
+# Enable with: cmake -DBUILD_PYTHON_BINDINGS=ON ..
+
+option(BUILD_PYTHON_BINDINGS "Build Python bindings using pybind11" OFF)
+
+if(BUILD_PYTHON_BINDINGS)
+    message(STATUS "Python bindings enabled")
+
+    # Find Python interpreter and development libraries
+    find_package(Python COMPONENTS Interpreter Development REQUIRED)
+    message(STATUS "Python found: ${Python_EXECUTABLE} (${Python_VERSION})")
+
+    # Add the python subdirectory
+    add_subdirectory(python)
+endif()
