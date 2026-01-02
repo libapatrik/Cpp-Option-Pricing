@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include <numeric>
+#include <execution>  
 
 
 // ============================================================================
@@ -182,6 +183,30 @@ double PathSimulator2D::generateStandardNormal() const {
 
 	return Z;
   }
+}
+
+void PathSimulator2D::initThreadLocalRNGs() const
+{
+  #ifdef _OPENMP
+    int numThreads = omp_get_max_threads();
+  #else
+    int numThreads = 1;
+  #endif
+
+  _threadRNGs.resize(numThreads);
+
+  for (int t = 0; t < numThreads; ++t) {
+    // each threads gets a seed: baseSeet + t * largePrime
+    _threadRNGs[t].seed(_randomSeed + t * 2147483647UL / numThreads);
+  }
+}
+
+double PathSimulator2D::generateStandardNormalParallel(int threadId) const
+{
+  // thread-safe RNG
+  std::uniform_real_distribution<double> uniform(0.0, 1.0);
+  double U = uniform(_threadRNGs[threadId]); // thread's private RNG
+  return Utils::inverseNormalCDF(U);
 }
 
 // ============================================================================
@@ -1002,6 +1027,75 @@ std::vector<std::pair<double, double>> HestonSLVPathSimulator2D::simulateAllPath
   return terminalValues;
 }
 
+
+std::vector<std::pair<double, double>> HestonSLVPathSimulator2D::simulateAllPathsParallel() const
+{
+  const HestonModel* heston = getHestonModel();
+  double S0 = heston->initValue();
+  double V0 = heston->v0();
+
+  // initialize thread-local RNGs
+  initThreadLocalRNGs();  
+
+  // Allocate arrays - these are SHARED across all threads, so each thread can read/write 
+  std::vector<double> spots(_numPaths, S0);
+  std::vector<double> variances(_numPaths, V0);
+  std::vector<double> nextSpots(_numPaths);
+  std::vector<double> nextVariances(_numPaths);
+
+  // time step - sequential cannot parallelize
+  for (size_t i = 0; i < _timeSteps.size() - 1; ++i) {
+    double t = _timeSteps[i];
+    double dt = _timeSteps[i + 1] - t;
+
+    // Evolve variance - parallel
+    #pragma omp parallel for schedule(static)
+    for (size_t p = 0; p < _numPaths; ++p) {
+      #ifdef _OPENMP
+        int tid = omp_get_thread_num();
+      #else 
+        int tid = 0;
+      #endif
+      double Z_V = generateStandardNormalParallel(tid);
+      nextVariances[p] = stepVarianceQE(variances[p], dt, Z_V, _psiC);
+    }
+    std::vector<BinData> bins = computeBinsVectorized(spots, variances);  // parallel sort + parallel bin stats
+
+    // Evolve spots - parallel
+    #pragma omp parallel for schedule(static)
+    for (size_t p = 0; p < _numPaths; ++p) {
+      #ifdef _OPENMP
+        int tid = omp_get_thread_num();
+      #else
+        int tid = 0;
+      #endif
+      double Z = generateStandardNormalParallel(tid);
+
+      double X_t = std::log(spots[p]);
+
+      // leverageSquared() only READS from bins (const reference)
+      // multiple threads are reading the same data = SAFE
+      double leverageSq = leverageSquared(spots[p], t, bins);
+      double X_next = stepLogPriceSLV(X_t, variances[p], nextVariances[p], leverageSq, dt, Z);
+
+      // write to nextSPots - each thread writes different indices
+      nextSpots[p] = std::exp(X_next);
+    }
+    // swap pointers
+    std::swap(spots, nextSpots);
+    std::swap(variances, nextVariances);
+  }
+  // pack the results - parallel
+  std::vector<std::pair<double, double>> terminalValues(_numPaths);
+
+  #pragma omp parallel for
+  for (size_t p = 0; p < _numPaths; ++p) {
+    terminalValues[p] = {spots[p], variances[p]};
+  }
+  
+  return terminalValues;
+}
+
   // ============================================================================
   // HestonSLVPathSimulator2D::simulateAllPathsFull - Full path history - for Asian, barrier, lookback options
   // ============================================================================
@@ -1115,3 +1209,62 @@ std::vector<HestonSLVPathSimulator2D::BinData> HestonSLVPathSimulator2D::compute
 return bins;
 }
 
+std::vector<HestonSLVPathSimulator2D::BinData> HestonSLVPathSimulator2D::computeBinsVectorized(const std::vector<double> &spotValues, const std::vector<double> &varianceValues) const
+{
+    size_t n =  spotValues.size();
+
+    // create indices 
+    std::vector<size_t> sortedIndices(n);
+    std::iota(sortedIndices.begin(), sortedIndices.end(), 0);
+
+    // Parallel sort - use TBB
+    std::sort(std::execution::par,
+              sortedIndices.begin(),
+              sortedIndices.end(),
+              [&spotValues](size_t a, size_t b) {
+                return spotValues[a] < spotValues[b];
+              });
+
+      std::vector<BinData> bins(_numBins);
+      size_t pathsPerBin = n / _numBins;
+      size_t remainder = n % _numBins;
+
+      // precompute the start and end position of the bin
+      std::vector<size_t> binStarts(_numBins + 1);
+      binStarts[0] = 0;
+
+      for (size_t k = 0; k < _numBins; ++k) {
+        // first 'remainder' bins get one extra path to handle leftovers
+        size_t binSize = pathsPerBin + (k < remainder ? 1 : 0);
+        binStarts[k + 1] = binStarts[k] + binSize;
+      }
+      // each bin is independent -> parallelize it
+      #pragma omp parallel for schedule(static)
+      for (size_t k = 0; k < _numBins; ++k) {
+        // get bin's range in the sorted array
+        size_t start = binStarts[k];
+        size_t end = binStarts[k + 1];
+        size_t binSize = end - start;
+
+        // accumulators for this bin
+        double sumSpot = 0.0;
+        double sumVariance = 0.0;
+        double maxSpot = -std::numeric_limits<double>::infinity();
+
+        // sum over all paths in this bin
+        for (size_t j = start; j < end; ++j) {
+          size_t idx = sortedIndices[j];
+
+          sumSpot += spotValues[idx];
+          sumVariance += varianceValues[idx];
+          maxSpot = std::max(maxSpot, spotValues[idx]);
+        }
+        bins[k].upperBound = maxSpot;
+
+        bins[k].midpoint = sumSpot / static_cast<double>(binSize);
+        bins[k].conditionalExpectation = sumVariance / static_cast<double>(binSize);
+      }
+      bins.back().upperBound = std::numeric_limits<double>::infinity();
+
+    return bins;
+}

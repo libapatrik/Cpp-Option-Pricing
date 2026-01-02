@@ -41,6 +41,23 @@ include_directories(${googletest_SOURCE_DIR}/googlemock/include)
 set(Boost_ROOT "/opt/homebrew/opt/boost")
 find_package(Boost REQUIRED)
 
+# OpenMP - for parallel Monte Carlo simulation
+# macOS Apple Clang needs explicit configuration for Homebrew's libomp
+if(APPLE)
+    set(OpenMP_ROOT "/opt/homebrew/opt/libomp")
+    set(OpenMP_C_FLAGS "-Xpreprocessor -fopenmp -I${OpenMP_ROOT}/include")
+    set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp -I${OpenMP_ROOT}/include")
+    set(OpenMP_C_LIB_NAMES "omp")
+    set(OpenMP_CXX_LIB_NAMES "omp")
+    set(OpenMP_omp_LIBRARY "${OpenMP_ROOT}/lib/libomp.dylib")
+endif()
+
+find_package(OpenMP REQUIRED)
+
+# TBB - for C++17 parallel algorithms (std::execution::par)
+# Install with: brew install tbb
+find_package(TBB REQUIRED)
+
 # Enable testing
 enable_testing()
 
@@ -94,6 +111,12 @@ add_library(CppFM_lib STATIC
 #   1. Propagate Boost headers to targets linking CppFM_lib
 #   2. Suppress warnings from Boost headers (-isystem)
 target_include_directories(CppFM_lib SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
+
+# Link OpenMP to the library
+target_link_libraries(CppFM_lib PUBLIC OpenMP::OpenMP_CXX)
+
+# Link TBB for parallel algorithms
+target_link_libraries(CppFM_lib PUBLIC TBB::tbb)
 
 # ============================================================================
 # Main Executable
