@@ -56,6 +56,9 @@ find_package(OpenMP REQUIRED)
 
 # TBB - for C++17 parallel algorithms (std::execution::par)
 # Install with: brew install tbb
+if(APPLE)
+    set(TBB_ROOT "/opt/homebrew/opt/tbb")
+endif()
 find_package(TBB REQUIRED)
 
 # Enable testing

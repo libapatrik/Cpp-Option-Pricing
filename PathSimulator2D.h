@@ -6,7 +6,7 @@
 #define CPPFM_PATHSIMULATOR2D_H
 
 #ifdef _OPENMP
-	#include <omp.h>  
+#include <omp.h>
 #endif
 
 #include "Model.h"
@@ -82,10 +82,11 @@
 
 // Abstract class for different discretization schemes for 2D models (e.g.,
 // Heston)
-class PathSimulator2D {
+class PathSimulator2D
+{
 public:
   PathSimulator2D(const std::vector<double> &timeSteps, const Model2D &model,
-				  size_t randomSeed);
+                  size_t randomSeed);
   virtual ~PathSimulator2D();
   virtual std::pair<double, double>
   nextStep(size_t timeIndex, double assetPrice, double variance) const = 0;
@@ -112,7 +113,6 @@ protected:
   // Generate random using thread's own RNG
   double generateStandardNormalParallel(int threadId) const;
 
-
   /**
    * Correlation-preserving discretization for X (Andersen Eq. 33)
    * Common to both TG and QE schemes
@@ -129,7 +129,7 @@ protected:
    * @return X(t+Δ) = ln(S(t+Δ))
    */
   double stepLogPriceEq33(double X_t, double V_t, double V_next, double dt,
-						  double Z, double gamma1, double gamma2) const;
+                          double Z, double gamma1, double gamma2) const;
 
   /**
    * Shared variance discretization methods (DRY principle)
@@ -161,7 +161,7 @@ protected:
 
   const std::vector<double> &_timeSteps;
   const Model2D
-	  *_modelPtr; // Pointer to base class Model2D - for polymorphic 2D models
+      *_modelPtr; // Pointer to base class Model2D - for polymorphic 2D models
   size_t _randomSeed;
   mutable std::default_random_engine _randomEngine;
 
@@ -169,7 +169,7 @@ protected:
   // For N paths, generate N/2 with fresh randoms, then N/2 with negated randoms
   mutable bool _antitheticMode; // true = using cached negated values
   mutable std::vector<double>
-	  _randomCache;           // Cache ALL randoms from previous path
+      _randomCache;           // Cache ALL randoms from previous path
   mutable size_t _cacheIndex; // Current position in cache during replay
 };
 
@@ -187,10 +187,11 @@ protected:
  * This scheme prevents negative variance by using V⁺ in all terms.
  * When V goes negative, it reverts back deterministically via drift term κθΔ.
  */
-class EulerPathSimulator2D : public PathSimulator2D {
+class EulerPathSimulator2D : public PathSimulator2D
+{
 public:
   EulerPathSimulator2D(const std::vector<double> &timeSteps,
-					   const Model2D &model, size_t randomSeed);
+                       const Model2D &model, size_t randomSeed);
   /**
    * Perform one time step using Full Truncation discretization
    * @param timeIndex Current time index in _timeSteps
@@ -199,12 +200,15 @@ public:
    * @return Pair of (S(t+Δ), V(t+Δ))
    */
   std::pair<double, double> nextStep(size_t timeIndex, double assetPrice,
-									 double variance) const override;
+                                     double variance) const override;
 };
 
-class MilsteinPathSimulator2D : public PathSimulator2D {};
+class MilsteinPathSimulator2D : public PathSimulator2D
+{
+};
 
-enum class NewtonMethod {
+enum class NewtonMethod
+{
   Original, // my implementation;
   Optimized // Optimized version - cached coefficients (as default)
 };
@@ -225,10 +229,11 @@ enum class NewtonMethod {
  * 1. V(t+Δ): Exact sampling vs. discretization schemes
  * 2. ∫V: Exact sampling vs. approximation (Equation 32)
  */
-class BKSchemeBase : public PathSimulator2D {
+class BKSchemeBase : public PathSimulator2D
+{
 public:
   BKSchemeBase(const std::vector<double> &timeSteps, const Model2D &model,
-			   size_t randomSeed);
+               size_t randomSeed);
   virtual ~BKSchemeBase() = default;
 
   /**
@@ -236,7 +241,7 @@ public:
    * Delegates to generateVarianceAndIntegral(), then applies Equation 11
    */
   std::pair<double, double> nextStep(size_t timeIndex, double assetPrice,
-									 double variance) const override final;
+                                     double variance) const override final;
 
 protected:
   /**
@@ -250,7 +255,7 @@ protected:
    * Shared by ALL BK variants (exact and approximate)
    */
   double stepLogPriceEq11(double X_t, double V_t, double V_next,
-						  double integratedV, double dt, double Z) const;
+                          double integratedV, double dt, double Z) const;
 
   /**
    * Pure virtual: Generate V(t+Δ) and ∫V
@@ -275,11 +280,12 @@ protected:
  *
  * Subclasses (BKTG, BKQE) differ ONLY in how they generate V(t+Δ).
  */
-class BKApproximateScheme : public BKSchemeBase {
+class BKApproximateScheme : public BKSchemeBase
+{
 public:
   BKApproximateScheme(const std::vector<double> &timeSteps,
-					  const Model2D &model, size_t randomSeed,
-					  double gamma1 = 0.5, double gamma2 = 0.5);
+                      const Model2D &model, size_t randomSeed,
+                      double gamma1 = 0.5, double gamma2 = 0.5);
 
 protected:
   /**
@@ -307,11 +313,12 @@ protected:
  *
  * Differs from BKQE ONLY in variance generation (TG vs QE)
  */
-class BKTGPathSimulator2D : public BKApproximateScheme {
+class BKTGPathSimulator2D : public BKApproximateScheme
+{
 public:
   BKTGPathSimulator2D(const std::vector<double> &timeSteps,
-					  const Model2D &model, size_t randomSeed,
-					  double gamma1 = 0.5, double gamma2 = 0.5);
+                      const Model2D &model, size_t randomSeed,
+                      double gamma1 = 0.5, double gamma2 = 0.5);
 
 protected:
   double generateNextVariance(double V_t, double dt) const override;
@@ -326,12 +333,13 @@ protected:
  *
  * Differs from BKTG ONLY in variance generation (QE vs TG)
  */
-class BKQEPathSimulator2D : public BKApproximateScheme {
+class BKQEPathSimulator2D : public BKApproximateScheme
+{
 public:
   BKQEPathSimulator2D(const std::vector<double> &timeSteps,
-					  const Model2D &model, size_t randomSeed,
-					  double psi_c = 1.5, double gamma1 = 0.5,
-					  double gamma2 = 0.5);
+                      const Model2D &model, size_t randomSeed,
+                      double psi_c = 1.5, double gamma1 = 0.5,
+                      double gamma2 = 0.5);
 
 protected:
   double generateNextVariance(double V_t, double dt) const override;
@@ -353,11 +361,12 @@ private:
  *
  * Most accurate but slowest method
  */
-class BKExactPathSimulator2D : public BKSchemeBase {
+class BKExactPathSimulator2D : public BKSchemeBase
+{
 public:
   BKExactPathSimulator2D(const std::vector<double> &timeSteps,
-						 const Model2D &model, size_t randomSeed,
-						 NewtonMethod newtonMethod = NewtonMethod::Optimized);
+                         const Model2D &model, size_t randomSeed,
+                         NewtonMethod newtonMethod = NewtonMethod::Optimized);
 
 protected:
   std::pair<double, double>
@@ -368,11 +377,12 @@ private:
 };
 
 // For X: (Equation 33) For V: Truncated Gaussian (TG) (Equation 13)
-class TGPathSimulator2D : public PathSimulator2D {
+class TGPathSimulator2D : public PathSimulator2D
+{
 public:
   TGPathSimulator2D(const std::vector<double> &timeSteps, const Model2D &model,
-					size_t randomSeed, double gamma1 = 0.5,
-					double gamma2 = 0.5);
+                    size_t randomSeed, double gamma1 = 0.5,
+                    double gamma2 = 0.5);
   virtual ~TGPathSimulator2D() override;
 
   /**
@@ -383,7 +393,7 @@ public:
    * @return Pair of (S(t+Δ), V(t+Δ))
    */
   std::pair<double, double> nextStep(size_t timeIndex, double assetPrice,
-									 double variance) const override;
+                                     double variance) const override;
 
 protected:
   double _gamma1; // γ₁: weight for V(t) in integral approximation
@@ -391,12 +401,13 @@ protected:
 };
 
 // For X: (Equation 33) For V: Quadratic-Exponential (QE) (Equation 23/26)
-class QEPathSimulator2D : public PathSimulator2D {
+class QEPathSimulator2D : public PathSimulator2D
+{
 public:
   QEPathSimulator2D(const std::vector<double> &timeSteps, const Model2D &model,
-					size_t randomSeed,
-					double psi_c = 1.5, // for the switching rule
-					double gamma1 = 0.5, double gamma2 = 0.5);
+                    size_t randomSeed,
+                    double psi_c = 1.5, // for the switching rule
+                    double gamma1 = 0.5, double gamma2 = 0.5);
   virtual ~QEPathSimulator2D() override;
 
   /**
@@ -407,11 +418,11 @@ public:
    * @return Pair of (S(t+Δ), V(t+Δ))
    */
   std::pair<double, double> nextStep(size_t timeIndex, double assetPrice,
-									 double variance) const override;
+                                     double variance) const override;
 
 protected:
   double _psi_c;  // ψ_c: Threshold parameter for switching between
-				  // quadratic/exponential
+                  // quadratic/exponential
   double _gamma1; // γ₁: weight for V(t) in integral approximation
   double _gamma2; // γ₂: weight for V(t+Δt) in integral approximation
 };
@@ -437,14 +448,15 @@ protected:
  * - Leverage function L2(t,S) = σ^2_LV / E[V|S]
  * - Batch simulation (all paths simultaneously)
  */
-class HestonSLVPathSimulator2D : public PathSimulator2D {
+class HestonSLVPathSimulator2D : public PathSimulator2D
+{
 public:
   HestonSLVPathSimulator2D(
-	  const HestonModel &model, const VolatilitySurface &volSurface,
-	  const std::vector<double> &timeSteps, // Caller must ensure lifetime
-	  size_t numPaths,
-	  size_t numBins = 20, // Paper recommends 20 bins
-	  size_t randomSeed = 42);
+      const HestonModel &model, const VolatilitySurface &volSurface,
+      const std::vector<double> &timeSteps, // Caller must ensure lifetime
+      size_t numPaths,
+      size_t numBins = 20, // Paper recommends 20 bins
+      size_t randomSeed = 42);
 
   ~HestonSLVPathSimulator2D() override;
 
@@ -457,7 +469,7 @@ public:
    * @throws std::runtime_error always
    */
   std::pair<double, double> nextStep(size_t timeIndex, double assetPrice,
-									 double variance) const override;
+                                     double variance) const override;
 
   /**
    * Simulate ALL paths simultaneously (batch mode)
@@ -478,12 +490,13 @@ private:
   // =========================================================================
   // Binning Data Structure (Section 3.1)
   // =========================================================================
-  struct BinData {
-	std::vector<size_t> pathIndices; // Paths assigned to this bin (J_{i,k})
-	double lowerBound;               // b_k
-	double upperBound;               // b_{k+1}
-	double midpoint;                 // (b_k + b_{k+1}) / 2 - for interpolation
-	double conditionalExpectation;   // E[V | S in bin_k]
+  struct BinData
+  {
+    std::vector<size_t> pathIndices; // Paths assigned to this bin (J_{i,k})
+    double lowerBound;               // b_k
+    double upperBound;               // b_{k+1}
+    double midpoint;                 // (b_k + b_{k+1}) / 2 - for interpolation
+    double conditionalExpectation;   // E[V | S in bin_k]
   };
 
   // =========================================================================
@@ -497,7 +510,7 @@ private:
    * @return Vector of bins with computed conditional expectations
    */
   std::vector<BinData> computeBins(const std::vector<double> &spotValues, const std::vector<double> &varianceValues) const;
-  
+
   std::vector<BinData> computeBinsVectorized(const std::vector<double> &spotValues, const std::vector<double> &varianceValues) const;
 
   /**
@@ -523,7 +536,7 @@ private:
    * @return L2(t, S)
    */
   double leverageSquared(double spot, double time,
-						 const std::vector<BinData> &bins) const;
+                         const std::vector<BinData> &bins) const;
 
   /**
    * Linear interpolation of E[V|S] between bin midpoints
@@ -533,7 +546,7 @@ private:
    */
   double
   interpolateConditionalExpectation(double spot,
-									const std::vector<BinData> &bins) const;
+                                    const std::vector<BinData> &bins) const;
 
   // =========================================================================
   // SLV-Specific Discretization (Section 3.3)
@@ -550,7 +563,7 @@ private:
    */
   // ? Reuse this from before no?
   double stepVarianceQE_SLV(double V_t, double dt, double Z_V,
-							double U_V) const;
+                            double U_V) const;
 
   /**
    * Step log-price using SLV scheme (Equation 3.18)
@@ -567,7 +580,7 @@ private:
    * @return X_{t+Δt}
    */
   double stepLogPriceSLV(double X_t, double V_t, double V_next,
-						 double leverageSq, double dt, double Z) const;
+                         double leverageSq, double dt, double Z) const;
 
   // =========================================================================
   // SLV-Specific Member Variables
@@ -580,7 +593,7 @@ private:
   // =========================================================================
 
   const VolatilitySurface
-	  *_volSurfacePtr; // Cloned vol surface for Dupire σ_LV(S,t)
+      *_volSurfacePtr; // Cloned vol surface for Dupire σ_LV(S,t)
   size_t _numPaths;    // N: number of MC paths
   size_t _numBins;     // l: number of bins for E[V|S]
   double _psiC;        // ψ_c: QE switching threshold (default 1.5)
@@ -597,11 +610,5 @@ private:
    * _modelPtr
    */
 };
-
-
-
-
-
-
 
 #endif // CPPFM_PATHSIMULATOR2D_H

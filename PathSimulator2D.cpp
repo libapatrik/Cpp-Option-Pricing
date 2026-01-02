@@ -8,17 +8,20 @@
 #include <stdexcept>
 #include <algorithm>
 #include <numeric>
-#include <tbb/parallel_sort.h>  // TBB parallel sort (works on macOS)  
-
+#include <tbb/parallel_sort.h>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 // ============================================================================
 // PathSimulator2D Base Class Implementation
 // ============================================================================
 
 PathSimulator2D::PathSimulator2D(const std::vector<double> &timeSteps,
-								 const Model2D &model, size_t randomSeed)
-	: _timeSteps(timeSteps), _modelPtr(model.clone()), _randomSeed(randomSeed),
-	  _randomEngine(randomSeed), _antitheticMode(false), _cacheIndex(0) {
+                                 const Model2D &model, size_t randomSeed)
+    : _timeSteps(timeSteps), _modelPtr(model.clone()), _randomSeed(randomSeed),
+      _randomEngine(randomSeed), _antitheticMode(false), _cacheIndex(0)
+{
   // _modelPtr should point to a COPY of model (use clone() method)
   // This ensures PathSimulator2D owns its model and model can be destroyed
   // safely
@@ -27,31 +30,35 @@ PathSimulator2D::PathSimulator2D(const std::vector<double> &timeSteps,
   // timeSteps init value is zero
   // TimeSteps is strictly increasing sequence
   if (!timeStepsSanityCheck())
-	throw std::runtime_error("The Time Steps are not correct!"); // exception
+    throw std::runtime_error("The Time Steps are not correct!"); // exception
 
   // Reserve space for random cache (estimate: 2 randoms per time step)
   _randomCache.reserve(timeSteps.size() * 4);
 }
 
-PathSimulator2D::~PathSimulator2D() {
+PathSimulator2D::~PathSimulator2D()
+{
   // Delete the model pointer - the 'new' called by clone() is deleted here
-  if (_modelPtr) { // Check if Null before deleting pointer
-	delete _modelPtr;
-	_modelPtr = nullptr; // Prevent double deletion
+  if (_modelPtr)
+  { // Check if Null before deleting pointer
+    delete _modelPtr;
+    _modelPtr = nullptr; // Prevent double deletion
   }
 }
 
-bool PathSimulator2D::timeStepsSanityCheck() const {
+bool PathSimulator2D::timeStepsSanityCheck() const
+{
   // required more logic
   if (_timeSteps.empty())
-	return false;
+    return false;
   if (_timeSteps[0] < 0.0)
-	return false;
-  for (size_t i = 1; i < _timeSteps.size(); ++i) {
-	if (!std::isfinite(_timeSteps[i]))
-	  return false; // finiteness
-	if (_timeSteps[i] <= _timeSteps[i - 1])
-	  return false; // increasing
+    return false;
+  for (size_t i = 1; i < _timeSteps.size(); ++i)
+  {
+    if (!std::isfinite(_timeSteps[i]))
+      return false; // finiteness
+    if (_timeSteps[i] <= _timeSteps[i - 1])
+      return false; // increasing
   }
   return true;
 }
@@ -61,7 +68,8 @@ bool PathSimulator2D::timeStepsSanityCheck() const {
  */
 // (X, V) put them together
 std::pair<std::vector<double>, std::vector<double>>
-PathSimulator2D::paths() const {
+PathSimulator2D::paths() const
+{
   /**
    * Path generation with PATH-LEVEL antithetic sampling
    *
@@ -73,12 +81,15 @@ PathSimulator2D::paths() const {
    */
 
   // Setup for current path
-  if (_antitheticMode) {
-	// Antithetic mode: replay cached randoms (negated)
-	_cacheIndex = 0;
-  } else {
-	// Fresh mode: clear cache for new path
-	_randomCache.clear();
+  if (_antitheticMode)
+  {
+    // Antithetic mode: replay cached randoms (negated)
+    _cacheIndex = 0;
+  }
+  else
+  {
+    // Fresh mode: clear cache for new path
+    _randomCache.clear();
   }
 
   // Initialisation stage : Path[0] = S0, Variance[0] = V0
@@ -91,17 +102,19 @@ PathSimulator2D::paths() const {
   // Since Model2D interface doesn't have auxInitValue(), we downcast to
   // HestonModel
   const HestonModel *hestonPtr = dynamic_cast<const HestonModel *>(_modelPtr);
-  if (!hestonPtr) {
-	throw std::runtime_error(
-		"PathSimulator2D currently only supports HestonModel");
+  if (!hestonPtr)
+  {
+    throw std::runtime_error(
+        "PathSimulator2D currently only supports HestonModel");
   }
   variancePath.push_back(hestonPtr->v0());
 
   // Iteration stage : Path[i] to Path[i+1]
-  for (size_t idx = 0; idx < _timeSteps.size() - 1; ++idx) {
-	auto [S_next, V_next] = nextStep(idx, assetPath[idx], variancePath[idx]);
-	assetPath.push_back(S_next);
-	variancePath.push_back(V_next);
+  for (size_t idx = 0; idx < _timeSteps.size() - 1; ++idx)
+  {
+    auto [S_next, V_next] = nextStep(idx, assetPath[idx], variancePath[idx]);
+    assetPath.push_back(S_next);
+    variancePath.push_back(V_next);
   }
 
   // Toggle antithetic mode for next path
@@ -110,7 +123,8 @@ PathSimulator2D::paths() const {
   return {assetPath, variancePath};
 }
 
-std::pair<double, double> PathSimulator2D::generateCorrelatedNormals() const {
+std::pair<double, double> PathSimulator2D::generateCorrelatedNormals() const
+{
   /**
    * Generate correlated standard normals with PATH-LEVEL antithetic sampling
    *
@@ -124,22 +138,25 @@ std::pair<double, double> PathSimulator2D::generateCorrelatedNormals() const {
 
   double Z_V, Z_perp;
 
-  if (_antitheticMode) {
-	// Replay cached values (negated)
-	Z_V = -_randomCache[_cacheIndex++];
-	Z_perp = -_randomCache[_cacheIndex++];
-  } else {
-	// Generate fresh normals
-	std::uniform_real_distribution<double> uniform(0.0, 1.0);
-	double U1 = uniform(_randomEngine);
-	double U2 = uniform(_randomEngine);
+  if (_antitheticMode)
+  {
+    // Replay cached values (negated)
+    Z_V = -_randomCache[_cacheIndex++];
+    Z_perp = -_randomCache[_cacheIndex++];
+  }
+  else
+  {
+    // Generate fresh normals
+    std::uniform_real_distribution<double> uniform(0.0, 1.0);
+    double U1 = uniform(_randomEngine);
+    double U2 = uniform(_randomEngine);
 
-	Z_V = Utils::inverseNormalCDF(U1);
-	Z_perp = Utils::inverseNormalCDF(U2);
+    Z_V = Utils::inverseNormalCDF(U1);
+    Z_perp = Utils::inverseNormalCDF(U2);
 
-	// Cache for antithetic path
-	_randomCache.push_back(Z_V);
-	_randomCache.push_back(Z_perp);
+    // Cache for antithetic path
+    _randomCache.push_back(Z_V);
+    _randomCache.push_back(Z_perp);
   }
 
   // Apply correlation structure
@@ -149,17 +166,20 @@ std::pair<double, double> PathSimulator2D::generateCorrelatedNormals() const {
   return {Z_V, Z_X};
 }
 
-double PathSimulator2D::generateUniform() const {
+double PathSimulator2D::generateUniform() const
+{
   std::uniform_real_distribution<double> uniform(0.0, 1.0);
   return uniform(_randomEngine);
 }
 
 double PathSimulator2D::generateStandardNormalSLV()
-	const { // ! because SLV doesn't use antithetic sampling at path-level 
+    const
+{ // ! because SLV doesn't use antithetic sampling at path-level
   return Utils::inverseNormalCDF(generateUniform());
 }
 
-double PathSimulator2D::generateStandardNormal() const {
+double PathSimulator2D::generateStandardNormal() const
+{
   /**
    * Generate a single standard normal with PATH-LEVEL antithetic sampling
    *
@@ -169,33 +189,37 @@ double PathSimulator2D::generateStandardNormal() const {
    * Otherwise: generate fresh and cache it
    */
 
-  if (_antitheticMode) {
-	// Replay cached value (negated)
-	return -_randomCache[_cacheIndex++];
-  } else {
-	// Generate fresh normal
-	std::uniform_real_distribution<double> uniform(0.0, 1.0);
-	double U = uniform(_randomEngine);
-	double Z = Utils::inverseNormalCDF(U);
+  if (_antitheticMode)
+  {
+    // Replay cached value (negated)
+    return -_randomCache[_cacheIndex++];
+  }
+  else
+  {
+    // Generate fresh normal
+    std::uniform_real_distribution<double> uniform(0.0, 1.0);
+    double U = uniform(_randomEngine);
+    double Z = Utils::inverseNormalCDF(U);
 
-	// Cache for antithetic path
-	_randomCache.push_back(Z);
+    // Cache for antithetic path
+    _randomCache.push_back(Z);
 
-	return Z;
+    return Z;
   }
 }
 
 void PathSimulator2D::initThreadLocalRNGs() const
 {
-  #ifdef _OPENMP
-    int numThreads = omp_get_max_threads();
-  #else
-    int numThreads = 1;
-  #endif
+#ifdef _OPENMP
+  int numThreads = omp_get_max_threads();
+#else
+  int numThreads = 1;
+#endif
 
   _threadRNGs.resize(numThreads);
 
-  for (int t = 0; t < numThreads; ++t) {
+  for (int t = 0; t < numThreads; ++t)
+  {
     // each threads gets a seed: baseSeet + t * largePrime
     _threadRNGs[t].seed(_randomSeed + t * 2147483647UL / numThreads);
   }
@@ -214,8 +238,9 @@ double PathSimulator2D::generateStandardNormalParallel(int threadId) const
 // ============================================================================
 
 double PathSimulator2D::stepLogPriceEq33(double X_t, double V_t, double V_next,
-										 double dt, double Z, double gamma1,
-										 double gamma2) const {
+                                         double dt, double Z, double gamma1,
+                                         double gamma2) const
+{
   /**
    * Correlation-Preserving Discretization for X (Andersen Eq. 33)
    *
@@ -235,8 +260,9 @@ double PathSimulator2D::stepLogPriceEq33(double X_t, double V_t, double V_next,
    */
 
   const HestonModel *hestonPtr = dynamic_cast<const HestonModel *>(_modelPtr);
-  if (!hestonPtr) {
-	throw std::runtime_error("stepLogPriceEq33 requires HestonModel");
+  if (!hestonPtr)
+  {
+    throw std::runtime_error("stepLogPriceEq33 requires HestonModel");
   }
 
   double r = hestonPtr->riskFreeRate(); // r: risk-free rate
@@ -250,7 +276,7 @@ double PathSimulator2D::stepLogPriceEq33(double X_t, double V_t, double V_next,
   // ========================================================================
 
   double K0 =
-	  -(rho * kappa * vbar / sigma_v) * dt; // interest rate could go here.
+      -(rho * kappa * vbar / sigma_v) * dt; // interest rate could go here.
 
   double K1 = gamma1 * dt * (kappa * rho / sigma_v - 0.5) - rho / sigma_v;
 
@@ -268,7 +294,7 @@ double PathSimulator2D::stepLogPriceEq33(double X_t, double V_t, double V_next,
 
   double variance_coeff = K3 * V_t + K4 * V_next;
   double term1 = std::sqrt(std::max(variance_coeff, 0.0)) *
-				 Z; // Ensure non-negative argument
+                 Z; // Ensure non-negative argument
 
   double X_next = X_t + drift + K0 + K1 * V_t + K2 * V_next + term1;
 
@@ -280,7 +306,8 @@ double PathSimulator2D::stepLogPriceEq33(double X_t, double V_t, double V_next,
 // ============================================================================
 
 double PathSimulator2D::stepVarianceTG(double V_t, double dt,
-									   double Z_V) const {
+                                       double Z_V) const
+{
   /**
    * Truncated Gaussian (TG) Scheme for Variance (Andersen Eq. 13)
    *
@@ -316,7 +343,8 @@ double PathSimulator2D::stepVarianceTG(double V_t, double dt,
 }
 
 double PathSimulator2D::stepVarianceQE(double V_t, double dt, double Z_V,
-									   double psi_c) const {
+                                       double psi_c) const
+{
   /**
    * Quadratic Exponential (QE) Scheme for Variance
    *
@@ -350,9 +378,9 @@ double PathSimulator2D::stepVarianceQE(double V_t, double dt, double Z_V,
   // Variance: s² = Var[V(t+Δ) | V(t)]
   //           = V(t)·σ²/κ·(e^(-κΔt) - e^(-2κΔt)) + θ·σ²/(2κ)·(1 - e^(-κΔt))²
   double s2 = V_t * sigma_v * sigma_v / kappa *
-				  (exp_kappa_dt - exp_kappa_dt * exp_kappa_dt) +
-			  vbar * sigma_v * sigma_v / (2.0 * kappa) * (1.0 - exp_kappa_dt) *
-				  (1.0 - exp_kappa_dt);
+                  (exp_kappa_dt - exp_kappa_dt * exp_kappa_dt) +
+              vbar * sigma_v * sigma_v / (2.0 * kappa) * (1.0 - exp_kappa_dt) *
+                  (1.0 - exp_kappa_dt);
 
   // Scaled variance: ψ = s²/m²
   double psi = s2 / (m * m); // Eq. 19
@@ -367,37 +395,43 @@ double PathSimulator2D::stepVarianceQE(double V_t, double dt, double Z_V,
   double Z_u = generateStandardNormal();
   double U_V = Utils::stdNormCdf(Z_u); // Always generate, even if unused
 
-  if (psi <= psi_c) {
-	// ? How does this mix-in with Ant-sampling?
-	// --------------------------------------------------------------------
-	// Quadratic scheme (ψ ≤ ψ_c): V ~ a(b + Z_V)²
-	// --------------------------------------------------------------------
-	// Note: U_V is generated but not used (ensures consistent random
-	// consumption)
+  if (psi <= psi_c)
+  {
+    // ? How does this mix-in with Ant-sampling?
+    // --------------------------------------------------------------------
+    // Quadratic scheme (ψ ≤ ψ_c): V ~ a(b + Z_V)²
+    // --------------------------------------------------------------------
+    // Note: U_V is generated but not used (ensures consistent random
+    // consumption)
 
-	double psi_inv = 2.0 / psi;
-	double temp = std::max(0.0, psi_inv - 1.0); // Numerical guard
-	double b_squared = temp + std::sqrt(psi_inv) * std::sqrt(temp); // Eq. 27
-	double a = m / (1.0 + b_squared);                               // Eq. 28
-	double b = std::sqrt(b_squared);
+    double psi_inv = 2.0 / psi;
+    double temp = std::max(0.0, psi_inv - 1.0);                     // Numerical guard
+    double b_squared = temp + std::sqrt(psi_inv) * std::sqrt(temp); // Eq. 27
+    double a = m / (1.0 + b_squared);                               // Eq. 28
+    double b = std::sqrt(b_squared);
 
-	double V_next = a * (b + Z_V) * (b + Z_V);
-	return std::max(V_next, 0.0); // Ensure non-negativity
-  } else {
-	// --------------------------------------------------------------------
-	// Exponential scheme (ψ > ψ_c): V ~ exponential/point mass mixture
-	// --------------------------------------------------------------------
-	double p = (psi - 1.0) / (psi + 1.0);
-	double beta = (1.0 - p) / m;
+    double V_next = a * (b + Z_V) * (b + Z_V);
+    return std::max(V_next, 0.0); // Ensure non-negativity
+  }
+  else
+  {
+    // --------------------------------------------------------------------
+    // Exponential scheme (ψ > ψ_c): V ~ exponential/point mass mixture
+    // --------------------------------------------------------------------
+    double p = (psi - 1.0) / (psi + 1.0);
+    double beta = (1.0 - p) / m;
 
-	if (U_V <= p) { // Eq. 25
-	  // Point mass at 0
-	  return 0.0;
-	} else {
-	  // Exponential: V = (1/β)·ln((1-p)/(1-U))
-	  double V_next = std::log((1.0 - p) / (1.0 - U_V)) / beta;
-	  return V_next;
-	}
+    if (U_V <= p)
+    { // Eq. 25
+      // Point mass at 0
+      return 0.0;
+    }
+    else
+    {
+      // Exponential: V = (1/β)·ln((1-p)/(1-U))
+      double V_next = std::log((1.0 - p) / (1.0 - U_V)) / beta;
+      return V_next;
+    }
   }
 }
 
@@ -406,13 +440,14 @@ double PathSimulator2D::stepVarianceQE(double V_t, double dt, double Z_V,
 // ============================================================================
 
 EulerPathSimulator2D::EulerPathSimulator2D(const std::vector<double> &timeSteps,
-										   const Model2D &model,
-										   size_t randomSeed)
-	: PathSimulator2D(timeSteps, model, randomSeed) {}
+                                           const Model2D &model,
+                                           size_t randomSeed)
+    : PathSimulator2D(timeSteps, model, randomSeed) {}
 
 std::pair<double, double>
 EulerPathSimulator2D::nextStep(size_t timeIndex, double assetPrice,
-							   double variance) const {
+                               double variance) const
+{
   /**
    * Full Truncation Euler Scheme (Equations 6-7)
    * Uses CORRELATED Brownian motions for V and X directly.
@@ -424,8 +459,9 @@ EulerPathSimulator2D::nextStep(size_t timeIndex, double assetPrice,
 
   // Get Heston model parameters
   const HestonModel *hestonPtr = dynamic_cast<const HestonModel *>(_modelPtr);
-  if (!hestonPtr) {
-	throw std::runtime_error("EulerPathSimulator2D requires HestonModel");
+  if (!hestonPtr)
+  {
+    throw std::runtime_error("EulerPathSimulator2D requires HestonModel");
   }
   double r = hestonPtr->riskFreeRate();  // r: risk-free rate
   double kappa = hestonPtr->kappa();     // κ: mean reversion speed
@@ -444,8 +480,8 @@ EulerPathSimulator2D::nextStep(size_t timeIndex, double assetPrice,
   double term1V = kappa * (vbar - V_plus) * dt;
   double term2V = sigma_v * std::sqrt(V_plus) * Z_V * sqrtDt;
   double V_next =
-	  std::max(variance + term1V + term2V,
-			   0.0); // FULL TRUNCATION SCHEME: Apply x+ = max(x, 0) to variance
+      std::max(variance + term1V + term2V,
+               0.0); // FULL TRUNCATION SCHEME: Apply x+ = max(x, 0) to variance
 
   // LOG-PRICE UPDATE (Equation 6):
   // Notation: X(t) = ln(S(t)) is the log-price
@@ -456,7 +492,7 @@ EulerPathSimulator2D::nextStep(size_t timeIndex, double assetPrice,
   double term1X = -0.5 * V_plus * dt;
   double term2X = std::sqrt(V_plus) * Z_X * sqrtDt;
   double S_next =
-	  assetPrice * std::exp(drift + term1X + term2X); // S(t+Δ) = S(t)·exp(ΔX)
+      assetPrice * std::exp(drift + term1X + term2X); // S(t+Δ) = S(t)·exp(ΔX)
 
   return {S_next, V_next};
 }
@@ -466,12 +502,13 @@ EulerPathSimulator2D::nextStep(size_t timeIndex, double assetPrice,
 // ============================================================================
 
 BKSchemeBase::BKSchemeBase(const std::vector<double> &timeSteps,
-						   const Model2D &model, size_t randomSeed)
-	: PathSimulator2D(timeSteps, model, randomSeed) {}
+                           const Model2D &model, size_t randomSeed)
+    : PathSimulator2D(timeSteps, model, randomSeed) {}
 
 std::pair<double, double> BKSchemeBase::nextStep(size_t timeIndex,
-												 double assetPrice,
-												 double variance) const {
+                                                 double assetPrice,
+                                                 double variance) const
+{
   /**
    * Common nextStep for all BK variants
    *
@@ -504,8 +541,9 @@ std::pair<double, double> BKSchemeBase::nextStep(size_t timeIndex,
 }
 
 double BKSchemeBase::stepLogPriceEq11(double X_t, double V_t, double V_next,
-									  double integratedV, double dt,
-									  double Z) const {
+                                      double integratedV, double dt,
+                                      double Z) const
+{
   /**
    * Broadie-Kaya Equation 11 (Exact SDE Representation)
    *
@@ -518,8 +556,9 @@ double BKSchemeBase::stepLogPriceEq11(double X_t, double V_t, double V_next,
    */
 
   const HestonModel *hestonPtr = dynamic_cast<const HestonModel *>(_modelPtr);
-  if (!hestonPtr) {
-	throw std::runtime_error("stepLogPriceEq11 requires HestonModel");
+  if (!hestonPtr)
+  {
+    throw std::runtime_error("stepLogPriceEq11 requires HestonModel");
   }
 
   double r = hestonPtr->riskFreeRate();
@@ -544,14 +583,15 @@ double BKSchemeBase::stepLogPriceEq11(double X_t, double V_t, double V_next,
 // ============================================================================
 
 BKApproximateScheme::BKApproximateScheme(const std::vector<double> &timeSteps,
-										 const Model2D &model,
-										 size_t randomSeed, double gamma1,
-										 double gamma2)
-	: BKSchemeBase(timeSteps, model, randomSeed), _gamma1(gamma1),
-	  _gamma2(gamma2) {}
+                                         const Model2D &model,
+                                         size_t randomSeed, double gamma1,
+                                         double gamma2)
+    : BKSchemeBase(timeSteps, model, randomSeed), _gamma1(gamma1),
+      _gamma2(gamma2) {}
 
 std::pair<double, double>
-BKApproximateScheme::generateIntegratedVariance(double V_t, double dt) const {
+BKApproximateScheme::generateIntegratedVariance(double V_t, double dt) const
+{
   /**
    * Implements approximation (32): ∫V ≈ γ₁V(t) + γ₂V(t+Δ)
    *
@@ -574,13 +614,14 @@ BKApproximateScheme::generateIntegratedVariance(double V_t, double dt) const {
 // ============================================================================
 
 BKExactPathSimulator2D::BKExactPathSimulator2D(
-	const std::vector<double> &timeSteps, const Model2D &model,
-	size_t randomSeed, NewtonMethod newtonMethod)
-	: BKSchemeBase(timeSteps, model, randomSeed), _newtonMethod(newtonMethod) {}
+    const std::vector<double> &timeSteps, const Model2D &model,
+    size_t randomSeed, NewtonMethod newtonMethod)
+    : BKSchemeBase(timeSteps, model, randomSeed), _newtonMethod(newtonMethod) {}
 
 std::pair<double, double>
 BKExactPathSimulator2D::generateIntegratedVariance(double V_t,
-												   double dt) const {
+                                                   double dt) const
+{
   /**
    * BKExact: Original Broadie-Kaya - bypasses approximation (32)
    *
@@ -591,8 +632,9 @@ BKExactPathSimulator2D::generateIntegratedVariance(double V_t,
    */
 
   const HestonModel *hestonPtr = dynamic_cast<const HestonModel *>(_modelPtr);
-  if (!hestonPtr) {
-	throw std::runtime_error("BKExact requires HestonModel");
+  if (!hestonPtr)
+  {
+    throw std::runtime_error("BKExact requires HestonModel");
   }
 
   double kappa = hestonPtr->kappa();
@@ -609,16 +651,17 @@ BKExactPathSimulator2D::generateIntegratedVariance(double V_t,
 
   // Use existing CIR sampler from Utils with pre-generated uniform
   double V_next =
-	  CIRSampler::sampleCIR(kappa, vbar, sigma_v, V_t, 0.0, dt, u_cir);
+      CIRSampler::sampleCIR(kappa, vbar, sigma_v, V_t, 0.0, dt, u_cir);
 
   // ========================================================================
   // STEP 2: Sample integrated variance ∫[t,t+Δ] V(s)ds exactly
   // ========================================================================
 
   // Define the characteristic function for integrated variance
-  auto chf = [&](double omega) -> std::complex<double> {
-	return ChFIntegratedVariance::compute(omega, kappa, vbar, sigma_v, V_t,
-										  V_next, dt);
+  auto chf = [&](double omega) -> std::complex<double>
+  {
+    return ChFIntegratedVariance::compute(omega, kappa, vbar, sigma_v, V_t,
+                                          V_next, dt);
   };
 
   // Truncation bounds for COS method [a, b]
@@ -642,10 +685,13 @@ BKExactPathSimulator2D::generateIntegratedVariance(double V_t,
 
   // Invert CDF to get sample of integrated variance
   double integratedV;
-  if (_newtonMethod == NewtonMethod::Original) {
-	integratedV = Transforms::invertCDF(a, b, N, chf, u).first;
-  } else {
-	integratedV = Transforms::invertCDF_Optimized(a, b, N, chf, u).first;
+  if (_newtonMethod == NewtonMethod::Original)
+  {
+    integratedV = Transforms::invertCDF(a, b, N, chf, u).first;
+  }
+  else
+  {
+    integratedV = Transforms::invertCDF_Optimized(a, b, N, chf, u).first;
   }
 
   integratedV = std::max(0.0, integratedV);
@@ -658,23 +704,27 @@ BKExactPathSimulator2D::generateIntegratedVariance(double V_t,
 // ============================================================================
 
 TGPathSimulator2D::TGPathSimulator2D(const std::vector<double> &timeSteps,
-									 const Model2D &model, size_t randomSeed,
-									 double gamma1, double gamma2)
-	: PathSimulator2D(timeSteps, model, randomSeed), _gamma1(gamma1),
-	  _gamma2(gamma2) {
+                                     const Model2D &model, size_t randomSeed,
+                                     double gamma1, double gamma2)
+    : PathSimulator2D(timeSteps, model, randomSeed), _gamma1(gamma1),
+      _gamma2(gamma2)
+{
   // Validate γ₁ + γ₂ should typically equal 1 for proper approximation
-  if (std::abs(_gamma1 + _gamma2 - 1.0) > 1e-10) {
-	// Warning: non-standard choice, but allow flexibility
+  if (std::abs(_gamma1 + _gamma2 - 1.0) > 1e-10)
+  {
+    // Warning: non-standard choice, but allow flexibility
   }
 }
 
-TGPathSimulator2D::~TGPathSimulator2D() {
+TGPathSimulator2D::~TGPathSimulator2D()
+{
   // Base class destructor handles cleanup
 }
 
 std::pair<double, double> TGPathSimulator2D::nextStep(size_t timeIndex,
-													  double assetPrice,
-													  double variance) const {
+                                                      double assetPrice,
+                                                      double variance) const
+{
   /**
    * TG Scheme:
    *
@@ -692,8 +742,9 @@ std::pair<double, double> TGPathSimulator2D::nextStep(size_t timeIndex,
 
   // Get Heston model parameters
   const HestonModel *hestonPtr = dynamic_cast<const HestonModel *>(_modelPtr);
-  if (!hestonPtr) {
-	throw std::runtime_error("TGPathSimulator2D requires HestonModel");
+  if (!hestonPtr)
+  {
+    throw std::runtime_error("TGPathSimulator2D requires HestonModel");
   }
 
   // ========================================================================
@@ -723,7 +774,7 @@ std::pair<double, double> TGPathSimulator2D::nextStep(size_t timeIndex,
 
   double X_t = std::log(assetPrice); // X(t) = ln(S(t))
   double X_next = PathSimulator2D::stepLogPriceEq33(X_t, variance, V_next, dt,
-													Z, _gamma1, _gamma2);
+                                                    Z, _gamma1, _gamma2);
   double S_next = std::exp(X_next); // S(t+Δ) = exp(X(t+Δ))
 
   return {S_next, V_next};
@@ -734,23 +785,27 @@ std::pair<double, double> TGPathSimulator2D::nextStep(size_t timeIndex,
 // ============================================================================
 
 QEPathSimulator2D::QEPathSimulator2D(const std::vector<double> &timeSteps,
-									 const Model2D &model, size_t randomSeed,
-									 double psi_c, double gamma1, double gamma2)
-	: PathSimulator2D(timeSteps, model, randomSeed), _psi_c(psi_c),
-	  _gamma1(gamma1), _gamma2(gamma2) {
+                                     const Model2D &model, size_t randomSeed,
+                                     double psi_c, double gamma1, double gamma2)
+    : PathSimulator2D(timeSteps, model, randomSeed), _psi_c(psi_c),
+      _gamma1(gamma1), _gamma2(gamma2)
+{
   // Validate γ₁ + γ₂ should typically equal 1 for proper approximation
-  if (std::abs(_gamma1 + _gamma2 - 1.0) > 1e-10) {
-	// Warning: non-standard choice, but allow flexibility
+  if (std::abs(_gamma1 + _gamma2 - 1.0) > 1e-10)
+  {
+    // Warning: non-standard choice, but allow flexibility
   }
 }
 
-QEPathSimulator2D::~QEPathSimulator2D() {
+QEPathSimulator2D::~QEPathSimulator2D()
+{
   // Base class destructor handles destruction
 }
 
 std::pair<double, double> QEPathSimulator2D::nextStep(size_t timeIndex,
-													  double assetPrice,
-													  double variance) const {
+                                                      double assetPrice,
+                                                      double variance) const
+{
   /**
    * QE Scheme:
    *
@@ -768,8 +823,9 @@ std::pair<double, double> QEPathSimulator2D::nextStep(size_t timeIndex,
 
   // Get Heston model parameters
   const HestonModel *hestonPtr = dynamic_cast<const HestonModel *>(_modelPtr);
-  if (!hestonPtr) {
-	throw std::runtime_error("QEPathSimulator2D requires HestonModel");
+  if (!hestonPtr)
+  {
+    throw std::runtime_error("QEPathSimulator2D requires HestonModel");
   }
 
   // ========================================================================
@@ -799,7 +855,7 @@ std::pair<double, double> QEPathSimulator2D::nextStep(size_t timeIndex,
 
   double X_t = std::log(assetPrice); // X(t) = ln(S(t))
   double X_next = PathSimulator2D::stepLogPriceEq33(X_t, variance, V_next, dt,
-													Z, _gamma1, _gamma2);
+                                                    Z, _gamma1, _gamma2);
   double S_next = std::exp(X_next); // S(t+Δ) = exp(X(t+Δ))
 
   return {S_next, V_next};
@@ -810,12 +866,13 @@ std::pair<double, double> QEPathSimulator2D::nextStep(size_t timeIndex,
 // ============================================================================
 
 BKTGPathSimulator2D::BKTGPathSimulator2D(const std::vector<double> &timeSteps,
-										 const Model2D &model,
-										 size_t randomSeed, double gamma1,
-										 double gamma2)
-	: BKApproximateScheme(timeSteps, model, randomSeed, gamma1, gamma2) {}
+                                         const Model2D &model,
+                                         size_t randomSeed, double gamma1,
+                                         double gamma2)
+    : BKApproximateScheme(timeSteps, model, randomSeed, gamma1, gamma2) {}
 
-double BKTGPathSimulator2D::generateNextVariance(double V_t, double dt) const {
+double BKTGPathSimulator2D::generateNextVariance(double V_t, double dt) const
+{
   /**
    * BKTG: Differs from BKQE ONLY in variance generation
    * Uses Truncated Gaussian (TG) scheme via shared implementation
@@ -829,13 +886,14 @@ double BKTGPathSimulator2D::generateNextVariance(double V_t, double dt) const {
 // ============================================================================
 
 BKQEPathSimulator2D::BKQEPathSimulator2D(const std::vector<double> &timeSteps,
-										 const Model2D &model,
-										 size_t randomSeed, double psi_c,
-										 double gamma1, double gamma2)
-	: BKApproximateScheme(timeSteps, model, randomSeed, gamma1, gamma2),
-	  _psi_c(psi_c) {}
+                                         const Model2D &model,
+                                         size_t randomSeed, double psi_c,
+                                         double gamma1, double gamma2)
+    : BKApproximateScheme(timeSteps, model, randomSeed, gamma1, gamma2),
+      _psi_c(psi_c) {}
 
-double BKQEPathSimulator2D::generateNextVariance(double V_t, double dt) const {
+double BKQEPathSimulator2D::generateNextVariance(double V_t, double dt) const
+{
   /**
    * BKQE: Differs from BKTG ONLY in variance generation
    * Uses Quadratic-Exponential (QE) scheme via shared implementation
@@ -850,61 +908,73 @@ double BKQEPathSimulator2D::generateNextVariance(double V_t, double dt) const {
 // ============================================================================
 
 HestonSLVPathSimulator2D::HestonSLVPathSimulator2D(
-	const HestonModel &model, const VolatilitySurface &volSurface,
-	const std::vector<double> &timeSteps, // ensure lifetime
-	size_t numPaths, size_t numBins, size_t randomSeed)
-	: PathSimulator2D(timeSteps, model, randomSeed),
-	  _volSurfacePtr(volSurface.clone().release()), _numPaths(numPaths),
-	  _numBins(numBins), _psiC(1.5)
+    const HestonModel &model, const VolatilitySurface &volSurface,
+    const std::vector<double> &timeSteps, // ensure lifetime
+    size_t numPaths, size_t numBins, size_t randomSeed)
+    : PathSimulator2D(timeSteps, model, randomSeed),
+      _volSurfacePtr(volSurface.clone().release()), _numPaths(numPaths),
+      _numBins(numBins), _psiC(1.5)
 // Validate SLV-specific
 {
   // Validate SLV-specific parameters
-  if (_numPaths == 0) {
-	throw std::runtime_error("Number of paths must be positive");
+  if (_numPaths == 0)
+  {
+    throw std::runtime_error("Number of paths must be positive");
   }
-  if (_numBins == 0 || _numBins > _numPaths) {
-	throw std::runtime_error("Number of bins must be in (0, numPaths]");
+  if (_numBins == 0 || _numBins > _numPaths)
+  {
+    throw std::runtime_error("Number of bins must be in (0, numPaths]");
   }
   // timeSteps validation done by base class
 }
 
-HestonSLVPathSimulator2D::~HestonSLVPathSimulator2D() {
+HestonSLVPathSimulator2D::~HestonSLVPathSimulator2D()
+{
   // delete _modelPtr; // deleted by base class
   delete _volSurfacePtr;
 }
 
 size_t HestonSLVPathSimulator2D::findBinIndex(
-	double spot, const std::vector<BinData>& bins) const {
+    double spot, const std::vector<BinData> &bins) const
+{
 
   // Binary search for bin containing spot
   size_t lo = 0, hi = bins.size() - 1;
 
-  while (lo < hi) {
-	size_t mid = (lo + hi) / 2;
-	if (spot < bins[mid].upperBound) {
-	  hi = mid;
-	} else {
-	  lo = mid + 1;
-	}
+  while (lo < hi)
+  {
+    size_t mid = (lo + hi) / 2;
+    if (spot < bins[mid].upperBound)
+    {
+      hi = mid;
+    }
+    else
+    {
+      lo = mid + 1;
+    }
   }
   return lo;
 }
 
-double HestonSLVPathSimulator2D::interpolateConditionalExpectation(double spot, const std::vector<BinData> &bins) const {
+double HestonSLVPathSimulator2D::interpolateConditionalExpectation(double spot, const std::vector<BinData> &bins) const
+{
   size_t k = findBinIndex(spot, bins);
 
   // Linear interpolation between bin midpoints
-  if (spot <= bins[0].midpoint) {
-	return bins[0].conditionalExpectation;
+  if (spot <= bins[0].midpoint)
+  {
+    return bins[0].conditionalExpectation;
   }
-  if (spot >= bins.back().midpoint) {
-	return bins.back().conditionalExpectation;
+  if (spot >= bins.back().midpoint)
+  {
+    return bins.back().conditionalExpectation;
   }
 
   // Find adjacent bins for interpolating
   size_t k_left = (spot < bins[k].midpoint && k > 0) ? k - 1 : k;
   size_t k_right = k_left + 1;
-  if (k_right >= bins.size()) k_right = bins.size() - 1;
+  if (k_right >= bins.size())
+    k_right = bins.size() - 1;
 
   double t = (spot - bins[k_left].midpoint) / (bins[k_right].midpoint - bins[k_left].midpoint);
 
@@ -912,7 +982,8 @@ double HestonSLVPathSimulator2D::interpolateConditionalExpectation(double spot, 
 }
 
 // ! Equation 2.9
-double HestonSLVPathSimulator2D::leverageSquared(double spot, double time, const std::vector<BinData> &bins) const {
+double HestonSLVPathSimulator2D::leverageSquared(double spot, double time, const std::vector<BinData> &bins) const
+{
   // L2(t, S) = σ^2_LV(t, S) / E[V|S]
   double sigma_LV = _volSurfacePtr->localVolatility(spot, time);
   double E_V_S = interpolateConditionalExpectation(spot, bins);
@@ -921,12 +992,12 @@ double HestonSLVPathSimulator2D::leverageSquared(double spot, double time, const
   E_V_S = std::max(minExpectation, E_V_S);
 
   return (sigma_LV * sigma_LV) / E_V_S;
-
 }
 
 double HestonSLVPathSimulator2D::stepLogPriceSLV(double X_t, double V_t, double V_next, double leverageSq, double dt,
-  double Z) const {
-  const HestonModel* heston = getHestonModel();
+                                                 double Z) const
+{
+  const HestonModel *heston = getHestonModel();
   double r = heston->riskFreeRate();
   double kappa = heston->kappa();
   double vbar = heston->vbar();
@@ -942,30 +1013,32 @@ double HestonSLVPathSimulator2D::stepLogPriceSLV(double X_t, double V_t, double 
   double term2 = std::sqrt(1 - rho * rho) * std::sqrt(L_V_dt) * Z;
 
   return X_t + drift + term1 + term2;
-
 }
 
-const HestonModel *HestonSLVPathSimulator2D::getHestonModel() const {
+const HestonModel *HestonSLVPathSimulator2D::getHestonModel() const
+{
   const HestonModel *hestonPtr = dynamic_cast<const HestonModel *>(_modelPtr);
-  if (!hestonPtr) {
-	throw std::runtime_error("This simulator requires HestonModel2D");
+  if (!hestonPtr)
+  {
+    throw std::runtime_error("This simulator requires HestonModel2D");
   }
   return hestonPtr;
 }
 
-
 // HestonSLVPathSimulator2D::nextStep - not used, throws error
 std::pair<double, double> HestonSLVPathSimulator2D::nextStep(
-	size_t /*timeIndex*/, double /*assetPrice*/, double /*variance*/) const {
+    size_t /*timeIndex*/, double /*assetPrice*/, double /*variance*/) const
+{
   throw std::runtime_error(
-	  "HestonSLVPathSimulator2D::nextStep() not supported - use simulateAllPaths() instead");
+      "HestonSLVPathSimulator2D::nextStep() not supported - use simulateAllPaths() instead");
 }
 
 // ============================================================================
 // HestonSLVPathSimulator2D::simulateAllPaths - SLV Monte Carlo simulation - for European options
 // ============================================================================
 // TODO
-std::vector<std::pair<double, double>> HestonSLVPathSimulator2D::simulateAllPaths() const {
+std::vector<std::pair<double, double>> HestonSLVPathSimulator2D::simulateAllPaths() const
+{
   /**
    * HESTON SLV MONTE CARLO SIMULATION
    * =================================
@@ -977,9 +1050,9 @@ std::vector<std::pair<double, double>> HestonSLVPathSimulator2D::simulateAllPath
    * WIP
    */
 
-  const HestonModel* heston = getHestonModel();
-  double S0 = heston->initValue();  // S_0 from base class ModelBase
-  double V0 = heston->v0();         // Initial variance from HestonModel
+  const HestonModel *heston = getHestonModel();
+  double S0 = heston->initValue(); // S_0 from base class ModelBase
+  double V0 = heston->v0();        // Initial variance from HestonModel
 
   // Current state vectors for all paths
   std::vector<double> spots(_numPaths, S0);
@@ -990,85 +1063,89 @@ std::vector<std::pair<double, double>> HestonSLVPathSimulator2D::simulateAllPath
   std::vector<double> nextVariances(_numPaths);
 
   // Time step - all paths together
-  for (size_t i = 0; i < _timeSteps.size() - 1; ++i) {
-	double t = _timeSteps[i];
-	double dt = _timeSteps[i + 1] - t;
+  for (size_t i = 0; i < _timeSteps.size() - 1; ++i)
+  {
+    double t = _timeSteps[i];
+    double dt = _timeSteps[i + 1] - t;
 
     // 1 evolve variances for ALL paths
-	for (size_t p =0; p < _numPaths; ++p) {
-		double Z_V = generateStandardNormalSLV();
-		nextVariances[p] = stepVarianceQE(variances[p], dt, Z_V, _psiC); // QE scheme for variance
+    for (size_t p = 0; p < _numPaths; ++p)
+    {
+      double Z_V = generateStandardNormalSLV();
+      nextVariances[p] = stepVarianceQE(variances[p], dt, Z_V, _psiC); // QE scheme for variance
+    }
 
-	}
+    // 2 compute bins for current (S, V)-pair
+    std::vector<BinData> bins = computeBins(spots, variances);
 
-	// 2 compute bins for current (S, V)-pair
-	std::vector<BinData> bins = computeBins(spots, variances);
+    // 3 evolve the log-spot for ALL paths using leverage
+    for (size_t p = 0; p < _numPaths; ++p)
+    {
+      double X_t = std::log(spots[p]);
+      double leverageSq = leverageSquared(spots[p], t, bins);
+      double Z = generateStandardNormalSLV(); // * the non-antithetic one
+      double X_next = stepLogPriceSLV(X_t, variances[p], nextVariances[p], leverageSq, dt, Z);
 
-	// 3 evolve the log-spot for ALL paths using leverage
-	for (size_t p = 0; p < _numPaths; ++p) {
-		double X_t = std::log(spots[p]);
-		double leverageSq = leverageSquared(spots[p], t, bins);
-		double Z = generateStandardNormalSLV();     // * the non-antithetic one
-		double X_next = stepLogPriceSLV(X_t, variances[p], nextVariances[p], leverageSq, dt, Z);
-		
-		nextSpots[p] = std::exp(X_next);
-	}
-	// 4 update state for the next iteration; swap currs to nexts
-	std::swap(spots, nextSpots);
-	std::swap(variances, nextVariances);
-
+      nextSpots[p] = std::exp(X_next);
+    }
+    // 4 update state for the next iteration; swap currs to nexts
+    std::swap(spots, nextSpots);
+    std::swap(variances, nextVariances);
   }
   // pack terminal values
   std::vector<std::pair<double, double>> terminalValues(_numPaths);
-  for (size_t p = 0; p < _numPaths; ++p) {
-	terminalValues[p] = {spots[p], variances[p]};
+  for (size_t p = 0; p < _numPaths; ++p)
+  {
+    terminalValues[p] = {spots[p], variances[p]};
   }
 
   return terminalValues;
 }
 
-
 std::vector<std::pair<double, double>> HestonSLVPathSimulator2D::simulateAllPathsParallel() const
 {
-  const HestonModel* heston = getHestonModel();
+  const HestonModel *heston = getHestonModel();
   double S0 = heston->initValue();
   double V0 = heston->v0();
 
   // initialize thread-local RNGs
-  initThreadLocalRNGs();  
+  initThreadLocalRNGs();
 
-  // Allocate arrays - these are SHARED across all threads, so each thread can read/write 
+  // Allocate arrays - these are SHARED across all threads, so each thread can read/write
   std::vector<double> spots(_numPaths, S0);
   std::vector<double> variances(_numPaths, V0);
   std::vector<double> nextSpots(_numPaths);
   std::vector<double> nextVariances(_numPaths);
 
   // time step - sequential cannot parallelize
-  for (size_t i = 0; i < _timeSteps.size() - 1; ++i) {
+  for (size_t i = 0; i < _timeSteps.size() - 1; ++i)
+  {
     double t = _timeSteps[i];
     double dt = _timeSteps[i + 1] - t;
 
-    // Evolve variance - parallel
-    #pragma omp parallel for schedule(static)
-    for (size_t p = 0; p < _numPaths; ++p) {
-      #ifdef _OPENMP
-        int tid = omp_get_thread_num();
-      #else 
-        int tid = 0;
-      #endif
+// Evolve variance - parallel
+#pragma omp parallel for schedule(static)
+    for (size_t p = 0; p < _numPaths; ++p)
+    {
+#ifdef _OPENMP
+      int tid = omp_get_thread_num();
+#else
+      int tid = 0;
+#endif
       double Z_V = generateStandardNormalParallel(tid);
       nextVariances[p] = stepVarianceQE(variances[p], dt, Z_V, _psiC);
     }
-    std::vector<BinData> bins = computeBinsVectorized(spots, variances);  // parallel sort + parallel bin stats
+    std::vector<BinData> bins = computeBinsVectorized(spots, variances); // parallel sort + parallel bin stats
 
-    // Evolve spots - parallel
-    #pragma omp parallel for schedule(static)
-    for (size_t p = 0; p < _numPaths; ++p) {
-      #ifdef _OPENMP
-        int tid = omp_get_thread_num();
-      #else
-        int tid = 0;
-      #endif
+// Evolve spots - parallel
+#pragma omp parallel for schedule(static)
+    for (size_t p = 0; p < _numPaths; ++p)
+    {
+#ifdef _OPENMP
+      int tid = omp_get_thread_num();
+#else
+      int tid = 0;
+#endif
       double Z = generateStandardNormalParallel(tid);
 
       double X_t = std::log(spots[p]);
@@ -1088,81 +1165,86 @@ std::vector<std::pair<double, double>> HestonSLVPathSimulator2D::simulateAllPath
   // pack the results - parallel
   std::vector<std::pair<double, double>> terminalValues(_numPaths);
 
-  #pragma omp parallel for
-  for (size_t p = 0; p < _numPaths; ++p) {
+#pragma omp parallel for
+  for (size_t p = 0; p < _numPaths; ++p)
+  {
     terminalValues[p] = {spots[p], variances[p]};
   }
-  
+
   return terminalValues;
 }
 
-  // ============================================================================
-  // HestonSLVPathSimulator2D::simulateAllPathsFull - Full path history - for Asian, barrier, lookback options
-  // ============================================================================
-  std::vector<std::vector<std::pair<double, double>>> HestonSLVPathSimulator2D::simulateAllPathsFull() const {
+// ============================================================================
+// HestonSLVPathSimulator2D::simulateAllPathsFull - Full path history - for Asian, barrier, lookback options
+// ============================================================================
+std::vector<std::vector<std::pair<double, double>>> HestonSLVPathSimulator2D::simulateAllPathsFull() const
+{
 
-	// Returns full path history: [path_index][time_index] -> (S, V)
+  // Returns full path history: [path_index][time_index] -> (S, V)
 
-	const HestonModel* heston = getHestonModel();
-	double S0 = heston->initValue();  // S_0 from base class ModelBase
-	double V0 = heston->v0();         // Initial variance from HestonModel
+  const HestonModel *heston = getHestonModel();
+  double S0 = heston->initValue(); // S_0 from base class ModelBase
+  double V0 = heston->v0();        // Initial variance from HestonModel
 
-	size_t numSteps = _timeSteps.size();
+  size_t numSteps = _timeSteps.size();
 
-	// 1 allocate space to store full path: [path_index][time_index] -> (S, V)
-	std::vector<std::vector<std::pair<double, double>>> allPaths(_numPaths, std::vector<std::pair<double, double>>(numSteps));
+  // 1 allocate space to store full path: [path_index][time_index] -> (S, V)
+  std::vector<std::vector<std::pair<double, double>>> allPaths(_numPaths, std::vector<std::pair<double, double>>(numSteps));
 
-	// current state vectors
-	std::vector<double> spots(_numPaths, S0);
-	std::vector<double> variances(_numPaths, V0);
+  // current state vectors
+  std::vector<double> spots(_numPaths, S0);
+  std::vector<double> variances(_numPaths, V0);
 
-	// store initial values
-	for (size_t p = 0; p < _numPaths; ++p) {
-		allPaths[p][0] = {S0, V0};
-	}
-
-	// temporary storage of nexts
-	std::vector<double> nextSpots(_numPaths);
-	std::vector<double> nextVariances(_numPaths);
-
-	// time step - all paths together
-	for (size_t i = 0; i < numSteps - 1; ++i) {
-		double t = _timeSteps[i];
-		double dt = _timeSteps[i + 1] - t;
-
-		// 1 evolve variances for ALL paths
-		for (size_t p = 0; p < _numPaths; ++p) {
-			double Z_V = generateStandardNormalSLV();
-			nextVariances[p] = stepVarianceQE(variances[p], dt, Z_V, _psiC); // QE scheme for variance
-		}
-
-		// 2 compute bins for current (S, V)-pair
-		std::vector<BinData> bins = computeBins(spots, variances);
-
-		// 3 evolve the log-spot for ALL paths using leverage
-		for (size_t p = 0; p < _numPaths; ++p) {
-			double X_t = std::log(spots[p]);
-			double leverageSq = leverageSquared(spots[p], t, bins);
-			double Z = generateStandardNormalSLV();     // * the non-antithetic one
-			double X_next = stepLogPriceSLV(X_t, variances[p], nextVariances[p], leverageSq, dt, Z);
-			nextSpots[p] = std::exp(X_next);
-
-			// store in path history
-			allPaths[p][i + 1] = {nextSpots[p], nextVariances[p]};
-		}
-
-		// 4 update state for the next iteration; swap currs to nexts
-		std::swap(spots, nextSpots);
-		std::swap(variances, nextVariances);
-	}
-
-	return allPaths;
+  // store initial values
+  for (size_t p = 0; p < _numPaths; ++p)
+  {
+    allPaths[p][0] = {S0, V0};
   }
 
+  // temporary storage of nexts
+  std::vector<double> nextSpots(_numPaths);
+  std::vector<double> nextVariances(_numPaths);
 
+  // time step - all paths together
+  for (size_t i = 0; i < numSteps - 1; ++i)
+  {
+    double t = _timeSteps[i];
+    double dt = _timeSteps[i + 1] - t;
+
+    // 1 evolve variances for ALL paths
+    for (size_t p = 0; p < _numPaths; ++p)
+    {
+      double Z_V = generateStandardNormalSLV();
+      nextVariances[p] = stepVarianceQE(variances[p], dt, Z_V, _psiC); // QE scheme for variance
+    }
+
+    // 2 compute bins for current (S, V)-pair
+    std::vector<BinData> bins = computeBins(spots, variances);
+
+    // 3 evolve the log-spot for ALL paths using leverage
+    for (size_t p = 0; p < _numPaths; ++p)
+    {
+      double X_t = std::log(spots[p]);
+      double leverageSq = leverageSquared(spots[p], t, bins);
+      double Z = generateStandardNormalSLV(); // * the non-antithetic one
+      double X_next = stepLogPriceSLV(X_t, variances[p], nextVariances[p], leverageSq, dt, Z);
+      nextSpots[p] = std::exp(X_next);
+
+      // store in path history
+      allPaths[p][i + 1] = {nextSpots[p], nextVariances[p]};
+    }
+
+    // 4 update state for the next iteration; swap currs to nexts
+    std::swap(spots, nextSpots);
+    std::swap(variances, nextVariances);
+  }
+
+  return allPaths;
+}
 
 std::vector<HestonSLVPathSimulator2D::BinData> HestonSLVPathSimulator2D::computeBins(
-  const std::vector<double> &spotValues, const std::vector<double> &varianceValues) const {
+    const std::vector<double> &spotValues, const std::vector<double> &varianceValues) const
+{
 
   size_t n = spotValues.size();
 
@@ -1172,9 +1254,10 @@ std::vector<HestonSLVPathSimulator2D::BinData> HestonSLVPathSimulator2D::compute
 
   // Sort by spot values
   std::sort(sortedIndices.begin(), sortedIndices.end(),
-			[&spotValues](size_t a, size_t b) {
-			  return spotValues[a] < spotValues[b];
-			});
+            [&spotValues](size_t a, size_t b)
+            {
+              return spotValues[a] < spotValues[b];
+            });
 
   // Divide into bins
   std::vector<BinData> bins(_numBins);
@@ -1182,88 +1265,94 @@ std::vector<HestonSLVPathSimulator2D::BinData> HestonSLVPathSimulator2D::compute
   size_t remainder = n % _numBins;
 
   size_t currentIndex = 0;
-  for (size_t k = 0; k < _numBins; ++k) {
-	size_t binSize = pathsPerBin + (k < remainder ? 1 : 0);
-  
-	double sumSpot = 0.0;
-	double sumVariance = 0.0;
-	double maxSpot = -std::numeric_limits<double>::infinity(); // initialize at -inf to improve
+  for (size_t k = 0; k < _numBins; ++k)
+  {
+    size_t binSize = pathsPerBin + (k < remainder ? 1 : 0);
 
-	for (size_t j = 0; j < binSize; ++j) {
-		size_t idx = sortedIndices[currentIndex + j];
-		sumSpot += spotValues[idx];
-		sumVariance += varianceValues[idx];
-		maxSpot = std::max(maxSpot, spotValues[idx]);
-	}
+    double sumSpot = 0.0;
+    double sumVariance = 0.0;
+    double maxSpot = -std::numeric_limits<double>::infinity(); // initialize at -inf to improve
 
-	bins[k].upperBound = maxSpot;
-	bins[k].midpoint = sumSpot / binSize;
-	bins[k].conditionalExpectation = sumVariance / binSize;  // E[V|S]
+    for (size_t j = 0; j < binSize; ++j)
+    {
+      size_t idx = sortedIndices[currentIndex + j];
+      sumSpot += spotValues[idx];
+      sumVariance += varianceValues[idx];
+      maxSpot = std::max(maxSpot, spotValues[idx]);
+    }
 
-	currentIndex += binSize;
+    bins[k].upperBound = maxSpot;
+    bins[k].midpoint = sumSpot / binSize;
+    bins[k].conditionalExpectation = sumVariance / binSize; // E[V|S]
+
+    currentIndex += binSize;
   }
 
   // Last bin upper bound should be +infinity for safety
   bins.back().upperBound = std::numeric_limits<double>::infinity();
 
-return bins;
+  return bins;
 }
 
 std::vector<HestonSLVPathSimulator2D::BinData> HestonSLVPathSimulator2D::computeBinsVectorized(const std::vector<double> &spotValues, const std::vector<double> &varianceValues) const
 {
-    size_t n =  spotValues.size();
+  size_t n = spotValues.size();
 
-    // create indices 
-    std::vector<size_t> sortedIndices(n);
-    std::iota(sortedIndices.begin(), sortedIndices.end(), 0);
+  // create indices
+  std::vector<size_t> sortedIndices(n);
+  std::iota(sortedIndices.begin(), sortedIndices.end(), 0);
 
-    // Parallel sort - uses all CPU cores via TBB
-    tbb::parallel_sort(sortedIndices.begin(),
-                       sortedIndices.end(),
-                       [&spotValues](size_t a, size_t b) {
-                         return spotValues[a] < spotValues[b];
-                       });
+  // Parallel sort - uses all CPU cores via TBB
+  tbb::parallel_sort(sortedIndices.begin(),
+                     sortedIndices.end(),
+                     [&spotValues](size_t a, size_t b)
+                     {
+                       return spotValues[a] < spotValues[b];
+                     });
 
-      std::vector<BinData> bins(_numBins);
-      size_t pathsPerBin = n / _numBins;
-      size_t remainder = n % _numBins;
+  std::vector<BinData> bins(_numBins);
+  size_t pathsPerBin = n / _numBins;
+  size_t remainder = n % _numBins;
 
-      // precompute the start and end position of the bin
-      std::vector<size_t> binStarts(_numBins + 1);
-      binStarts[0] = 0;
+  // precompute the start and end position of the bin
+  std::vector<size_t> binStarts(_numBins + 1);
+  binStarts[0] = 0;
 
-      for (size_t k = 0; k < _numBins; ++k) {
-        // first 'remainder' bins get one extra path to handle leftovers
-        size_t binSize = pathsPerBin + (k < remainder ? 1 : 0);
-        binStarts[k + 1] = binStarts[k] + binSize;
-      }
-      // each bin is independent -> parallelize it
-      #pragma omp parallel for schedule(static)
-      for (size_t k = 0; k < _numBins; ++k) {
-        // get bin's range in the sorted array
-        size_t start = binStarts[k];
-        size_t end = binStarts[k + 1];
-        size_t binSize = end - start;
+  for (size_t k = 0; k < _numBins; ++k)
+  {
+    // first 'remainder' bins get one extra path to handle leftovers
+    size_t binSize = pathsPerBin + (k < remainder ? 1 : 0);
+    binStarts[k + 1] = binStarts[k] + binSize;
+  }
+// each bin is independent -> parallelize it
+#pragma omp parallel for schedule(static)
+  for (size_t k = 0; k < _numBins; ++k)
+  {
+    // get bin's range in the sorted array
+    size_t start = binStarts[k];
+    size_t end = binStarts[k + 1];
+    size_t binSize = end - start;
 
-        // accumulators for this bin
-        double sumSpot = 0.0;
-        double sumVariance = 0.0;
-        double maxSpot = -std::numeric_limits<double>::infinity();
+    // accumulators for this bin
+    double sumSpot = 0.0;
+    double sumVariance = 0.0;
+    double maxSpot = -std::numeric_limits<double>::infinity();
 
-        // sum over all paths in this bin
-        for (size_t j = start; j < end; ++j) {
-          size_t idx = sortedIndices[j];
+    // sum over all paths in this bin
+    for (size_t j = start; j < end; ++j)
+    {
+      size_t idx = sortedIndices[j];
 
-          sumSpot += spotValues[idx];
-          sumVariance += varianceValues[idx];
-          maxSpot = std::max(maxSpot, spotValues[idx]);
-        }
-        bins[k].upperBound = maxSpot;
+      sumSpot += spotValues[idx];
+      sumVariance += varianceValues[idx];
+      maxSpot = std::max(maxSpot, spotValues[idx]);
+    }
+    bins[k].upperBound = maxSpot;
 
-        bins[k].midpoint = sumSpot / static_cast<double>(binSize);
-        bins[k].conditionalExpectation = sumVariance / static_cast<double>(binSize);
-      }
-      bins.back().upperBound = std::numeric_limits<double>::infinity();
+    bins[k].midpoint = sumSpot / static_cast<double>(binSize);
+    bins[k].conditionalExpectation = sumVariance / static_cast<double>(binSize);
+  }
+  bins.back().upperBound = std::numeric_limits<double>::infinity();
 
-    return bins;
+  return bins;
 }

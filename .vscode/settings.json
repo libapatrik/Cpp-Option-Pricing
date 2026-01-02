@@ -2,7 +2,9 @@
   "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
   "C_Cpp.default.includePath": [
     "${workspaceFolder}/**",
-    "/opt/homebrew/opt/boost/include"
+    "/opt/homebrew/opt/boost/include",
+    "/opt/homebrew/opt/tbb/include",
+    "/opt/homebrew/opt/libomp/include"
   ],
   "C_Cpp.default.compilerPath": "/usr/bin/clang++",
   "C_Cpp.default.cppStandard": "c++20",
@@ -11,5 +13,8 @@
   "cmake.configureOnOpen": true,
   "cmake.buildDirectory": "${workspaceFolder}/build",
   "editor.lightbulb.enabled": "on",
+  "prettier.tabWidth": 4,
+  "prettier.useTabs": true,
+  "editor.formatOnSave": true,
 
 }
