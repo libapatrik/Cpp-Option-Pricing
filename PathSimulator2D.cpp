@@ -1067,7 +1067,6 @@ std::vector<std::pair<double, double>> HestonSLVPathSimulator2D::simulateAllPath
 
 
 
-// TODO
 std::vector<HestonSLVPathSimulator2D::BinData> HestonSLVPathSimulator2D::computeBins(
   const std::vector<double> &spotValues, const std::vector<double> &varianceValues) const {
 
