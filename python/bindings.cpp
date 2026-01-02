@@ -294,7 +294,7 @@ PYBIND11_MODULE(_core, m) {
         }
 
         std::vector<std::pair<double, double>> simulate() {
-            return simulator->simulateAllPaths();
+            return simulator->simulateAllPaths();      // change here for Parallelized version
         }
 
         std::vector<std::vector<std::pair<double, double>>> simulate_full() {

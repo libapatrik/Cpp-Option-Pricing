@@ -8,7 +8,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include <numeric>
-#include <execution>  
+#include <tbb/parallel_sort.h>  // TBB parallel sort (works on macOS)  
 
 
 // ============================================================================
@@ -1217,13 +1217,12 @@ std::vector<HestonSLVPathSimulator2D::BinData> HestonSLVPathSimulator2D::compute
     std::vector<size_t> sortedIndices(n);
     std::iota(sortedIndices.begin(), sortedIndices.end(), 0);
 
-    // Parallel sort - use TBB
-    std::sort(std::execution::par,
-              sortedIndices.begin(),
-              sortedIndices.end(),
-              [&spotValues](size_t a, size_t b) {
-                return spotValues[a] < spotValues[b];
-              });
+    // Parallel sort - uses all CPU cores via TBB
+    tbb::parallel_sort(sortedIndices.begin(),
+                       sortedIndices.end(),
+                       [&spotValues](size_t a, size_t b) {
+                         return spotValues[a] < spotValues[b];
+                       });
 
       std::vector<BinData> bins(_numBins);
       size_t pathsPerBin = n / _numBins;
