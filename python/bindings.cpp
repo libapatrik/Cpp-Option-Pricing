@@ -1,6 +1,6 @@
 /**
  * Python bindings for CppFM library using pybind11
- * 
+ *
  */
 
 #include <pybind11/pybind11.h>
@@ -20,19 +20,23 @@ namespace py = pybind11;
 // =============================================================================
 // Trampoline class for DiscountCurve (abstract base class)
 // =============================================================================
-class PyDiscountCurve : public DiscountCurve {
+class PyDiscountCurve : public DiscountCurve
+{
 public:
     using DiscountCurve::DiscountCurve;
 
-    double discount(double time) const override {
+    double discount(double time) const override
+    {
         PYBIND11_OVERRIDE_PURE(double, DiscountCurve, discount, time);
     }
 
-    DiscountCurve* clone() const override {
-        PYBIND11_OVERRIDE_PURE(DiscountCurve*, DiscountCurve, clone);
+    DiscountCurve *clone() const override
+    {
+        PYBIND11_OVERRIDE_PURE(DiscountCurve *, DiscountCurve, clone);
     }
 
-    double rate() const override {
+    double rate() const override
+    {
         PYBIND11_OVERRIDE_PURE(double, DiscountCurve, rate);
     }
 };
@@ -40,7 +44,8 @@ public:
 // =============================================================================
 // Main module definition
 // =============================================================================
-PYBIND11_MODULE(_core, m) {
+PYBIND11_MODULE(_core, m)
+{
     m.doc() = R"pbdoc(
         CppFM Python Bindings
         ---------------------
@@ -82,7 +87,7 @@ PYBIND11_MODULE(_core, m) {
     // =========================================================================
 
     py::class_<DiscountCurve, PyDiscountCurve>(m, "DiscountCurve",
-        "Abstract base class for discount curves")
+                                               "Abstract base class for discount curves")
         .def("discount", &DiscountCurve::discount, py::arg("time"),
              "Get discount factor B(0,t) for given time t")
         .def("rate", &DiscountCurve::rate,
@@ -92,21 +97,20 @@ PYBIND11_MODULE(_core, m) {
              "Get instantaneous forward rate r(t) = -d/dt[log(B(t))]");
 
     py::class_<FlatDiscountCurve, DiscountCurve>(m, "FlatDiscountCurve",
-        "Flat (constant) interest rate discount curve: B(t) = exp(-r*t)")
+                                                 "Flat (constant) interest rate discount curve: B(t) = exp(-r*t)")
         .def(py::init<double>(), py::arg("rate"),
              "Create flat discount curve with constant rate r")
         .def("discount", &FlatDiscountCurve::discount, py::arg("time"))
         .def("rate", &FlatDiscountCurve::rate)
-        .def("__repr__", [](const FlatDiscountCurve& c) {
-            return "<FlatDiscountCurve rate=" + std::to_string(c.rate()) + ">";
-        });
+        .def("__repr__", [](const FlatDiscountCurve &c)
+             { return "<FlatDiscountCurve rate=" + std::to_string(c.rate()) + ">"; });
 
     // =========================================================================
     // VolatilitySurface enums
     // =========================================================================
 
     py::enum_<VolatilitySurface::SmileInterpolationType>(m, "SmileInterpolation",
-        "Interpolation method across strikes (smile dimension)")
+                                                         "Interpolation method across strikes (smile dimension)")
         .value("Linear", VolatilitySurface::SmileInterpolationType::Linear,
                "Linear interpolation in volatility space")
         .value("CubicSpline", VolatilitySurface::SmileInterpolationType::CubicSpline,
@@ -114,7 +118,7 @@ PYBIND11_MODULE(_core, m) {
         .export_values();
 
     py::enum_<VolatilitySurface::MaturityInterpolationType>(m, "MaturityInterpolation",
-        "Interpolation method across maturities (term structure)")
+                                                            "Interpolation method across maturities (term structure)")
         .value("Bilinear", VolatilitySurface::MaturityInterpolationType::Bilinear,
                "Simple linear interpolation in volatility space")
         .value("ForwardMoneyness", VolatilitySurface::MaturityInterpolationType::ForwardMoneyness,
@@ -126,7 +130,7 @@ PYBIND11_MODULE(_core, m) {
     // =========================================================================
 
     py::class_<VolatilitySurface>(m, "VolatilitySurface",
-        R"pbdoc(
+                                  R"pbdoc(
             Implied volatility surface with Dupire local volatility support.
 
             Implements equation (1.4) from the documentation for IV surface
@@ -140,10 +144,10 @@ PYBIND11_MODULE(_core, m) {
                 smile_interp: SmileInterpolation type (default: CubicSpline)
                 maturity_interp: MaturityInterpolation type (default: ForwardMoneyness)
         )pbdoc")
-        .def(py::init<const std::vector<double>&,
-                      const std::vector<double>&,
-                      const std::vector<std::vector<double>>&,
-                      const DiscountCurve&,
+        .def(py::init<const std::vector<double> &,
+                      const std::vector<double> &,
+                      const std::vector<std::vector<double>> &,
+                      const DiscountCurve &,
                       VolatilitySurface::SmileInterpolationType,
                       VolatilitySurface::MaturityInterpolationType>(),
              py::arg("strikes"),
@@ -161,18 +165,18 @@ PYBIND11_MODULE(_core, m) {
         .def("get_bounds", &VolatilitySurface::getBounds,
              "Get surface bounds: ((min_K, max_K), (min_T, max_T))")
         .def_property_readonly("strikes", &VolatilitySurface::strikes,
-             "Get strike grid")
+                               "Get strike grid")
         .def_property_readonly("maturities", &VolatilitySurface::maturities,
-             "Get maturity grid")
+                               "Get maturity grid")
         .def_property_readonly("volatilities", &VolatilitySurface::volatilities,
-             "Get volatility matrix");
+                               "Get volatility matrix");
 
     // =========================================================================
     // VolatilitySurfaceBuilder
     // =========================================================================
 
     py::class_<VolatilitySurfaceBuilder>(m, "VolatilitySurfaceBuilder",
-        R"pbdoc(
+                                         R"pbdoc(
             Builder for constructing VolatilitySurface incrementally.
 
             Example:
@@ -205,17 +209,15 @@ PYBIND11_MODULE(_core, m) {
         .def("set_discount_curve", &VolatilitySurfaceBuilder::setDiscountCurve,
              py::arg("discount_curve"), py::return_value_policy::reference,
              "Set the discount curve")
-        .def("build", [](VolatilitySurfaceBuilder& builder) {
-                return builder.build();
-             }, py::return_value_policy::take_ownership,
-             "Build and return the VolatilitySurface");
+        .def("build", [](VolatilitySurfaceBuilder &builder)
+             { return builder.build(); }, py::return_value_policy::take_ownership, "Build and return the VolatilitySurface");
 
     // =========================================================================
     // HestonModel
     // =========================================================================
 
     py::class_<HestonModel>(m, "HestonModel",
-        R"pbdoc(
+                            R"pbdoc(
             Heston Stochastic Volatility Model.
 
             2D SDE system:
@@ -232,7 +234,7 @@ PYBIND11_MODULE(_core, m) {
                 sigma_v: Vol-of-vol sigma_v > 0
                 rho: Correlation rho in [-1, 1]
         )pbdoc")
-        .def(py::init<double, const DiscountCurve&, double, double, double, double, double>(),
+        .def(py::init<double, const DiscountCurve &, double, double, double, double, double>(),
              py::arg("spot"),
              py::arg("discount_curve"),
              py::arg("v0"),
@@ -240,32 +242,23 @@ PYBIND11_MODULE(_core, m) {
              py::arg("vbar"),
              py::arg("sigma_v"),
              py::arg("rho"))
-        .def_property_readonly("spot", [](const HestonModel& m) { return m.initValue(); },
-             "Initial spot price S_0")
-        .def_property_readonly("v0", &HestonModel::v0,
-             "Initial variance V_0")
-        .def_property_readonly("kappa", &HestonModel::kappa,
-             "Mean reversion speed kappa")
-        .def_property_readonly("vbar", &HestonModel::vbar,
-             "Long-term variance theta (vbar)")
-        .def_property_readonly("sigma_v", &HestonModel::sigma_v,
-             "Volatility of volatility sigma_v")
-        .def_property_readonly("rho", &HestonModel::rho,
-             "Correlation rho")
-        .def_property_readonly("risk_free_rate", &HestonModel::riskFreeRate,
-             "Risk-free rate r")
-        .def("correlation", &HestonModel::correlation,
-             "Get correlation coefficient rho")
-        .def("satisfies_feller", &HestonModel::satisfiesFellerCondition,
-             "Check Feller condition: 2*kappa*vbar >= sigma_v^2")
-        .def("__repr__", [](const HestonModel& m) {
-            return "<HestonModel S0=" + std::to_string(m.initValue()) +
-                   " v0=" + std::to_string(m.v0()) +
-                   " kappa=" + std::to_string(m.kappa()) +
-                   " vbar=" + std::to_string(m.vbar()) +
-                   " sigma_v=" + std::to_string(m.sigma_v()) +
-                   " rho=" + std::to_string(m.rho()) + ">";
-        });
+        .def_property_readonly("spot", [](const HestonModel &m)
+                               { return m.initValue(); }, "Initial spot price S_0")
+        .def_property_readonly("v0", &HestonModel::v0, "Initial variance V_0")
+        .def_property_readonly("kappa", &HestonModel::kappa, "Mean reversion speed kappa")
+        .def_property_readonly("vbar", &HestonModel::vbar, "Long-term variance theta (vbar)")
+        .def_property_readonly("sigma_v", &HestonModel::sigma_v, "Volatility of volatility sigma_v")
+        .def_property_readonly("rho", &HestonModel::rho, "Correlation rho")
+        .def_property_readonly("risk_free_rate", &HestonModel::riskFreeRate, "Risk-free rate r")
+        .def("correlation", &HestonModel::correlation, "Get correlation coefficient rho")
+        .def("satisfies_feller", &HestonModel::satisfiesFellerCondition, "Check Feller condition: 2*kappa*vbar >= sigma_v^2")
+        .def("__repr__", [](const HestonModel &m)
+             { return "<HestonModel S0=" + std::to_string(m.initValue()) +
+                      " v0=" + std::to_string(m.v0()) +
+                      " kappa=" + std::to_string(m.kappa()) +
+                      " vbar=" + std::to_string(m.vbar()) +
+                      " sigma_v=" + std::to_string(m.sigma_v()) +
+                      " rho=" + std::to_string(m.rho()) + ">"; });
 
     // =========================================================================
     // HestonSLVPathSimulator2D
@@ -276,16 +269,17 @@ PYBIND11_MODULE(_core, m) {
     //
 
     // Wrapper class that owns both the time_steps vector and the simulator
-    struct HestonSLVSimulatorWrapper {
-        std::vector<double> time_steps;  // Owned copy of time steps
+    struct HestonSLVSimulatorWrapper
+    {
+        std::vector<double> time_steps; // Owned copy of time steps
         std::unique_ptr<HestonSLVPathSimulator2D> simulator;
 
-        HestonSLVSimulatorWrapper(const HestonModel& model,
-                                   const VolatilitySurface& vol_surface,
-                                   std::vector<double> ts,
-                                   size_t num_paths,
-                                   size_t num_bins,
-                                   size_t seed)
+        HestonSLVSimulatorWrapper(const HestonModel &model,
+                                  const VolatilitySurface &vol_surface,
+                                  std::vector<double> ts,
+                                  size_t num_paths,
+                                  size_t num_bins,
+                                  size_t seed)
             : time_steps(std::move(ts))
         {
             // Create simulator with reference to our owned vector
@@ -293,17 +287,27 @@ PYBIND11_MODULE(_core, m) {
                 model, vol_surface, time_steps, num_paths, num_bins, seed);
         }
 
-        std::vector<std::pair<double, double>> simulate() {
-            return simulator->simulateAllPaths();      // change here for Parallelized version
+        std::vector<std::pair<double, double>> simulate(bool parallel = true)
+        {
+            if (parallel)
+            {
+                return simulator->simulateAllPathsParallel();
+            }
+            return simulator->simulateAllPaths();
         }
 
-        std::vector<std::vector<std::pair<double, double>>> simulate_full() {
+        std::vector<std::vector<std::pair<double, double>>> simulate_full(bool parallel = true)
+        {
+            if (parallel)
+            {
+                return simulator->simulateAllPathsFullParallel();
+            }
             return simulator->simulateAllPathsFull();
         }
     };
 
     py::class_<HestonSLVSimulatorWrapper>(m, "HestonSLVSimulator",
-        R"pbdoc(
+                                          R"pbdoc(
             Heston Stochastic Local Volatility (SLV) Monte Carlo Simulator.
 
             Implements the van der Stoep et al. (2013) methodology for
@@ -332,8 +336,8 @@ PYBIND11_MODULE(_core, m) {
                 # Full path history (for hedging analysis)
                 paths = sim.simulate_full()  # paths[path_idx][time_idx] = (S, V)
         )pbdoc")
-        .def(py::init<const HestonModel&,
-                      const VolatilitySurface&,
+        .def(py::init<const HestonModel &,
+                      const VolatilitySurface &,
                       std::vector<double>,
                       size_t,
                       size_t,
@@ -345,13 +349,18 @@ PYBIND11_MODULE(_core, m) {
              py::arg("num_bins") = 20,
              py::arg("seed") = 42)
         .def("simulate", &HestonSLVSimulatorWrapper::simulate,
+             py::arg("parallel") = true,
              R"pbdoc(
                 Simulate all paths and return terminal values.
+
+                Args:
+                    parallel: Use OpenMP parallelization (default: True)
 
                 Returns:
                     List of (S_T, V_T) tuples for all paths at terminal time T.
              )pbdoc")
         .def("simulate_full", &HestonSLVSimulatorWrapper::simulate_full,
+             py::arg("parallel") = true,
              R"pbdoc(
                 Simulate all paths and return full path history.
 
@@ -375,49 +384,49 @@ PYBIND11_MODULE(_core, m) {
 
     // Use explicit function pointer casts for overloaded functions
     m.def("bs_call_price",
-          static_cast<double(*)(double, double, double, double, double)>(
+          static_cast<double (*)(double, double, double, double, double)>(
               &BlackScholesFormulas::callPrice),
           py::arg("spot"), py::arg("strike"), py::arg("rate"),
           py::arg("volatility"), py::arg("maturity"),
           "Black-Scholes call option price");
 
     m.def("bs_put_price",
-          static_cast<double(*)(double, double, double, double, double)>(
+          static_cast<double (*)(double, double, double, double, double)>(
               &BlackScholesFormulas::putPrice),
           py::arg("spot"), py::arg("strike"), py::arg("rate"),
           py::arg("volatility"), py::arg("maturity"),
           "Black-Scholes put option price");
 
     m.def("bs_delta",
-          static_cast<double(*)(double, double, double, double, double, Option::Type)>(
+          static_cast<double (*)(double, double, double, double, double, Option::Type)>(
               &BlackScholesFormulas::delta),
           py::arg("spot"), py::arg("strike"), py::arg("rate"),
           py::arg("volatility"), py::arg("maturity"), py::arg("option_type"),
           "Option delta");
 
     m.def("bs_gamma",
-          static_cast<double(*)(double, double, double, double, double)>(
+          static_cast<double (*)(double, double, double, double, double)>(
               &BlackScholesFormulas::gamma),
           py::arg("spot"), py::arg("strike"), py::arg("rate"),
           py::arg("volatility"), py::arg("maturity"),
           "Option gamma");
 
     m.def("bs_vega",
-          static_cast<double(*)(double, double, double, double, double)>(
+          static_cast<double (*)(double, double, double, double, double)>(
               &BlackScholesFormulas::vega),
           py::arg("spot"), py::arg("strike"), py::arg("rate"),
           py::arg("volatility"), py::arg("maturity"),
           "Option vega");
 
     m.def("bs_theta",
-          static_cast<double(*)(double, double, double, double, double, Option::Type)>(
+          static_cast<double (*)(double, double, double, double, double, Option::Type)>(
               &BlackScholesFormulas::theta),
           py::arg("spot"), py::arg("strike"), py::arg("rate"),
           py::arg("volatility"), py::arg("maturity"), py::arg("option_type"),
           "Option theta");
 
     m.def("bs_implied_volatility",
-          static_cast<double(*)(double, double, double, double, double, Option::Type, double, size_t, double)>(
+          static_cast<double (*)(double, double, double, double, double, Option::Type, double, size_t, double)>(
               &BlackScholesFormulas::impliedVolatility),
           py::arg("spot"), py::arg("strike"), py::arg("rate"), py::arg("maturity"),
           py::arg("market_price"), py::arg("option_type"),

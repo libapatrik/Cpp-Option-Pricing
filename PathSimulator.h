@@ -4,6 +4,7 @@
 #include "Model.h"
 #include <random>
 #include <vector>
+#include "fast_rng/pcg_random.hpp"
 
 
 class PathSimulator
@@ -30,7 +31,8 @@ protected:
 
     std::vector<double> _timeSteps; // information for discretisation; not necessarily equally spaced! {t_0, t_1, ..., t_n}
     const Model* _modelPtr; // Pointer to base class Model pure virtual cannot instantiate - take const pointer
-    mutable std::default_random_engine _randomEngine; // had to change to mutable because of the const method path()
+    // mutable std::default_random_engine _randomEngine; // had to change to mutable because of the const method path()
+    mutable pcg32 _randomEngine; // PCG32: faster, smaller state (16 bytes vs 2.5KB), better statistical quality
 };
 
 class EulerPathSimulator : public PathSimulator

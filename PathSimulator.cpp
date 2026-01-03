@@ -8,7 +8,8 @@
 //TODO: Make it into one for loop - requires some vectorisation
 std::vector<std::vector<double>> GBM_pathSimulator(const double& S0, const double& r, const double& sigma, const double& T, int numSteps, int numPaths) {
     // Seed
-    std::default_random_engine generator(1);
+    // std::default_random_engine generator(1);
+    pcg32 generator(1); // PCG32: faster, smaller state, better statistical quality
     std::normal_distribution<double> distribution(0.0, 1.0); // mean 0, stddev 1
 
     double dt = T / static_cast<double>(numSteps);     // time step

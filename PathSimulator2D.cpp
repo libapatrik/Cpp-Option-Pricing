@@ -221,7 +221,9 @@ void PathSimulator2D::initThreadLocalRNGs() const
   for (int t = 0; t < numThreads; ++t)
   {
     // each threads gets a seed: baseSeet + t * largePrime
-    _threadRNGs[t].seed(_randomSeed + t * 2147483647UL / numThreads);
+    // _threadRNGs[t].seed(_randomSeed + t * 2147483647UL / numThreads);
+    // PCG32: use stream parameter for independent sequences per thread
+    _threadRNGs[t] = pcg32(_randomSeed, t); // same seed, different stream per thread
   }
 }
 
@@ -392,8 +394,10 @@ double PathSimulator2D::stepVarianceQE(double V_t, double dt, double Z_V,
   // CRITICAL: Generate ALL randoms upfront to ensure consistent consumption
   // This prevents cache misalignment when branch decisions differ between
   // fresh and antithetic paths due to different variance values.
-  double Z_u = generateStandardNormal();
-  double U_V = Utils::stdNormCdf(Z_u); // Always generate, even if unused
+  // NOTE: For parallel execution, the caller must provide Z_V which already
+  // encodes the extra randomness needed for the exponential branch.
+  // We use Z_V transformed to uniform for the switching logic.
+  double U_V = Utils::stdNormCdf(Z_V); // Use Z_V for both quadratic and exponential
 
   if (psi <= psi_c)
   {
@@ -1219,7 +1223,7 @@ std::vector<std::vector<std::pair<double, double>>> HestonSLVPathSimulator2D::si
     }
 
     // 2 compute bins for current (S, V)-pair
-    std::vector<BinData> bins = computeBins(spots, variances);
+    std::vector<BinData> bins = computeBins(spots, variances); // ? change back to parallel
 
     // 3 evolve the log-spot for ALL paths using leverage
     for (size_t p = 0; p < _numPaths; ++p)
@@ -1235,6 +1239,77 @@ std::vector<std::vector<std::pair<double, double>>> HestonSLVPathSimulator2D::si
     }
 
     // 4 update state for the next iteration; swap currs to nexts
+    std::swap(spots, nextSpots);
+    std::swap(variances, nextVariances);
+  }
+
+  return allPaths;
+}
+
+std::vector<std::vector<std::pair<double, double>>> HestonSLVPathSimulator2D::simulateAllPathsFullParallel() const
+{
+  // TODO: Implement parallel version
+  const HestonModel *heston = getHestonModel();
+  double S0 = heston->initValue();
+  double V0 = heston->v0();
+
+  size_t numSteps = _timeSteps.size();
+
+  initThreadLocalRNGs();
+  // allocate
+  std::vector<std::vector<std::pair<double, double>>> allPaths(_numPaths, std::vector<std::pair<double, double>>(numSteps));
+
+  // current state vectors
+  std::vector<double> spots(_numPaths, S0);
+  std::vector<double> variances(_numPaths, V0);
+  std::vector<double> nextSpots(_numPaths);
+  std::vector<double> nextVariances(_numPaths);
+
+// Store initial values parallel
+#pragma omp parallel for schedule(static)
+  for (size_t p = 0; p < _numPaths; ++p)
+  {
+    allPaths[p][0] = {S0, V0};
+  }
+  // time stepping loop - sequential as bins depend on previous state
+  for (size_t i = 0; i < numSteps - 1; ++i)
+  {
+    double t = _timeSteps[i];
+    double dt = _timeSteps[i + 1] - t;
+
+// evolve variances
+#pragma omp parallel for schedule(static)
+    for (size_t p = 0; p < _numPaths; ++p)
+    {
+#ifdef _OPENMP
+      int tid = omp_get_thread_num();
+#else
+      int tid = 0;
+#endif
+      double Z_V = generateStandardNormalParallel(tid);
+      nextVariances[p] = stepVarianceQE(variances[p], dt, Z_V, _psiC);
+    }
+    // compute bins (use sequential version to avoid TBB/OpenMP conflict)
+    std::vector<BinData> bins = computeBinsVectorized(spots, variances);
+
+// evolve log-spots
+#pragma omp parallel for schedule(static)
+    for (size_t p = 0; p < _numPaths; ++p)
+    {
+#ifdef _OPENMP
+      int tid = omp_get_thread_num();
+#else
+      int tid = 0;
+#endif
+      double Z = generateStandardNormalParallel(tid);
+      double X_t = std::log(spots[p]);
+      double leverageSq = leverageSquared(spots[p], t, bins); // read only access
+      double X_next = stepLogPriceSLV(X_t, variances[p], nextVariances[p], leverageSq, dt, Z);
+
+      nextSpots[p] = std::exp(X_next);
+      // store the path history (each thread will write to different path index)
+      allPaths[p][i + 1] = {nextSpots[p], nextVariances[p]};
+    }
     std::swap(spots, nextSpots);
     std::swap(variances, nextVariances);
   }

@@ -4,6 +4,7 @@
 #include <vector>
 #include <functional>
 #include <complex>
+#include "fast_rng/pcg_random.hpp"
 
 
 /**
@@ -17,6 +18,7 @@
  * 
  *  TODO:
  *  (1) Optimize std::exp/log/sqrt with Accelerate.h
+ *  (1.1) Make the PDE solvers more efficient 
  *  (2) Implement generic n-dim Cholesky decomposition to decorrelate the Brownian motions
  *  (3) Develop a linspace function as in Python
  *  (4) Develop a creating a table function?
@@ -52,6 +54,7 @@ public: // expose methods which we want to expose
 private:
     Utils() = delete; // delete constructor; everything is static
 };
+
 
 
 

@@ -639,7 +639,6 @@ double CIRSampler::sampleCIR(double kappa, double vbar, double sigma,
 // * Characteristic Function of Integrated Variance Implementation
 // ============================================================================
 
-// TODO: As static method?
 std::complex<double> ChFIntegratedVariance::compute(double omega, double kappa, double vbar, double sigma, double v_s, double v_t, double tau)
 {
     /**

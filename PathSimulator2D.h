@@ -13,6 +13,7 @@
 #include "VolatilitySurface.h"
 #include <random>
 #include <vector>
+#include "fast_rng/pcg_random.hpp"
 
 /// GOAL: Andersen -> Stoep -> Hammouda QMC
 /**
@@ -106,8 +107,8 @@ protected:
   double generateStandardNormal() const;
 
   // Thread-local RNGs for parallel simulation
-  // ? faster with PCG or xoroshiro123++
-  mutable std::vector<std::default_random_engine> _threadRNGs;
+  // mutable std::vector<std::default_random_engine> _threadRNGs;
+  mutable std::vector<pcg32> _threadRNGs; // PCG32: 16 bytes state vs 2.5KB, better cache efficiency for parallel
   // initialize thread-local RNGs (call once before parallel region)
   void initThreadLocalRNGs() const;
   // Generate random using thread's own RNG
@@ -160,17 +161,16 @@ protected:
   double stepVarianceQE(double V_t, double dt, double Z_V, double psi_c) const;
 
   const std::vector<double> &_timeSteps;
-  const Model2D
-      *_modelPtr; // Pointer to base class Model2D - for polymorphic 2D models
+  const Model2D *_modelPtr; // Pointer to base class Model2D - for polymorphic 2D models
   size_t _randomSeed;
-  mutable std::default_random_engine _randomEngine;
+  // mutable std::default_random_engine _randomEngine;  // removing the slower variant
+  mutable pcg32 _randomEngine;
 
   // Antithetic sampling support (PATH-LEVEL for proper variance reduction)
   // For N paths, generate N/2 with fresh randoms, then N/2 with negated randoms
-  mutable bool _antitheticMode; // true = using cached negated values
-  mutable std::vector<double>
-      _randomCache;           // Cache ALL randoms from previous path
-  mutable size_t _cacheIndex; // Current position in cache during replay
+  mutable bool _antitheticMode;             // true = using cached negated values
+  mutable std::vector<double> _randomCache; // Cache ALL randoms from previous path
+  mutable size_t _cacheIndex;               // Current position in cache during replay
 };
 
 /** EULER as a pair for (X, V)
@@ -485,6 +485,7 @@ public:
    * @return [path_index][time_index] -> (S, V)
    */
   std::vector<std::vector<std::pair<double, double>>> simulateAllPathsFull() const;
+  std::vector<std::vector<std::pair<double, double>>> simulateAllPathsFullParallel() const;
 
 private:
   // =========================================================================
