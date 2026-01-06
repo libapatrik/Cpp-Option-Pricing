@@ -172,8 +172,7 @@ double PathSimulator2D::generateUniform() const
   return uniform(_randomEngine);
 }
 
-double PathSimulator2D::generateStandardNormalSLV()
-    const
+double PathSimulator2D::generateStandardNormalSLV() const
 { // ! because SLV doesn't use antithetic sampling at path-level
   return Utils::inverseNormalCDF(generateUniform());
 }
@@ -220,10 +219,10 @@ void PathSimulator2D::initThreadLocalRNGs() const
 
   for (int t = 0; t < numThreads; ++t)
   {
-    // each threads gets a seed: baseSeet + t * largePrime
-    // _threadRNGs[t].seed(_randomSeed + t * 2147483647UL / numThreads);
     // PCG32: use stream parameter for independent sequences per thread
-    _threadRNGs[t] = pcg32(_randomSeed, t); // same seed, different stream per thread
+    // Each thread gets the same seed but a different stream ID (0, 1, 2, ...)
+    // PCG's stream feature guarantees statistically independent sequences
+    _threadRNGs[t] = pcg32(_randomSeed, t);
   }
 }
 

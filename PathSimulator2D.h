@@ -25,8 +25,10 @@
  *  V:   Euler    Milstein     BK     TG (Eq:13)     QE (Eq:23-26)
  *
  *  TODO:
- *  1. COS-method: given ChF recover CDF + PDF
- *  2. Newton method to invert CDF to get integrated variance sample
+ *  For HestonSLV: Pre-compute the local vol grid & GPU implementation?
+ *  Implement Quasi MC O(1/N) with Sobol sequences 
+ *  *  COS-method: given ChF recover CDF + PDF
+ *  Newton method to invert CDF to get integrated variance sample
  *  NOTE: MC-Optimization: How much better can we make the MC simulation?
  *        Control variates (CV) vs. Antithetic sampling (AS) vs. Quasi-MC
  *        CV +AS, CV + QMC works, but AS + QMC doesn't work well
