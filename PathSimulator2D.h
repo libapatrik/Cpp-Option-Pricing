@@ -26,7 +26,7 @@
  *
  *  TODO:
  *  For HestonSLV: Pre-compute the local vol grid & GPU implementation?
- *  Implement Quasi MC O(1/N) with Sobol sequences 
+ *  Implement Quasi MC O(1/N) with Sobol sequences
  *  *  COS-method: given ChF recover CDF + PDF
  *  Newton method to invert CDF to get integrated variance sample
  *  NOTE: MC-Optimization: How much better can we make the MC simulation?
@@ -488,6 +488,12 @@ public:
    */
   std::vector<std::vector<std::pair<double, double>>> simulateAllPathsFull() const;
   std::vector<std::vector<std::pair<double, double>>> simulateAllPathsFullParallel() const;
+  
+  size_t calibrateLeverage(size_t maxIterations = 10, double tol = 1e-3, double damping = 0.5);
+  bool isCalibrated() const { return _leverageCalibrated; } // check if leverage was calibrated
+  // Get calibration error history (||L_new - L_old||/||L_old|| per iteration)
+  const std::vector<double>& calibrationErrors() const { return _calibrationErrors; }
+  void resetCalibration();
 
 private:
   // =========================================================================
@@ -501,6 +507,19 @@ private:
     double midpoint;                 // (b_k + b_{k+1}) / 2 - for interpolation
     double conditionalExpectation;   // E[V | S in bin_k]
   };
+
+  // Leverage grid for iterative calibration
+  std::vector<double> _leverageGrid;
+  std::vector<double> _spotGridPoints;
+  size_t _nSpotGrid;
+  bool _leverageCalibrated;
+  std::vector<double> _calibrationErrors;
+
+  void initializeLeverageGrid(); // initialize the leverage grid with L^2=1 everywhere
+  std::vector<std::vector<BinData>> simulateAndCollectAllBins() const;
+  double updateLeverageGrid(const std::vector<std::vector<BinData>>& allTimeBins, double damping);
+  double getLeverageSquaredFromGrid(double spot, size_t timeIdx) const;
+  size_t findSpotGridIndex(double spot) const;
 
   // =========================================================================
   // Binning Algorithm 1

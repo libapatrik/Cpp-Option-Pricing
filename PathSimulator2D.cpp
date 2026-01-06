@@ -1111,22 +1111,25 @@ std::vector<std::pair<double, double>> HestonSLVPathSimulator2D::simulateAllPath
   double S0 = heston->initValue();
   double V0 = heston->v0();
 
-  // initialize thread-local RNGs
   initThreadLocalRNGs();
 
-  // Allocate arrays - these are SHARED across all threads, so each thread can read/write
   std::vector<double> spots(_numPaths, S0);
   std::vector<double> variances(_numPaths, V0);
   std::vector<double> nextSpots(_numPaths);
   std::vector<double> nextVariances(_numPaths);
 
-  // time step - sequential cannot parallelize
+  // only compute bins on-the-fly if not calibrated
+  std::vector<BinData> currentBins;
+
   for (size_t i = 0; i < _timeSteps.size() - 1; ++i)
   {
     double t = _timeSteps[i];
     double dt = _timeSteps[i + 1] - t;
 
-// Evolve variance - parallel
+    if (!_leverageCalibrated) {
+      currentBins = computeBinsVectorized(spots, variances);
+    }
+
 #pragma omp parallel for schedule(static)
     for (size_t p = 0; p < _numPaths; ++p)
     {
@@ -1138,9 +1141,7 @@ std::vector<std::pair<double, double>> HestonSLVPathSimulator2D::simulateAllPath
       double Z_V = generateStandardNormalParallel(tid);
       nextVariances[p] = stepVarianceQE(variances[p], dt, Z_V, _psiC);
     }
-    std::vector<BinData> bins = computeBinsVectorized(spots, variances); // parallel sort + parallel bin stats
 
-// Evolve spots - parallel
 #pragma omp parallel for schedule(static)
     for (size_t p = 0; p < _numPaths; ++p)
     {
@@ -1150,22 +1151,23 @@ std::vector<std::pair<double, double>> HestonSLVPathSimulator2D::simulateAllPath
       int tid = 0;
 #endif
       double Z = generateStandardNormalParallel(tid);
-
       double X_t = std::log(spots[p]);
 
-      // leverageSquared() only READS from bins (const reference)
-      // multiple threads are reading the same data = SAFE
-      double leverageSq = leverageSquared(spots[p], t, bins);
-      double X_next = stepLogPriceSLV(X_t, variances[p], nextVariances[p], leverageSq, dt, Z);
+      double leverageSq;
+      if (_leverageCalibrated) {
+        leverageSq = getLeverageSquaredFromGrid(spots[p], i);
+      } else {
+        leverageSq = leverageSquared(spots[p], t, currentBins);
+      }
 
-      // write to nextSPots - each thread writes different indices
+      double X_next = stepLogPriceSLV(X_t, variances[p], nextVariances[p], leverageSq, dt, Z);
       nextSpots[p] = std::exp(X_next);
     }
-    // swap pointers
+
     std::swap(spots, nextSpots);
     std::swap(variances, nextVariances);
   }
-  // pack the results - parallel
+
   std::vector<std::pair<double, double>> terminalValues(_numPaths);
 
 #pragma omp parallel for
@@ -1247,7 +1249,6 @@ std::vector<std::vector<std::pair<double, double>>> HestonSLVPathSimulator2D::si
 
 std::vector<std::vector<std::pair<double, double>>> HestonSLVPathSimulator2D::simulateAllPathsFullParallel() const
 {
-  // TODO: Implement parallel version
   const HestonModel *heston = getHestonModel();
   double S0 = heston->initValue();
   double V0 = heston->v0();
@@ -1255,28 +1256,31 @@ std::vector<std::vector<std::pair<double, double>>> HestonSLVPathSimulator2D::si
   size_t numSteps = _timeSteps.size();
 
   initThreadLocalRNGs();
-  // allocate
+
   std::vector<std::vector<std::pair<double, double>>> allPaths(_numPaths, std::vector<std::pair<double, double>>(numSteps));
 
-  // current state vectors
   std::vector<double> spots(_numPaths, S0);
   std::vector<double> variances(_numPaths, V0);
   std::vector<double> nextSpots(_numPaths);
   std::vector<double> nextVariances(_numPaths);
 
-// Store initial values parallel
+  std::vector<BinData> currentBins;
+
 #pragma omp parallel for schedule(static)
   for (size_t p = 0; p < _numPaths; ++p)
   {
     allPaths[p][0] = {S0, V0};
   }
-  // time stepping loop - sequential as bins depend on previous state
+
   for (size_t i = 0; i < numSteps - 1; ++i)
   {
     double t = _timeSteps[i];
     double dt = _timeSteps[i + 1] - t;
 
-// evolve variances
+    if (!_leverageCalibrated) {
+      currentBins = computeBinsVectorized(spots, variances);
+    }
+
 #pragma omp parallel for schedule(static)
     for (size_t p = 0; p < _numPaths; ++p)
     {
@@ -1288,10 +1292,7 @@ std::vector<std::vector<std::pair<double, double>>> HestonSLVPathSimulator2D::si
       double Z_V = generateStandardNormalParallel(tid);
       nextVariances[p] = stepVarianceQE(variances[p], dt, Z_V, _psiC);
     }
-    // compute bins (use sequential version to avoid TBB/OpenMP conflict)
-    std::vector<BinData> bins = computeBinsVectorized(spots, variances);
 
-// evolve log-spots
 #pragma omp parallel for schedule(static)
     for (size_t p = 0; p < _numPaths; ++p)
     {
@@ -1302,11 +1303,17 @@ std::vector<std::vector<std::pair<double, double>>> HestonSLVPathSimulator2D::si
 #endif
       double Z = generateStandardNormalParallel(tid);
       double X_t = std::log(spots[p]);
-      double leverageSq = leverageSquared(spots[p], t, bins); // read only access
+
+      double leverageSq;
+      if (_leverageCalibrated) {
+        leverageSq = getLeverageSquaredFromGrid(spots[p], i);
+      } else {
+        leverageSq = leverageSquared(spots[p], t, currentBins);
+      }
+
       double X_next = stepLogPriceSLV(X_t, variances[p], nextVariances[p], leverageSq, dt, Z);
 
       nextSpots[p] = std::exp(X_next);
-      // store the path history (each thread will write to different path index)
       allPaths[p][i + 1] = {nextSpots[p], nextVariances[p]};
     }
     std::swap(spots, nextSpots);
@@ -1430,3 +1437,216 @@ std::vector<HestonSLVPathSimulator2D::BinData> HestonSLVPathSimulator2D::compute
 
   return bins;
 }
+
+// Leverage calibration
+void HestonSLVPathSimulator2D::initializeLeverageGrid()
+{
+  const HestonModel* heston = getHestonModel();
+  double S0 = heston->initValue();
+
+  _nSpotGrid = 80;
+  double spotMin = 0.3 * S0;
+  double spotMax = 2.5 * S0;
+
+  // log-uniform spot grid
+  _spotGridPoints.resize(_nSpotGrid);
+  double logMin = std::log(spotMin);
+  double logMax = std::log(spotMax);
+  for (size_t i = 0; i < _nSpotGrid; ++i) {
+    double frac = static_cast<double>(i) / static_cast<double>(_nSpotGrid - 1);
+    _spotGridPoints[i] = std::exp(logMin + frac * (logMax - logMin));
+  }
+
+  // L^2 = 1 everywhere (pure Heston)
+  size_t numTimeSteps = _timeSteps.size();
+  _leverageGrid.resize(numTimeSteps * _nSpotGrid, 1.0);
+
+  _leverageCalibrated = false;
+  _calibrationErrors.clear();
+}
+
+void HestonSLVPathSimulator2D::resetCalibration()
+{
+  _leverageCalibrated = false;
+  _calibrationErrors.clear();
+  std::fill(_leverageGrid.begin(), _leverageGrid.end(), 1.0);
+}
+
+size_t HestonSLVPathSimulator2D::findSpotGridIndex(double spot) const
+{
+  auto it = std::lower_bound(_spotGridPoints.begin(), _spotGridPoints.end(), spot);
+
+  if (it == _spotGridPoints.begin()) {
+    return 0;
+  }
+  if (it == _spotGridPoints.end()) {
+    return _nSpotGrid - 2;
+  }
+
+  return static_cast<size_t>(std::distance(_spotGridPoints.begin(), it)) - 1;
+}
+
+double HestonSLVPathSimulator2D::getLeverageSquaredFromGrid(double spot, size_t timeIdx) const
+{
+  if (!_leverageCalibrated || _leverageGrid.empty()) {
+    return 1.0;
+  }
+
+  size_t t_idx = std::min(timeIdx, _timeSteps.size() - 1);
+
+  size_t s_lo = findSpotGridIndex(spot);
+  size_t s_hi = std::min(s_lo + 1, _nSpotGrid - 1);
+
+  double S_lo = _spotGridPoints[s_lo];
+  double S_hi = _spotGridPoints[s_hi];
+  double alpha = 0.0;
+  if (S_hi > S_lo) {
+    alpha = (spot - S_lo) / (S_hi - S_lo);
+    alpha = std::clamp(alpha, 0.0, 1.0);
+  }
+
+  double L2_lo = _leverageGrid[t_idx * _nSpotGrid + s_lo];
+  double L2_hi = _leverageGrid[t_idx * _nSpotGrid + s_hi];
+
+  return (1.0 - alpha) * L2_lo + alpha * L2_hi;
+}
+
+std::vector<std::vector<HestonSLVPathSimulator2D::BinData>>
+HestonSLVPathSimulator2D::simulateAndCollectAllBins() const
+{
+  const HestonModel* heston = getHestonModel();
+  double S0 = heston->initValue();
+  double V0 = heston->v0();
+
+  size_t numTimeSteps = _timeSteps.size();
+  std::vector<std::vector<BinData>> allTimeBins(numTimeSteps);
+
+  std::vector<double> spots(_numPaths, S0);
+  std::vector<double> variances(_numPaths, V0);
+  std::vector<double> nextSpots(_numPaths);
+  std::vector<double> nextVariances(_numPaths);
+
+  allTimeBins[0] = computeBins(spots, variances);
+
+  initThreadLocalRNGs();
+
+  for (size_t i = 0; i < numTimeSteps - 1; ++i) {
+    double t = _timeSteps[i];
+    double dt = _timeSteps[i + 1] - t;
+
+    const std::vector<BinData>& currentBins = allTimeBins[i];
+
+    #pragma omp parallel for schedule(static)
+    for (size_t p = 0; p < _numPaths; ++p) {
+      #ifdef _OPENMP
+        int tid = omp_get_thread_num();
+      #else
+        int tid = 0;
+      #endif
+      double Z_V = generateStandardNormalParallel(tid);
+      nextVariances[p] = stepVarianceQE(variances[p], dt, Z_V, _psiC);
+    }
+
+    #pragma omp parallel for schedule(static)
+    for (size_t p = 0; p < _numPaths; ++p) {
+      #ifdef _OPENMP
+        int tid = omp_get_thread_num();
+      #else
+        int tid = 0;
+      #endif
+
+      double X_t = std::log(spots[p]);
+
+      double leverageSq;
+      if (_leverageCalibrated) {
+        leverageSq = getLeverageSquaredFromGrid(spots[p], i);
+      } else {
+        leverageSq = leverageSquared(spots[p], t, currentBins);
+      }
+
+      double Z = generateStandardNormalParallel(tid);
+      double X_next = stepLogPriceSLV(X_t, variances[p], nextVariances[p], leverageSq, dt, Z);
+      nextSpots[p] = std::exp(X_next);
+    }
+
+    std::swap(spots, nextSpots);
+    std::swap(variances, nextVariances);
+
+    allTimeBins[i + 1] = computeBinsVectorized(spots, variances);
+  }
+
+  return allTimeBins;
+}
+
+double HestonSLVPathSimulator2D::updateLeverageGrid(
+    const std::vector<std::vector<BinData>>& allTimeBins,
+    double damping)
+{
+  double maxRelChange = 0.0;
+  size_t numTimeSteps = _timeSteps.size();
+
+  for (size_t t_idx = 1; t_idx < numTimeSteps; ++t_idx) {
+    double t = _timeSteps[t_idx];
+    const std::vector<BinData>& bins = allTimeBins[t_idx];
+
+    for (size_t s_idx = 0; s_idx < _nSpotGrid; ++s_idx) {
+      double spot = _spotGridPoints[s_idx];
+
+      double sigma_LV;
+      try {
+        sigma_LV = _volSurfacePtr->localVolatility(spot, t);
+      } catch (...) {
+        continue;
+      }
+
+      double E_V_S = interpolateConditionalExpectation(spot, bins);
+      E_V_S = std::max(1e-8, E_V_S);
+
+      double L2_computed = (sigma_LV * sigma_LV) / E_V_S;
+      double L_computed = std::sqrt(std::max(L2_computed, 0.0));
+
+      size_t gridIdx = t_idx * _nSpotGrid + s_idx;
+      double L2_old = _leverageGrid[gridIdx];
+      double L_old = std::sqrt(std::max(L2_old, 0.0));
+
+      // damping on L for stability
+      double L_new = damping * L_computed + (1.0 - damping) * L_old;
+      double L2_new = L_new * L_new;
+
+      double relChange = (L_old > 1e-10)
+                         ? std::abs(L_new - L_old) / L_old
+                         : std::abs(L_new - L_old);
+      maxRelChange = std::max(maxRelChange, relChange);
+
+      _leverageGrid[gridIdx] = L2_new;
+    }
+  }
+
+  return maxRelChange;
+}
+
+size_t HestonSLVPathSimulator2D::calibrateLeverage(size_t maxIterations, double tol, double damping)
+{
+  initializeLeverageGrid();
+
+  size_t iter = 0;
+  for (; iter < maxIterations; ++iter) {
+    auto allTimeBins = simulateAndCollectAllBins();
+
+    double maxChange = updateLeverageGrid(allTimeBins, damping);
+    _calibrationErrors.push_back(maxChange);
+
+    if (maxChange < tol) {
+      _leverageCalibrated = true;
+      return iter + 1;
+    }
+
+    if (iter == 0) {
+      _leverageCalibrated = true;
+    }
+  }
+
+  _leverageCalibrated = true;
+  return iter;
+}
+

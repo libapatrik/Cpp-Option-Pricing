@@ -271,7 +271,7 @@ PYBIND11_MODULE(_core, m)
     // Wrapper class that owns both the time_steps vector and the simulator
     struct HestonSLVSimulatorWrapper
     {
-        std::vector<double> time_steps; // Owned copy of time steps
+        std::vector<double> time_steps;
         std::unique_ptr<HestonSLVPathSimulator2D> simulator;
 
         HestonSLVSimulatorWrapper(const HestonModel &model,
@@ -282,7 +282,6 @@ PYBIND11_MODULE(_core, m)
                                   size_t seed)
             : time_steps(std::move(ts))
         {
-            // Create simulator with reference to our owned vector
             simulator = std::make_unique<HestonSLVPathSimulator2D>(
                 model, vol_surface, time_steps, num_paths, num_bins, seed);
         }
@@ -303,6 +302,26 @@ PYBIND11_MODULE(_core, m)
                 return simulator->simulateAllPathsFullParallel();
             }
             return simulator->simulateAllPathsFull();
+        }
+
+        size_t calibrate_leverage(size_t max_iters = 10, double tol = 1e-3, double damping = 0.5)
+        {
+            return simulator->calibrateLeverage(max_iters, tol, damping);
+        }
+
+        bool is_calibrated() const
+        {
+            return simulator->isCalibrated();
+        }
+
+        std::vector<double> get_calibration_errors() const
+        {
+            return simulator->calibrationErrors();
+        }
+
+        void reset_calibration()
+        {
+            simulator->resetCalibration();
         }
     };
 
@@ -350,24 +369,21 @@ PYBIND11_MODULE(_core, m)
              py::arg("seed") = 42)
         .def("simulate", &HestonSLVSimulatorWrapper::simulate,
              py::arg("parallel") = true,
-             R"pbdoc(
-                Simulate all paths and return terminal values.
-
-                Args:
-                    parallel: Use OpenMP parallelization (default: True)
-
-                Returns:
-                    List of (S_T, V_T) tuples for all paths at terminal time T.
-             )pbdoc")
+             "Simulate and return terminal values (S_T, V_T)")
         .def("simulate_full", &HestonSLVSimulatorWrapper::simulate_full,
              py::arg("parallel") = true,
-             R"pbdoc(
-                Simulate all paths and return full path history.
-
-                Returns:
-                    Nested list: paths[path_idx][time_idx] = (S, V)
-                    Useful for hedging P&L analysis.
-             )pbdoc");
+             "Simulate and return full path history")
+        .def("calibrate_leverage", &HestonSLVSimulatorWrapper::calibrate_leverage,
+             py::arg("max_iters") = 10,
+             py::arg("tol") = 1e-3,
+             py::arg("damping") = 0.5,
+             "Run iterative leverage calibration (Van der Stoep)")
+        .def("is_calibrated", &HestonSLVSimulatorWrapper::is_calibrated,
+             "Check if leverage has been calibrated")
+        .def("get_calibration_errors", &HestonSLVSimulatorWrapper::get_calibration_errors,
+             "Get convergence history")
+        .def("reset_calibration", &HestonSLVSimulatorWrapper::reset_calibration,
+             "Reset calibration to single-pass mode");
 
     // =========================================================================
     // Option type enum (must be defined before BlackScholes that uses it)
