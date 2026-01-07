@@ -303,7 +303,7 @@ double PathSimulator2D::stepLogPriceEq33(double X_t, double V_t, double V_next,
 }
 
 // ============================================================================
-// Shared Variance Discretization Methods (DRY Principle)
+// Shared Variance Discretization Methods
 // ============================================================================
 
 double PathSimulator2D::stepVarianceTG(double V_t, double dt,
@@ -384,7 +384,10 @@ double PathSimulator2D::stepVarianceQE(double V_t, double dt, double Z_V,
                   (1.0 - exp_kappa_dt);
 
   // Scaled variance: ψ = s²/m²
-  double psi = s2 / (m * m); // Eq. 19
+  // Guard against division by zero when mean variance is very small
+  const double MIN_MEAN_VARIANCE = 1e-10;
+  double m_safe = std::max(m, MIN_MEAN_VARIANCE);
+  double psi = s2 / (m_safe * m_safe); // Eq. 19
 
   // ========================================================================
   // 3.2.3 Switching rule
@@ -410,7 +413,7 @@ double PathSimulator2D::stepVarianceQE(double V_t, double dt, double Z_V,
     double psi_inv = 2.0 / psi;
     double temp = std::max(0.0, psi_inv - 1.0);                     // Numerical guard
     double b_squared = temp + std::sqrt(psi_inv) * std::sqrt(temp); // Eq. 27
-    double a = m / (1.0 + b_squared);                               // Eq. 28
+    double a = m_safe / (1.0 + b_squared);                          // Eq. 28
     double b = std::sqrt(b_squared);
 
     double V_next = a * (b + Z_V) * (b + Z_V);
@@ -422,7 +425,7 @@ double PathSimulator2D::stepVarianceQE(double V_t, double dt, double Z_V,
     // Exponential scheme (ψ > ψ_c): V ~ exponential/point mass mixture
     // --------------------------------------------------------------------
     double p = (psi - 1.0) / (psi + 1.0);
-    double beta = (1.0 - p) / m;
+    double beta = (1.0 - p) / m_safe;
 
     if (U_V <= p)
     { // Eq. 25
@@ -776,8 +779,7 @@ std::pair<double, double> TGPathSimulator2D::nextStep(size_t timeIndex,
   // The correlation between X and V is preserved through K₁ and K₂ coefficients
 
   double X_t = std::log(assetPrice); // X(t) = ln(S(t))
-  double X_next = PathSimulator2D::stepLogPriceEq33(X_t, variance, V_next, dt,
-                                                    Z, _gamma1, _gamma2);
+  double X_next = PathSimulator2D::stepLogPriceEq33(X_t, variance, V_next, dt, Z, _gamma1, _gamma2);
   double S_next = std::exp(X_next); // S(t+Δ) = exp(X(t+Δ))
 
   return {S_next, V_next};
@@ -805,9 +807,7 @@ QEPathSimulator2D::~QEPathSimulator2D()
   // Base class destructor handles destruction
 }
 
-std::pair<double, double> QEPathSimulator2D::nextStep(size_t timeIndex,
-                                                      double assetPrice,
-                                                      double variance) const
+std::pair<double, double> QEPathSimulator2D::nextStep(size_t timeIndex, double assetPrice, double variance) const
 {
   /**
    * QE Scheme:
@@ -857,8 +857,7 @@ std::pair<double, double> QEPathSimulator2D::nextStep(size_t timeIndex,
   // The correlation between X and V is preserved through K1 and K2 coefficients
 
   double X_t = std::log(assetPrice); // X(t) = ln(S(t))
-  double X_next = PathSimulator2D::stepLogPriceEq33(X_t, variance, V_next, dt,
-                                                    Z, _gamma1, _gamma2);
+  double X_next = PathSimulator2D::stepLogPriceEq33(X_t, variance, V_next, dt, Z, _gamma1, _gamma2);
   double S_next = std::exp(X_next); // S(t+Δ) = exp(X(t+Δ))
 
   return {S_next, V_next};
@@ -911,13 +910,14 @@ double BKQEPathSimulator2D::generateNextVariance(double V_t, double dt) const
 // ============================================================================
 
 HestonSLVPathSimulator2D::HestonSLVPathSimulator2D(
-    const HestonModel &model, const VolatilitySurface &volSurface,
+    const HestonModel &model,
     const std::vector<double> &timeSteps, // ensure lifetime
     size_t numPaths, size_t numBins, size_t randomSeed)
     : PathSimulator2D(timeSteps, model, randomSeed),
-      _volSurfacePtr(volSurface.clone().release()), _numPaths(numPaths),
-      _numBins(numBins), _psiC(1.5)
-// Validate SLV-specific
+      _hestonLocalVol(std::make_unique<HestonLocalVol>(
+          model.kappa(), model.vbar(), model.sigma_v(), model.rho(),
+          model.v0(), model.riskFreeRate(), model.initValue())),
+      _numPaths(numPaths), _numBins(numBins), _psiC(1.5)
 {
   // Validate SLV-specific parameters
   if (_numPaths == 0)
@@ -929,12 +929,15 @@ HestonSLVPathSimulator2D::HestonSLVPathSimulator2D(
     throw std::runtime_error("Number of bins must be in (0, numPaths]");
   }
   // timeSteps validation done by base class
+
+  // Initialize spot grid and precompute local vol grid using analytical Dupire
+  // This is done at construction for fast lookups during simulation
+  initializeLeverageGrid();
 }
 
 HestonSLVPathSimulator2D::~HestonSLVPathSimulator2D()
 {
-  // delete _modelPtr; // deleted by base class
-  delete _volSurfacePtr;
+  // _hestonLocalVol is automatically cleaned up by unique_ptr
 }
 
 size_t HestonSLVPathSimulator2D::findBinIndex(
@@ -988,7 +991,18 @@ double HestonSLVPathSimulator2D::interpolateConditionalExpectation(double spot, 
 double HestonSLVPathSimulator2D::leverageSquared(double spot, double time, const std::vector<BinData> &bins) const
 {
   // L2(t, S) = σ^2_LV(t, S) / E[V|S]
-  double sigma_LV = _volSurfacePtr->localVolatility(spot, time);
+  // Uses precomputed local vol grid from COS-based analytical Dupire
+
+  // Find time index for grid lookup
+  size_t timeIdx = 0;
+  for (size_t i = 0; i < _timeSteps.size(); ++i) {
+    if (std::abs(_timeSteps[i] - time) < 1e-10) {
+      timeIdx = i;
+      break;
+    }
+  }
+
+  double sigma_LV = getLocalVolFromGrid(spot, timeIdx);
   double E_V_S = interpolateConditionalExpectation(spot, bins);
 
   const double minExpectation = 1e-8;
@@ -1350,19 +1364,24 @@ std::vector<HestonSLVPathSimulator2D::BinData> HestonSLVPathSimulator2D::compute
   {
     size_t binSize = pathsPerBin + (k < remainder ? 1 : 0);
 
-    double sumSpot = 0.0;
     double sumVariance = 0.0;
-    double maxSpot = -std::numeric_limits<double>::infinity(); // initialize at -inf to improve
+    double sumSpot = 0.0;
+    double minSpot = std::numeric_limits<double>::infinity();
+    double maxSpot = -std::numeric_limits<double>::infinity();
 
     for (size_t j = 0; j < binSize; ++j)
     {
       size_t idx = sortedIndices[currentIndex + j];
-      sumSpot += spotValues[idx];
+      double spot = spotValues[idx];
       sumVariance += varianceValues[idx];
-      maxSpot = std::max(maxSpot, spotValues[idx]);
+      sumSpot += spot;
+      minSpot = std::min(minSpot, spot);
+      maxSpot = std::max(maxSpot, spot);
     }
 
+    bins[k].lowerBound = minSpot;
     bins[k].upperBound = maxSpot;
+    // Sample mean per van der Stoep Algorithm 1
     bins[k].midpoint = sumSpot / binSize;
     bins[k].conditionalExpectation = sumVariance / binSize; // E[V|S]
 
@@ -1415,21 +1434,25 @@ std::vector<HestonSLVPathSimulator2D::BinData> HestonSLVPathSimulator2D::compute
     size_t binSize = end - start;
 
     // accumulators for this bin
-    double sumSpot = 0.0;
     double sumVariance = 0.0;
+    double sumSpot = 0.0;
+    double minSpot = std::numeric_limits<double>::infinity();
     double maxSpot = -std::numeric_limits<double>::infinity();
 
     // sum over all paths in this bin
     for (size_t j = start; j < end; ++j)
     {
       size_t idx = sortedIndices[j];
+      double spot = spotValues[idx];
 
-      sumSpot += spotValues[idx];
       sumVariance += varianceValues[idx];
-      maxSpot = std::max(maxSpot, spotValues[idx]);
+      sumSpot += spot;
+      minSpot = std::min(minSpot, spot);
+      maxSpot = std::max(maxSpot, spot);
     }
+    bins[k].lowerBound = minSpot;
     bins[k].upperBound = maxSpot;
-
+    // Sample mean per van der Stoep Algorithm 1
     bins[k].midpoint = sumSpot / static_cast<double>(binSize);
     bins[k].conditionalExpectation = sumVariance / static_cast<double>(binSize);
   }
@@ -1444,7 +1467,7 @@ void HestonSLVPathSimulator2D::initializeLeverageGrid()
   const HestonModel* heston = getHestonModel();
   double S0 = heston->initValue();
 
-  _nSpotGrid = 80;
+  _nSpotGrid = 100;   // Good resolution for leverage interpolation
   double spotMin = 0.3 * S0;
   double spotMax = 2.5 * S0;
 
@@ -1461,6 +1484,9 @@ void HestonSLVPathSimulator2D::initializeLeverageGrid()
   size_t numTimeSteps = _timeSteps.size();
   _leverageGrid.resize(numTimeSteps * _nSpotGrid, 1.0);
 
+  // Precompute local vol grid using COS-based analytical Dupire
+  precomputeLocalVolGrid();
+
   _leverageCalibrated = false;
   _calibrationErrors.clear();
 }
@@ -1470,6 +1496,66 @@ void HestonSLVPathSimulator2D::resetCalibration()
   _leverageCalibrated = false;
   _calibrationErrors.clear();
   std::fill(_leverageGrid.begin(), _leverageGrid.end(), 1.0);
+}
+
+void HestonSLVPathSimulator2D::precomputeLocalVolGrid()
+{
+  /**
+   * Precompute local vol on the same grid as leverage using vectorized COS
+   *
+   * Performance optimization:
+   * - Uses batch localVolsAtTime() which vectorizes COS pricing
+   * - Parallelizes across time slices using OpenMP
+   * - Reduces CF evaluations from O(N_time × N_spot × N_terms × 13)
+   *   to O(N_time × 5 × N_terms) - roughly 100x faster!
+   */
+  size_t numTimeSteps = _timeSteps.size();
+  _localVolGrid.resize(numTimeSteps * _nSpotGrid);
+
+  double sqrtV0 = std::sqrt(getHestonModel()->v0());
+
+  // Parallel loop over time slices
+  // Each time slice is independent - perfect for parallelization
+  #pragma omp parallel for schedule(dynamic)
+  for (size_t t_idx = 0; t_idx < numTimeSteps; ++t_idx) {
+    double t = _timeSteps[t_idx];
+
+    // Handle t=0 case (use sqrt(v0) as default)
+    if (t < 1e-6) {
+      for (size_t s_idx = 0; s_idx < _nSpotGrid; ++s_idx) {
+        _localVolGrid[t_idx * _nSpotGrid + s_idx] = sqrtV0;
+      }
+      continue;
+    }
+
+    // Batch compute local vols for all spots at this time using vectorized COS
+    std::vector<double> lvs = _hestonLocalVol->localVolsAtTime(_spotGridPoints, t);
+
+    // Copy to grid
+    for (size_t s_idx = 0; s_idx < _nSpotGrid; ++s_idx) {
+      _localVolGrid[t_idx * _nSpotGrid + s_idx] = lvs[s_idx];
+    }
+  }
+}
+
+double HestonSLVPathSimulator2D::getLocalVolFromGrid(double spot, size_t timeIdx) const
+{
+  // Linear interpolation in spot dimension
+  size_t s_lo = findSpotGridIndex(spot);
+  size_t s_hi = std::min(s_lo + 1, _nSpotGrid - 1);
+
+  double spot_lo = _spotGridPoints[s_lo];
+  double spot_hi = _spotGridPoints[s_hi];
+
+  double lv_lo = _localVolGrid[timeIdx * _nSpotGrid + s_lo];
+  double lv_hi = _localVolGrid[timeIdx * _nSpotGrid + s_hi];
+
+  if (s_lo == s_hi || std::abs(spot_hi - spot_lo) < 1e-12) {
+    return lv_lo;
+  }
+
+  double t = (spot - spot_lo) / (spot_hi - spot_lo);
+  return (1.0 - t) * lv_lo + t * lv_hi;
 }
 
 size_t HestonSLVPathSimulator2D::findSpotGridIndex(double spot) const
@@ -1592,26 +1678,25 @@ double HestonSLVPathSimulator2D::updateLeverageGrid(
     for (size_t s_idx = 0; s_idx < _nSpotGrid; ++s_idx) {
       double spot = _spotGridPoints[s_idx];
 
-      double sigma_LV;
-      try {
-        sigma_LV = _volSurfacePtr->localVolatility(spot, t);
-      } catch (...) {
-        continue;
-      }
+      // Use precomputed local vol grid
+      double sigma_LV = _localVolGrid[t_idx * _nSpotGrid + s_idx];
 
       double E_V_S = interpolateConditionalExpectation(spot, bins);
       E_V_S = std::max(1e-8, E_V_S);
 
       double L2_computed = (sigma_LV * sigma_LV) / E_V_S;
-      double L_computed = std::sqrt(std::max(L2_computed, 0.0));
+      L2_computed = std::max(L2_computed, 0.0);  // Ensure non-negative
 
       size_t gridIdx = t_idx * _nSpotGrid + s_idx;
       double L2_old = _leverageGrid[gridIdx];
-      double L_old = std::sqrt(std::max(L2_old, 0.0));
 
-      // damping on L for stability
-      double L_new = damping * L_computed + (1.0 - damping) * L_old;
-      double L2_new = L_new * L_new;
+      // Apply damping directly to L² for linear averaging in variance space
+      // This avoids the non-linear cross-terms from (αL₁ + (1-α)L₂)²
+      double L2_new = damping * L2_computed + (1.0 - damping) * L2_old;
+
+      // Compute relative change using L (not L²) for convergence metric
+      double L_old = std::sqrt(std::max(L2_old, 0.0));
+      double L_new = std::sqrt(std::max(L2_new, 0.0));
 
       double relChange = (L_old > 1e-10)
                          ? std::abs(L_new - L_old) / L_old
@@ -1622,12 +1707,25 @@ double HestonSLVPathSimulator2D::updateLeverageGrid(
     }
   }
 
+  // Copy leverage from t_idx=1 to t_idx=0 (Dupire formula unreliable at t->0)
+  // This ensures the first simulation step uses calibrated leverage
+  if (numTimeSteps > 1) {
+    for (size_t s_idx = 0; s_idx < _nSpotGrid; ++s_idx) {
+      _leverageGrid[0 * _nSpotGrid + s_idx] = _leverageGrid[1 * _nSpotGrid + s_idx];
+    }
+  }
+
   return maxRelChange;
 }
 
 size_t HestonSLVPathSimulator2D::calibrateLeverage(size_t maxIterations, double tol, double damping)
 {
   initializeLeverageGrid();
+
+  // CRITICAL: Keep _leverageCalibrated = false during the iteration loop
+  // so that simulateAndCollectAllBins() always computes fresh leverage from formula.
+  // Only set it true AFTER calibration completes for subsequent pricing calls.
+  _leverageCalibrated = false;
 
   size_t iter = 0;
   for (; iter < maxIterations; ++iter) {
@@ -1637,16 +1735,12 @@ size_t HestonSLVPathSimulator2D::calibrateLeverage(size_t maxIterations, double 
     _calibrationErrors.push_back(maxChange);
 
     if (maxChange < tol) {
-      _leverageCalibrated = true;
+      _leverageCalibrated = true;  // Only now mark as calibrated
       return iter + 1;
-    }
-
-    if (iter == 0) {
-      _leverageCalibrated = true;
     }
   }
 
-  _leverageCalibrated = true;
+  _leverageCalibrated = true;  // Mark as calibrated even if max iterations reached
   return iter;
 }
 

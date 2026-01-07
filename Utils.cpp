@@ -192,7 +192,7 @@ std::vector<double> ThomasAlgorithm::solve(const std::vector<double>& lower,
 
 
 // ============================================================================
-// * Numerical Derivatives Implementation
+// ! Numerical Derivatives Implementation
 // ============================================================================
 
 double NumericalDerivatives::firstDerivative(std::function<double(double)> f, double x, double h)
@@ -753,6 +753,634 @@ std::complex<double> ChFIntegratedVariance::modifiedBesselI(double nu, std::comp
 }
 
 // ============================================================================
-// * Newton-Raphson Method
+// Heston Characteristic Function
 // ============================================================================
+
+HestonCF::HestonCF(double kappa, double vbar, double sigma, double rho, double v0, double r, double T)
+    : _kappa(kappa), _vbar(vbar), _sigma(sigma), _rho(rho), _v0(v0), _r(r), _T(T)
+{
+}
+
+std::complex<double> HestonCF::operator()(double u) const
+{
+    /**
+     * Heston CF for log-return X = ln(S_T/S_0)
+     *
+     * φ(u) = exp(C + D·v0 + iu·r·T)
+     *
+     * Using "Little Heston Trap" formulation to avoid branch cut issues.
+     * Forces Re(d) > 0 for stable branch selection.
+     */
+    using namespace std::complex_literals;
+
+    std::complex<double> iu = 1i * u;
+
+    // d = sqrt((κ - ρσiu)² + σ²(iu + u²))
+    std::complex<double> term1 = _kappa - _rho * _sigma * iu;
+    std::complex<double> term2 = _sigma * _sigma * (iu + u * u);
+    std::complex<double> d = std::sqrt(term1 * term1 + term2);
+
+    // Force Re(d) > 0 for stable branch (Albrecher et al. 2007)
+    if (std::real(d) < 0.0) {
+        d = -d;
+    }
+
+    // g = (κ - ρσiu - d) / (κ - ρσiu + d)
+    std::complex<double> g = (term1 - d) / (term1 + d);
+
+    std::complex<double> exp_neg_dT = std::exp(-d * _T);
+
+    // C = (κθ/σ²) · [(κ - ρσiu - d)T - 2ln((1 - g·e^{-dT})/(1-g))]
+    std::complex<double> C = (_kappa * _vbar / (_sigma * _sigma)) * (
+        (term1 - d) * _T - 2.0 * std::log((1.0 - g * exp_neg_dT) / (1.0 - g))
+    );
+
+    // D = ((κ - ρσiu - d)/σ²) · (1 - e^{-dT})/(1 - g·e^{-dT})
+    std::complex<double> D = ((term1 - d) / (_sigma * _sigma)) *
+                             (1.0 - exp_neg_dT) / (1.0 - g * exp_neg_dT);
+
+    // φ(u) = exp(C + D·v0 + iu·r·T)
+    return std::exp(C + D * _v0 + iu * _r * _T);
+}
+
+
+// ============================================================================
+// COS Option Pricer
+// ============================================================================
+
+double COSPricer::chi(size_t k, double a, double b, double c, double d)
+{
+    /**
+     * χ_k(c,d) from Fang & Oosterlee Eq. (22)
+     *
+     * For k=0: χ_0 = e^d - e^c
+     * For k≠0: χ_k = [e^d(cos(ω(d-a)) + ω·sin(ω(d-a))) - e^c(cos(ω(c-a)) + ω·sin(ω(c-a)))] / (1 + ω²)
+     *
+     * where ω = kπ/(b-a)
+     */
+    double bma = b - a;
+
+    if (k == 0) {
+        return std::exp(d) - std::exp(c);
+    }
+
+    double w = k * PI / bma;
+    double w2 = w * w;
+
+    double d_shifted = d - a;
+    double c_shifted = c - a;
+
+    double result = (std::exp(d) * (std::cos(w * d_shifted) + w * std::sin(w * d_shifted)) -
+                     std::exp(c) * (std::cos(w * c_shifted) + w * std::sin(w * c_shifted))) / (1.0 + w2);
+
+    return result;
+}
+
+double COSPricer::psi(size_t k, double a, double b, double c, double d)
+{
+    /**
+     * ψ_k(c,d) from Fang & Oosterlee Eq. (23)
+     *
+     * For k=0: ψ_0 = d - c
+     * For k≠0: ψ_k = [sin(ω(d-a)) - sin(ω(c-a))] / ω
+     */
+    double bma = b - a;
+
+    if (k == 0) {
+        return d - c;
+    }
+
+    double w = k * PI / bma;
+    double d_shifted = d - a;
+    double c_shifted = c - a;
+
+    return (std::sin(w * d_shifted) - std::sin(w * c_shifted)) / w;
+}
+
+double COSPricer::price(double S0, double K, double r, double T,
+                        const std::function<std::complex<double>(double)>& chf,
+                        OptionType type, size_t N, double L, double sigma)
+{
+    /**
+     * COS option price: V = K·e^{-rT} · Σ' Re[H_k] · V_k
+     *
+     * where H_k = φ(ω_k) · exp(iω_k(x0-a))
+     *       V_k depends on option type:
+     *         Call: (2/(b-a)) · (χ_k(0,b) - ψ_k(0,b))   payoff on [0, b]
+     *         Put:  (2/(b-a)) · (-χ_k(a,0) + ψ_k(a,0))  payoff on [a, 0]
+     *
+     * For numerical stability, we use put-call parity for OTM options:
+     *   - OTM call (K > S0): price put, then C = P + S0 - K·e^{-rT}
+     *   - OTM put (K < S0): price call, then P = C - S0 + K·e^{-rT}
+     */
+    bool isCall = (type == OptionType::Call);
+
+    if (T <= 0.0) {
+        return isCall ? std::max(S0 - K, 0.0) : std::max(K - S0, 0.0);
+    }
+
+    // Use put-call parity for OTM options (more numerically stable)
+    bool isOTM = (isCall && K > S0) || (!isCall && K < S0);
+    bool priceAsCall = isOTM ? !isCall : isCall;  // Price the ITM option
+
+    double x0 = std::log(S0 / K);
+
+    // Domain [a, b]: centered at x0 with width L·σ·√T
+    double vol = (sigma > 0.0) ? sigma : 0.25;
+    double halfWidth = L * vol * std::sqrt(T);
+    double a = x0 - halfWidth;
+    double b = x0 + halfWidth;
+    double bma = b - a;
+
+    double sum = 0.0;
+
+    for (size_t k = 0; k < N; ++k) {
+        double w = k * PI / bma;
+
+        std::complex<double> phi_k = chf(w);
+        std::complex<double> H_k = phi_k * std::exp(std::complex<double>(0.0, w * (x0 - a)));
+
+        // V_k depends on option type (priceAsCall determines which formula to use)
+        double V_k;
+        if (priceAsCall) {
+            V_k = (2.0 / bma) * (chi(k, a, b, 0.0, b) - psi(k, a, b, 0.0, b));
+        } else {
+            V_k = (2.0 / bma) * (-chi(k, a, b, a, 0.0) + psi(k, a, b, a, 0.0));
+        }
+
+        // First term halved (Fourier series convention)
+        if (k == 0) {
+            V_k *= 0.5;
+        }
+
+        sum += std::real(H_k) * V_k;
+    }
+
+    double rawPrice = std::max(0.0, K * std::exp(-r * T) * sum);
+
+    // Apply put-call parity if we priced the opposite option
+    if (isOTM) {
+        double pv_strike = K * std::exp(-r * T);
+        if (isCall) {
+            // We priced put, convert to call: C = P + S0 - K·e^{-rT}
+            rawPrice = rawPrice + S0 - pv_strike;
+        } else {
+            // We priced call, convert to put: P = C - S0 + K·e^{-rT}
+            rawPrice = rawPrice - S0 + pv_strike;
+        }
+    }
+
+    return std::max(0.0, rawPrice);
+}
+
+double COSPricer::callPrice(double S0, double K, double r, double T,
+                            const std::function<std::complex<double>(double)>& chf,
+                            size_t N, double L, double sigma)
+{
+    return price(S0, K, r, T, chf, OptionType::Call, N, L, sigma);
+}
+
+double COSPricer::putPrice(double S0, double K, double r, double T,
+                           const std::function<std::complex<double>(double)>& chf,
+                           size_t N, double L, double sigma)
+{
+    return price(S0, K, r, T, chf, OptionType::Put, N, L, sigma);
+}
+
+// =============================================================================
+// Vectorized COS Pricing - Multiple strikes at same maturity
+// =============================================================================
+
+std::vector<double> COSPricer::prices(double S0, const std::vector<double>& strikes,
+                                       double r, double T,
+                                       const std::function<std::complex<double>(double)>& chf,
+                                       OptionType type, size_t N, double L, double sigma)
+{
+    /**
+     * Vectorized COS pricing: Price many options at same maturity efficiently
+     *
+     * Key insight: The characteristic function φ(ω) depends only on T, not K.
+     * By precomputing φ(ω_k) once for k=0..N-1 and reusing across all strikes,
+     * we reduce CF evaluations from O(M × N) to O(N) where M = num strikes.
+     *
+     * Algorithm:
+     * 1. Compute common domain [a, b] that covers all strikes
+     * 2. Precompute φ(ω_k) for k=0..N-1 (just N evaluations!)
+     * 3. For each strike: compute x0, V_k, and sum using precomputed φ values
+     */
+
+    size_t M = strikes.size();
+    std::vector<double> result(M);
+
+    if (M == 0) return result;
+
+    // Handle T <= 0 case
+    bool isCall = (type == OptionType::Call);
+    if (T <= 0.0) {
+        for (size_t j = 0; j < M; ++j) {
+            result[j] = isCall ? std::max(S0 - strikes[j], 0.0)
+                               : std::max(strikes[j] - S0, 0.0);
+        }
+        return result;
+    }
+
+    // =========================================================================
+    // Step 1: Compute common domain [a, b] covering all strikes
+    // =========================================================================
+    // Find min/max of x0 = ln(S0/K) across all strikes
+    double x0_min = std::numeric_limits<double>::max();
+    double x0_max = std::numeric_limits<double>::lowest();
+
+    for (double K : strikes) {
+        double x0 = std::log(S0 / K);
+        x0_min = std::min(x0_min, x0);
+        x0_max = std::max(x0_max, x0);
+    }
+
+    double vol = (sigma > 0.0) ? sigma : 0.25;
+    double sqrtT = std::sqrt(T);
+    double halfWidth = L * vol * sqrtT;
+
+    // Common bounds with some extra margin
+    double a = x0_min - halfWidth;
+    double b = x0_max + halfWidth;
+    double bma = b - a;
+
+    // =========================================================================
+    // Step 2: Precompute characteristic function values φ(ω_k)
+    // =========================================================================
+    // This is the expensive part - only done once for all strikes!
+    std::vector<std::complex<double>> phi_vals(N);
+    for (size_t k = 0; k < N; ++k) {
+        double w = k * PI / bma;
+        phi_vals[k] = chf(w);
+    }
+
+    // Precompute chi and psi for common bounds (these depend on a, b but not K)
+    // For call: payoff on [0, b], for put: payoff on [a, 0]
+    std::vector<double> chi_call(N), psi_call(N);
+    std::vector<double> chi_put(N), psi_put(N);
+
+    for (size_t k = 0; k < N; ++k) {
+        chi_call[k] = chi(k, a, b, 0.0, b);
+        psi_call[k] = psi(k, a, b, 0.0, b);
+        chi_put[k] = chi(k, a, b, a, 0.0);
+        psi_put[k] = psi(k, a, b, a, 0.0);
+    }
+
+    double discount = std::exp(-r * T);
+
+    // =========================================================================
+    // Step 3: Price each strike using precomputed values
+    // =========================================================================
+    for (size_t j = 0; j < M; ++j) {
+        double K = strikes[j];
+        double x0 = std::log(S0 / K);
+
+        // Use put-call parity for OTM options (numerical stability)
+        bool isOTM = (isCall && K > S0) || (!isCall && K < S0);
+        bool priceAsCall = isOTM ? !isCall : isCall;
+
+        double sum = 0.0;
+        for (size_t k = 0; k < N; ++k) {
+            double w = k * PI / bma;
+
+            // H_k = φ(ω_k) · exp(i·ω_k·(x0 - a))
+            std::complex<double> H_k = phi_vals[k] *
+                std::exp(std::complex<double>(0.0, w * (x0 - a)));
+
+            // V_k from payoff coefficients
+            double V_k;
+            if (priceAsCall) {
+                V_k = (2.0 / bma) * (chi_call[k] - psi_call[k]);
+            } else {
+                V_k = (2.0 / bma) * (-chi_put[k] + psi_put[k]);
+            }
+
+            // First term halved (Fourier convention)
+            if (k == 0) V_k *= 0.5;
+
+            sum += std::real(H_k) * V_k;
+        }
+
+        double rawPrice = std::max(0.0, K * discount * sum);
+
+        // Apply put-call parity if we priced the opposite option
+        if (isOTM) {
+            double pv_strike = K * discount;
+            if (isCall) {
+                rawPrice = rawPrice + S0 - pv_strike;
+            } else {
+                rawPrice = rawPrice - S0 + pv_strike;
+            }
+        }
+
+        result[j] = std::max(0.0, rawPrice);
+    }
+
+    return result;
+}
+
+std::vector<double> COSPricer::callPrices(double S0, const std::vector<double>& strikes,
+                                           double r, double T,
+                                           const std::function<std::complex<double>(double)>& chf,
+                                           size_t N, double L, double sigma)
+{
+    return prices(S0, strikes, r, T, chf, OptionType::Call, N, L, sigma);
+}
+
+std::vector<double> COSPricer::putPrices(double S0, const std::vector<double>& strikes,
+                                          double r, double T,
+                                          const std::function<std::complex<double>(double)>& chf,
+                                          size_t N, double L, double sigma)
+{
+    return prices(S0, strikes, r, T, chf, OptionType::Put, N, L, sigma);
+}
+
+double COSPricer::bsCall(double S, double K, double r, double T, double vol)
+{
+    if (T <= 0.0) return std::max(S - K, 0.0);
+    if (vol <= 0.0) return std::max(S - K * std::exp(-r * T), 0.0);
+
+    double sqrtT = std::sqrt(T);
+    double d1 = (std::log(S / K) + (r + 0.5 * vol * vol) * T) / (vol * sqrtT);
+    double d2 = d1 - vol * sqrtT;
+
+    return S * Utils::stdNormCdf(d1) - K * std::exp(-r * T) * Utils::stdNormCdf(d2);
+}
+
+double COSPricer::bsVega(double S, double K, double r, double T, double vol)
+{
+    if (T <= 0.0 || vol <= 0.0) return 0.0;
+
+    double sqrtT = std::sqrt(T);
+    double d1 = (std::log(S / K) + (r + 0.5 * vol * vol) * T) / (vol * sqrtT);
+
+    return S * Utils::stdNormPdf(d1) * sqrtT;
+}
+
+double COSPricer::impliedVol(double price, double S0, double K, double r, double T,
+                              bool isCall, double tol, size_t maxIter)
+{
+    /**
+     * Newton-Raphson on Black-Scholes to find σ such that BS(σ) = price
+     */
+    if (T <= 0.0) return 0.0;
+
+    // Intrinsic value check
+    double intrinsic = isCall ? std::max(S0 - K * std::exp(-r * T), 0.0)
+                              : std::max(K * std::exp(-r * T) - S0, 0.0);
+    if (price <= intrinsic + 1e-10) {
+        return 0.001;  // Return small vol for near-intrinsic prices
+    }
+
+    // Initial guess from Brenner-Subrahmanyam approximation
+    double sigma = std::sqrt(2.0 * PI / T) * price / S0;
+    sigma = std::max(0.01, std::min(sigma, 2.0));
+
+    for (size_t iter = 0; iter < maxIter; ++iter) {
+        double bsPrice = isCall ? bsCall(S0, K, r, T, sigma)
+                                : (bsCall(S0, K, r, T, sigma) - S0 + K * std::exp(-r * T));
+        double vega = bsVega(S0, K, r, T, sigma);
+
+        double diff = bsPrice - price;
+
+        if (std::abs(diff) < tol) {
+            return sigma;
+        }
+
+        if (vega < 1e-10) {
+            // Vega too small, use bisection step
+            sigma = (diff > 0) ? sigma * 0.9 : sigma * 1.1;
+        } else {
+            double newSigma = sigma - diff / vega;
+            newSigma = std::max(0.001, std::min(newSigma, 3.0));
+            sigma = newSigma;
+        }
+    }
+
+    return sigma;
+}
+
+
+// ============================================================================
+// Heston Analytical Local Volatility (COS-based Dupire)
+// ============================================================================
+
+HestonLocalVol::HestonLocalVol(double kappa, double vbar, double sigma, double rho,
+                               double v0, double r, double S0)
+    : _kappa(kappa), _vbar(vbar), _sigma(sigma), _rho(rho), _v0(v0), _r(r), _S0(S0)
+{
+}
+
+void HestonLocalVol::setCOSParams(size_t N, double L)
+{
+    _N = N;
+    _L = L;
+}
+
+double HestonLocalVol::callPrice(double K, double T) const
+{
+    // Delegate to batch method for single strike
+    return callPrices({K}, T)[0];
+}
+
+double HestonLocalVol::localVariance(double K, double T) const
+{
+    double lv = localVol(K, T);
+    return lv * lv;
+}
+
+double HestonLocalVol::localVol(double K, double T) const
+{
+    // Delegate to batch method for single point
+    return localVolsAtTime({K}, T)[0];
+}
+
+// =============================================================================
+// Vectorized Batch Computation for HestonLocalVol
+// =============================================================================
+
+std::vector<double> HestonLocalVol::callPrices(const std::vector<double>& strikes, double T) const
+{
+    HestonCF cf(_kappa, _vbar, _sigma, _rho, _v0, _r, T);
+    double vol_estimate = std::sqrt(_v0);
+    return COSPricer::callPrices(_S0, strikes, _r, T, cf, _N, _L, vol_estimate);
+}
+
+std::vector<double> HestonLocalVol::localVolsAtTime(const std::vector<double>& spots, double T) const
+{
+    /**
+     * Batch computation of local volatility for all spots at same maturity
+     *
+     * Uses vectorized COS pricing for massive speedup:
+     * - Instead of N × M × 13 CF evaluations (for M spots, 13 prices each)
+     * - We use just 5 × N CF evaluations (5 maturities, N terms each)
+     *
+     * Algorithm:
+     * 1. Build strike list: for each spot, add K±h1, K±h2, K for derivatives
+     * 2. Price all strikes at each required maturity (T, T±h1, T±h2)
+     * 3. Extract derivatives from prices and apply Dupire formula
+     *
+     * Speedup: ~50-100x compared to individual localVol() calls
+     */
+
+    size_t M = spots.size();
+    std::vector<double> result(M);
+
+    if (M == 0) return result;
+
+    // Handle T=0 case
+    if (T <= 1e-6) {
+        double sqrtV0 = std::sqrt(_v0);
+        std::fill(result.begin(), result.end(), sqrtV0);
+        return result;
+    }
+
+    // =========================================================================
+    // Step 1: Build strike grids for each spot
+    // =========================================================================
+    // For Dupire with Richardson extrapolation, we need at strike T:
+    //   5 strikes: K, K±h1, K±h2 (for dCdK and d2CdK2)
+    // At T±h1 and T±h2, we only need K (for dCdT)
+
+    std::vector<double> h1_vec(M), h2_vec(M);  // Step sizes per spot
+    std::vector<double> allStrikes_T;           // All strikes for time T
+    allStrikes_T.reserve(5 * M);
+
+    // Build strike list for T and store step sizes
+    for (size_t j = 0; j < M; ++j) {
+        double K = spots[j];  // In local vol, strike = spot for Dupire
+        double h1 = K * 0.005;  // 0.5% of strike
+        double h2 = h1 / 2.0;
+
+        h1_vec[j] = h1;
+        h2_vec[j] = h2;
+
+        // 5 strikes per spot: K-h1, K-h2, K, K+h2, K+h1
+        allStrikes_T.push_back(K - h1);  // index 5*j + 0
+        allStrikes_T.push_back(K - h2);  // index 5*j + 1
+        allStrikes_T.push_back(K);       // index 5*j + 2
+        allStrikes_T.push_back(K + h2);  // index 5*j + 3
+        allStrikes_T.push_back(K + h1);  // index 5*j + 4
+    }
+
+    // Build strike list for dCdT (just the central strike for each spot)
+    std::vector<double> centralStrikes(M);
+    for (size_t j = 0; j < M; ++j) {
+        centralStrikes[j] = spots[j];
+    }
+
+    // =========================================================================
+    // Step 2: Time derivative step sizes
+    // =========================================================================
+    double hT1 = std::max(T * 0.02, 0.002);  // ~2% or minimum 2 days
+    double hT2 = hT1 / 2.0;
+
+    bool useForwardDiff = (T - hT1 <= 0.0);
+    if (useForwardDiff) {
+        hT1 = T * 0.5;
+    }
+
+    // =========================================================================
+    // Step 3: Batch price all required options using vectorized COS
+    // =========================================================================
+    double vol_estimate = std::sqrt(_v0);
+
+    // Prices at T (for dCdK, d2CdK2)
+    HestonCF cf_T(_kappa, _vbar, _sigma, _rho, _v0, _r, T);
+    std::vector<double> prices_T = COSPricer::callPrices(
+        _S0, allStrikes_T, _r, T, cf_T, _N, _L, vol_estimate);
+
+    // Prices for dCdT (central strikes at shifted times)
+    std::vector<double> prices_Tph1, prices_Tmh1, prices_Tph2, prices_Tmh2;
+
+    if (useForwardDiff) {
+        // Forward difference for very short maturities
+        HestonCF cf_Tph1(_kappa, _vbar, _sigma, _rho, _v0, _r, T + hT1);
+        prices_Tph1 = COSPricer::callPrices(
+            _S0, centralStrikes, _r, T + hT1, cf_Tph1, _N, _L, vol_estimate);
+
+        // Also need prices at T for central strikes (extract from prices_T)
+        // These are at indices 5*j + 2
+    } else {
+        // Richardson extrapolation for dCdT
+        HestonCF cf_Tph1(_kappa, _vbar, _sigma, _rho, _v0, _r, T + hT1);
+        HestonCF cf_Tmh1(_kappa, _vbar, _sigma, _rho, _v0, _r, T - hT1);
+        HestonCF cf_Tph2(_kappa, _vbar, _sigma, _rho, _v0, _r, T + hT2);
+        HestonCF cf_Tmh2(_kappa, _vbar, _sigma, _rho, _v0, _r, T - hT2);
+
+        prices_Tph1 = COSPricer::callPrices(
+            _S0, centralStrikes, _r, T + hT1, cf_Tph1, _N, _L, vol_estimate);
+        prices_Tmh1 = COSPricer::callPrices(
+            _S0, centralStrikes, _r, T - hT1, cf_Tmh1, _N, _L, vol_estimate);
+        prices_Tph2 = COSPricer::callPrices(
+            _S0, centralStrikes, _r, T + hT2, cf_Tph2, _N, _L, vol_estimate);
+        prices_Tmh2 = COSPricer::callPrices(
+            _S0, centralStrikes, _r, T - hT2, cf_Tmh2, _N, _L, vol_estimate);
+    }
+
+    // =========================================================================
+    // Step 4: Compute Dupire local vol for each spot
+    // =========================================================================
+    for (size_t j = 0; j < M; ++j) {
+        double K = spots[j];
+        double h1 = h1_vec[j];
+        double h2 = h2_vec[j];
+
+        // Extract prices from batched results
+        double C_Kmh1 = prices_T[5*j + 0];  // C(K-h1, T)
+        double C_Kmh2 = prices_T[5*j + 1];  // C(K-h2, T)
+        double C_K    = prices_T[5*j + 2];  // C(K, T)
+        double C_Kph2 = prices_T[5*j + 3];  // C(K+h2, T)
+        double C_Kph1 = prices_T[5*j + 4];  // C(K+h1, T)
+
+        // =====================================================================
+        // dCdK with Richardson extrapolation
+        // =====================================================================
+        double dCdK_h1 = (C_Kph1 - C_Kmh1) / (2.0 * h1);
+        double dCdK_h2 = (C_Kph2 - C_Kmh2) / (2.0 * h2);
+        double delta_K = (4.0 * dCdK_h2 - dCdK_h1) / 3.0;
+
+        // =====================================================================
+        // d2CdK2 with Richardson extrapolation
+        // =====================================================================
+        double d2CdK2_h1 = (C_Kph1 - 2.0 * C_K + C_Kmh1) / (h1 * h1);
+        double d2CdK2_h2 = (C_Kph2 - 2.0 * C_K + C_Kmh2) / (h2 * h2);
+        double gamma_K = (4.0 * d2CdK2_h2 - d2CdK2_h1) / 3.0;
+
+        // =====================================================================
+        // dCdT with Richardson extrapolation (or forward difference)
+        // =====================================================================
+        double theta;
+        if (useForwardDiff) {
+            theta = (prices_Tph1[j] - C_K) / hT1;
+        } else {
+            double dCdT_h1 = (prices_Tph1[j] - prices_Tmh1[j]) / (2.0 * hT1);
+            double dCdT_h2 = (prices_Tph2[j] - prices_Tmh2[j]) / (2.0 * hT2);
+            theta = (4.0 * dCdT_h2 - dCdT_h1) / 3.0;
+        }
+
+        // =====================================================================
+        // Dupire formula
+        // =====================================================================
+        double numerator = 2.0 * (theta + _r * K * delta_K);
+        double denominator = K * K * gamma_K;
+
+        double localVar;
+        if (denominator < 1e-12) {
+            localVar = _vbar;  // Fallback for deep OTM
+        } else {
+            localVar = numerator / denominator;
+        }
+
+        // Sanity bounds
+        localVar = std::max(localVar, 1e-6);
+        localVar = std::min(localVar, 4.0);  // 200% vol cap
+
+        result[j] = std::sqrt(localVar);
+    }
+
+    return result;
+}
 

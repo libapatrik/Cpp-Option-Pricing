@@ -284,14 +284,25 @@ double VolatilitySurface::computeDupireLocalVolatility(double spot, double time)
     if (time <= MIN_TIME) {
         return impliedVol; // for very small times, return implied volatility
     }
+
+    // For times before the first maturity pillar, Dupire derivatives are unreliable
+    // Use flat extrapolation from the first reliable time point
+    double firstMaturity = _maturities.front();
+    double minReliableTime = firstMaturity * 0.5;  // Require at least half of first pillar
+    if (time < minReliableTime && firstMaturity > MIN_TIME) {
+        // Recursively compute local vol at the first reliable time
+        // and use flat extrapolation backwards
+        return computeDupireLocalVolatility(spot, minReliableTime);
+    }
     
     double volSqrtTime = impliedVol * std::sqrt(time);
     double d1 = (std::log(spot / strike) + (riskFreeRate + 0.5 * impliedVol * impliedVol) * time) / volSqrtTime;
     double d2 = d1 - volSqrtTime;
     
-    // Compute the numerator: 1 + 2T/σ* × (∂σ*/∂T + r×∂σ*/∂K)
+    // Compute the numerator: 1 + 2T/σ* × (∂σ*/∂T + r×K×∂σ*/∂K)
     // This captures how the implied volatility surface changes over time and across strikes
-    double numerator = 1.0 + (2.0 * time / impliedVol) * (dSigma_dT + riskFreeRate * dSigma_dK);
+    // NOTE: The rate term requires multiplication by strike K (from Dupire formula derivation)
+    double numerator = 1.0 + (2.0 * time / impliedVol) * (dSigma_dT + riskFreeRate * strike * dSigma_dK);
     
     // Compute the denominator components
     double K_dSigma_dK_sqrtT = strike * dSigma_dK * std::sqrt(time);
@@ -345,22 +356,24 @@ double VolatilitySurface::computeDupireLocalVolatility(double spot, double time)
 double VolatilitySurface::impliedVolatilityDerivativeTime(double strike, double maturity) const
 {
     /* Implied Volatility Time Derivative (dSigma/dT)
-     * 
+     *
      * This computes how the implied volatility changes as we move along the time dimension.
      * Dupire formula uses it to account for time decay of the volatility smile.
-     * 
+     *
      * Uses centered finite difference approximation via NumericalDerivatives utility.
-     * 
+     *
      * A positive value means implied volatility increases with time (smile steepens).
      * A negative value means implied volatility decreases with time (smile flattens).
      */
-    
+
     // Create lambda: fix strike K, differentiate with respect to time T
     auto volAsTimeFunction = [this, strike](double t) {
         return this->impliedVolatility(strike, t);
     };
-    
-    return NumericalDerivatives::firstDerivative(volAsTimeFunction, maturity);
+
+    // Step size: 1% relative to maturity, but at least 0.01 years (about 3-4 trading days)
+    double h = std::max(0.01 * maturity, 0.01);
+    return NumericalDerivatives::firstDerivative(volAsTimeFunction, maturity, h);
 }
 
 /**
@@ -370,23 +383,28 @@ double VolatilitySurface::impliedVolatilityDerivativeStrike(double strike, doubl
 {
     /*
      * Implied Volatility Strike Derivative (dSigma/dK)
-     * 
+     *
      * This computes how the implied volatility changes as we move across the strike dimension.
      * It measures the slope of the volatility smile at a given point.
-     * 
+     *
      * Uses centered finite difference approximation via NumericalDerivatives utility.
-     * 
+     *
      * A positive value means implied volatility increases with strike (upward sloping smile).
      * A negative value means implied volatility decreases with strike (downward sloping smile).
      * Near zero indicates a flat smile at that point.
      */
-    
+
     // Create lambda: fix maturity T, differentiate with respect to strike K
     auto volAsStrikeFunction = [this, maturity](double k) {
         return this->impliedVolatility(k, maturity);
     };
-    
-    return NumericalDerivatives::firstDerivative(volAsStrikeFunction, strike);
+
+    // Vol-adaptive step size: scale with implied vol and sqrt(T)
+    // This is approximately 2% of the ATM straddle width
+    double vol = impliedVolatility(strike, maturity);
+    double h = 0.02 * strike * vol * std::sqrt(maturity);
+    h = std::max(h, 0.005 * strike);  // Floor at 0.5% of strike for very low vol/short T
+    return NumericalDerivatives::firstDerivative(volAsStrikeFunction, strike, h);
 }
 
 /**
@@ -396,25 +414,33 @@ double VolatilitySurface::impliedVolatilitySecondDerivativeStrike(double strike,
 {
     /*
      * Implied Volatility Second Strike Derivative (d2Sigma/dK2)
-     * 
+     *
      * This computes the curvature of the volatility smile at a given point.
      * It measures how the slope of the smile changes across strikes.
-     * 
+     *
      * Uses centered second difference via NumericalDerivatives utility.
-     * 
+     *
      * A positive value indicates convexity (smile curves upward like a parabola).
      * A negative value indicates concavity (smile curves downward).
      * Near zero indicates the smile is approximately linear at that point.
-     * 
+     *
      * In Dupire's formula this accounts for smile curvature effects.
+     *
+     * Note: Second derivative is numerically sensitive (h^2 in denominator).
+     * Step size scales with implied vol and sqrt(T) for stability across vol regimes.
      */
-    
+
     // Create lambda: fix maturity T, differentiate twice with respect to strike K
     auto volAsStrikeFunction = [this, maturity](double k) {
         return this->impliedVolatility(k, maturity);
     };
-    
-    return NumericalDerivatives::secondDerivative(volAsStrikeFunction, strike);
+
+    // Vol-adaptive step size: ~5% of ATM straddle width
+    // Higher vol -> smoother prices -> need larger step to capture curvature
+    double vol = impliedVolatility(strike, maturity);
+    double h = 0.05 * strike * vol * std::sqrt(maturity);
+    h = std::max(h, 0.01 * strike);  // Floor at 1% of strike for very low vol/short T
+    return NumericalDerivatives::secondDerivative(volAsStrikeFunction, strike, h);
 }
 
 std::pair<std::pair<double, double>, std::pair<double, double>> VolatilitySurface::getBounds() const

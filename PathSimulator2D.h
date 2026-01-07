@@ -11,7 +11,9 @@
 
 #include "Model.h"
 #include "VolatilitySurface.h"
+#include "Utils.h"  // For HestonLocalVol
 #include <random>
+#include <memory>
 #include <vector>
 #include "fast_rng/pcg_random.hpp"
 
@@ -445,16 +447,23 @@ protected:
  * - stepVarianceQE() - QE variance discretization
  *
  * SLV-specific additions:
- * - _volSurfacePtr - for Dupire local volatility σ_LV(S,t)
+ * - _hestonLocalVol - COS-based analytical Dupire for σ_LV(S,t)
  * - Binning algorithm (Algorithm 1) for E[V|S]
  * - Leverage function L2(t,S) = σ^2_LV / E[V|S]
  * - Batch simulation (all paths simultaneously)
+ *
+ * Uses HestonLocalVol (COS-based analytical Dupire) for local volatility
+ * which avoids IV surface interpolation artifacts that caused ~260bp errors.
  */
 class HestonSLVPathSimulator2D : public PathSimulator2D
 {
 public:
+  /**
+   * Constructor with HestonModel - uses COS-based analytical Dupire
+   * Local volatility is computed via HestonLocalVol internally
+   */
   HestonSLVPathSimulator2D(
-      const HestonModel &model, const VolatilitySurface &volSurface,
+      const HestonModel &model,
       const std::vector<double> &timeSteps, // Caller must ensure lifetime
       size_t numPaths,
       size_t numBins = 20, // Paper recommends 20 bins
@@ -495,6 +504,11 @@ public:
   const std::vector<double>& calibrationErrors() const { return _calibrationErrors; }
   void resetCalibration();
 
+  // Diagnostic accessors
+  const std::vector<double>& getLeverageGrid() const { return _leverageGrid; }
+  const std::vector<double>& getSpotGridPoints() const { return _spotGridPoints; }
+  size_t getNumSpotGridPoints() const { return _nSpotGrid; }
+
 private:
   // =========================================================================
   // Binning Data Structure (Section 3.1)
@@ -514,6 +528,12 @@ private:
   size_t _nSpotGrid;
   bool _leverageCalibrated;
   std::vector<double> _calibrationErrors;
+
+  // Precomputed local volatility grid from HestonLocalVol (COS-based Dupire)
+  // Indexed as: _localVolGrid[timeIdx * _nSpotGrid + spotIdx]
+  std::vector<double> _localVolGrid;
+  void precomputeLocalVolGrid();  // Initialize local vol grid at construction
+  double getLocalVolFromGrid(double spot, size_t timeIdx) const;
 
   void initializeLeverageGrid(); // initialize the leverage grid with L^2=1 everywhere
   std::vector<std::vector<BinData>> simulateAndCollectAllBins() const;
@@ -614,8 +634,7 @@ private:
   // - _timeSteps (reference)
   // =========================================================================
 
-  const VolatilitySurface
-      *_volSurfacePtr; // Cloned vol surface for Dupire σ_LV(S,t)
+  std::unique_ptr<HestonLocalVol> _hestonLocalVol; // COS-based analytical Dupire for σ_LV(S,t)
   size_t _numPaths;    // N: number of MC paths
   size_t _numBins;     // l: number of bins for E[V|S]
   double _psiC;        // ψ_c: QE switching threshold (default 1.5)
