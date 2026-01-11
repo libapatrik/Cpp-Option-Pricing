@@ -1,41 +1,55 @@
 # Option Pricing Library
 
-## Table of Contents
+## Models
 
-1. Black-Scholes
-   - Analytical Pricing
-   - Greeks
+- **Black-Scholes**: constant vol, analytical Greeks
+- **Dupire**: local vol $\sigma(S,t)$ from IV surface
+- **Heston**: stochastic vol with mean reversion
 
-2. Dupire Local Volatility
-   - Local Volatility Extraction
-   - Finite Difference Pricing
-   
+## Path Simulators
 
-3. Heston Stochastic Volatility
-   - Replicating Andersen (2010)
+1D schemes (Black-Scholes, Dupire):
+- Euler, Milstein
 
+2D Heston schemes (Andersen 2008):
+- Euler (full truncation, Eq. 6-7)
+- Truncated Gaussian (Eq. 13)
+- Quadratic-Exponential (Eq. 23/26)
+- Broadie-Kaya variants: BK-TG, BK-QE, BK-Exact
+- Eq. 33 log-price discretization
 
-4. Heston Stochastic Local Volatility
-   - Replicating Stoep et al. (2013)
+Heston SLV (van der Stoep et al. 2013):
+- Leverage function $L^2(S,t) = \sigma^2_{LV} / \mathbb{E}[V|S]$
+- Binning for conditional expectation
+- Iterative calibration
 
-5. Market Data
-   - Discount Curves
-   - Volatility Surfaces
-   - Interpolation Schemes
+## Pricers
 
-6. PDE Framework
-   - Grid Construction
-   - Theta-Method Solvers
-   - Boundary Conditions
-   - Greeks via Finite Differences
+- **BlackScholesPricer**: closed-form
+- **MonteCarloPricer**: any PathSimulator, antithetic sampling
+- **FDPricer**: theta-method PDE solver
+- **COSPricer**: Fourier-cosine expansion (Fang & Oosterlee 2008)
 
-7. Utilities
-   - Thomas Algorithm
-   - Numerical Derivatives
-   - Newton Method
-   - COS Method
-   - CIR Sampling
-   - Characteristic Function of Integrated Variance Process
+## Market Data
 
-8. Building and Testing
-   - Test Suite
+- **DiscountCurve**: flat curve, instantaneous forward rates
+- **VolatilitySurface**: strike/maturity grid, linear/cubic smile interpolation
+- **VolatilitySurfaceBuilder**: fluent API
+
+## PDE Framework
+
+- **Grid**: uniform or log-spaced
+- **ThetaMethodSolver**: explicit ($\theta=0$), implicit ($\theta=1$), Crank-Nicolson ($\theta=0.5$)
+- **BoundaryConditions**: Dirichlet
+- **PDEGreeksCalculator**: bump-and-revalue for vega, rho, vanna, volga
+
+## Utilities
+
+- Thomas algorithm (tridiagonal solver)
+- COS method: CDF/PDF recovery, CDF inversion via Newton
+- CIR exact sampling (non-central $\chi^2$)
+- ChF of integrated variance (Broadie & Kaya 2006)
+- Heston ChF with Little Heston Trap (Albrecher 2007)
+- HestonLocalVol: analytical Dupire via COS
+- Interpolation: linear, natural cubic spline
+- PCG32 RNG
