@@ -917,6 +917,8 @@ HestonSLVPathSimulator2D::HestonSLVPathSimulator2D(
       _hestonLocalVol(std::make_unique<HestonLocalVol>(
           model.kappa(), model.vbar(), model.sigma_v(), model.rho(),
           model.v0(), model.riskFreeRate(), model.initValue())),
+      _externalVolSurface(nullptr),
+      _localVolSource(LocalVolSource::HestonAnalytical),
       _numPaths(numPaths), _numBins(numBins), _psiC(1.5)
 {
   // Validate SLV-specific parameters
@@ -932,6 +934,33 @@ HestonSLVPathSimulator2D::HestonSLVPathSimulator2D(
 
   // Initialize spot grid and precompute local vol grid using analytical Dupire
   // This is done at construction for fast lookups during simulation
+  initializeLeverageGrid();
+}
+
+HestonSLVPathSimulator2D::HestonSLVPathSimulator2D(
+    const HestonModel &model,
+    const VolatilitySurface* volSurface,
+    const std::vector<double> &timeSteps,
+    size_t numPaths, size_t numBins, size_t randomSeed)
+    : PathSimulator2D(timeSteps, model, randomSeed),
+      _hestonLocalVol(nullptr),
+      _externalVolSurface(volSurface),
+      _localVolSource(LocalVolSource::ExternalSurface),
+      _numPaths(numPaths), _numBins(numBins), _psiC(1.5)
+{
+  if (!volSurface)
+  {
+    throw std::runtime_error("VolatilitySurface pointer cannot be null");
+  }
+  if (_numPaths == 0)
+  {
+    throw std::runtime_error("Number of paths must be positive");
+  }
+  if (_numBins == 0 || _numBins > _numPaths)
+  {
+    throw std::runtime_error("Number of bins must be in (0, numPaths]");
+  }
+
   initializeLeverageGrid();
 }
 
@@ -1501,39 +1530,57 @@ void HestonSLVPathSimulator2D::resetCalibration()
 void HestonSLVPathSimulator2D::precomputeLocalVolGrid()
 {
   /**
-   * Precompute local vol on the same grid as leverage using vectorized COS
+   * Precompute local vol on the same grid as leverage
    *
-   * Performance optimization:
-   * - Uses batch localVolsAtTime() which vectorizes COS pricing
-   * - Parallelizes across time slices using OpenMP
-   * - Reduces CF evaluations from O(N_time × N_spot × N_terms × 13)
-   *   to O(N_time × 5 × N_terms) - roughly 100x faster!
+   * Two modes:
+   * 1. HestonAnalytical: vectorized COS-based Dupire (fast)
+   * 2. ExternalSurface: Dupire from user's VolatilitySurface
    */
   size_t numTimeSteps = _timeSteps.size();
   _localVolGrid.resize(numTimeSteps * _nSpotGrid);
 
   double sqrtV0 = std::sqrt(getHestonModel()->v0());
 
-  // Parallel loop over time slices
-  // Each time slice is independent - perfect for parallelization
-  #pragma omp parallel for schedule(dynamic)
-  for (size_t t_idx = 0; t_idx < numTimeSteps; ++t_idx) {
-    double t = _timeSteps[t_idx];
+  if (_localVolSource == LocalVolSource::HestonAnalytical)
+  {
+    // Vectorized COS-based Dupire - O(N_time × 5 × N_terms)
+    #pragma omp parallel for schedule(dynamic)
+    for (size_t t_idx = 0; t_idx < numTimeSteps; ++t_idx) {
+      double t = _timeSteps[t_idx];
 
-    // Handle t=0 case (use sqrt(v0) as default)
-    if (t < 1e-6) {
-      for (size_t s_idx = 0; s_idx < _nSpotGrid; ++s_idx) {
-        _localVolGrid[t_idx * _nSpotGrid + s_idx] = sqrtV0;
+      if (t < 1e-6) {
+        for (size_t s_idx = 0; s_idx < _nSpotGrid; ++s_idx) {
+          _localVolGrid[t_idx * _nSpotGrid + s_idx] = sqrtV0;
+        }
+        continue;
       }
-      continue;
+
+      std::vector<double> lvs = _hestonLocalVol->localVolsAtTime(_spotGridPoints, t);
+      for (size_t s_idx = 0; s_idx < _nSpotGrid; ++s_idx) {
+        _localVolGrid[t_idx * _nSpotGrid + s_idx] = lvs[s_idx];
+      }
     }
+  }
+  else
+  {
+    // External surface - use Dupire formula from VolatilitySurface
+    #pragma omp parallel for schedule(dynamic)
+    for (size_t t_idx = 0; t_idx < numTimeSteps; ++t_idx) {
+      double t = _timeSteps[t_idx];
 
-    // Batch compute local vols for all spots at this time using vectorized COS
-    std::vector<double> lvs = _hestonLocalVol->localVolsAtTime(_spotGridPoints, t);
+      if (t < 1e-6) {
+        for (size_t s_idx = 0; s_idx < _nSpotGrid; ++s_idx) {
+          _localVolGrid[t_idx * _nSpotGrid + s_idx] = sqrtV0;
+        }
+        continue;
+      }
 
-    // Copy to grid
-    for (size_t s_idx = 0; s_idx < _nSpotGrid; ++s_idx) {
-      _localVolGrid[t_idx * _nSpotGrid + s_idx] = lvs[s_idx];
+      for (size_t s_idx = 0; s_idx < _nSpotGrid; ++s_idx) {
+        double spot = _spotGridPoints[s_idx];
+        double lv = _externalVolSurface->localVolatility(spot, t);
+        // Floor to avoid negative/zero local vol
+        _localVolGrid[t_idx * _nSpotGrid + s_idx] = std::max(lv, 0.01);
+      }
     }
   }
 }

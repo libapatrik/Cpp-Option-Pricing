@@ -14,6 +14,7 @@
 #include "../PathSimulator2D.h"
 #include "../BlackScholesFormulas.h"
 #include "../FinancialInstrument.h"
+// Utils.h causes crashes - skip for now
 
 namespace py = pybind11;
 
@@ -77,7 +78,7 @@ PYBIND11_MODULE(_core, m)
 
             # Run SLV simulation
             sim = cppfm.HestonSLVSimulator(
-                heston, vol_surface, time_steps, num_paths=10000
+                heston, time_steps, num_paths=10000
             )
             paths = sim.simulate_full()  # Full path history
     )pbdoc";
@@ -273,17 +274,33 @@ PYBIND11_MODULE(_core, m)
     {
         std::vector<double> time_steps;
         std::unique_ptr<HestonSLVPathSimulator2D> simulator;
+        std::unique_ptr<VolatilitySurface> owned_vol_surface; // owned copy for external surface mode
 
+        // Constructor 1: HestonModel only (uses internal HestonLocalVol)
         HestonSLVSimulatorWrapper(const HestonModel &model,
-                                  const VolatilitySurface &vol_surface,
+                                  std::vector<double> ts,
+                                  size_t num_paths,
+                                  size_t num_bins,
+                                  size_t seed)
+            : time_steps(std::move(ts)), owned_vol_surface(nullptr)
+        {
+            simulator = std::make_unique<HestonSLVPathSimulator2D>(
+                model, time_steps, num_paths, num_bins, seed);
+        }
+
+        // Constructor 2: HestonModel + external VolatilitySurface
+        HestonSLVSimulatorWrapper(const HestonModel &model,
+                                  const VolatilitySurface &volSurface,
                                   std::vector<double> ts,
                                   size_t num_paths,
                                   size_t num_bins,
                                   size_t seed)
             : time_steps(std::move(ts))
         {
+            // Clone the surface so wrapper owns it (Python object may go out of scope)
+            owned_vol_surface = volSurface.clone();
             simulator = std::make_unique<HestonSLVPathSimulator2D>(
-                model, vol_surface, time_steps, num_paths, num_bins, seed);
+                model, owned_vol_surface.get(), time_steps, num_paths, num_bins, seed);
         }
 
         std::vector<std::pair<double, double>> simulate(bool parallel = true)
@@ -325,6 +342,18 @@ PYBIND11_MODULE(_core, m)
         }
     };
 
+    // =========================================================================
+    // Pure Heston QE Simulator - TEMPORARILY DISABLED
+    // =========================================================================
+    /*
+    struct HestonQESimulatorWrapper { ... };
+    py::class_<HestonQESimulatorWrapper>(m, "HestonQESimulator", ...);
+    */
+
+    // =========================================================================
+    // HestonSLVSimulator
+    // =========================================================================
+
     py::class_<HestonSLVSimulatorWrapper>(m, "HestonSLVSimulator",
                                           R"pbdoc(
             Heston Stochastic Local Volatility (SLV) Monte Carlo Simulator.
@@ -335,26 +364,44 @@ PYBIND11_MODULE(_core, m)
             - Binning algorithm for conditional expectation E[V|S]
             - Leverage function L^2(t,S) = sigma_LV^2 / E[V|S]
 
+            Two modes of operation:
+            1. Without vol_surface: Uses internal HestonLocalVol (COS-based Dupire)
+               - For validating SLV implementation (L≈1 everywhere)
+            2. With vol_surface: Uses external VolatilitySurface for local vol
+               - For fitting arbitrary market smiles
+
             Args:
                 model: HestonModel instance
-                vol_surface: VolatilitySurface for Dupire local vol
+                vol_surface: Optional VolatilitySurface for external local vol
                 time_steps: List of time points [0, t1, t2, ..., T]
                 num_paths: Number of Monte Carlo paths
                 num_bins: Number of bins for E[V|S] (default: 20)
                 seed: Random seed (default: 42)
 
-            Example:
+            Example (internal Dupire):
                 sim = cppfm.HestonSLVSimulator(
-                    heston, vol_surface,
-                    time_steps=list(np.linspace(0, 1, 252)),
+                    heston, time_steps=list(np.linspace(0, 1, 252)),
                     num_paths=50000
                 )
-                # Terminal values only
-                terminal = sim.simulate()  # List of (S_T, V_T)
 
-                # Full path history (for hedging analysis)
-                paths = sim.simulate_full()  # paths[path_idx][time_idx] = (S, V)
+            Example (external surface):
+                sim = cppfm.HestonSLVSimulator(
+                    heston, vol_surface, time_steps=list(np.linspace(0, 1, 252)),
+                    num_paths=50000
+                )
         )pbdoc")
+        // Constructor 1: HestonModel only (internal Dupire)
+        .def(py::init<const HestonModel &,
+                      std::vector<double>,
+                      size_t,
+                      size_t,
+                      size_t>(),
+             py::arg("model"),
+             py::arg("time_steps"),
+             py::arg("num_paths"),
+             py::arg("num_bins") = 20,
+             py::arg("seed") = 42)
+        // Constructor 2: HestonModel + external VolatilitySurface
         .def(py::init<const HestonModel &,
                       const VolatilitySurface &,
                       std::vector<double>,
@@ -448,6 +495,17 @@ PYBIND11_MODULE(_core, m)
           py::arg("market_price"), py::arg("option_type"),
           py::arg("initial_guess") = 0.2, py::arg("max_iter") = 100, py::arg("tol") = 1e-8,
           "Compute implied volatility from option price");
+
+    // Heston pricing via COS method (HestonCF and COSPricer from Utils.h via PathSimulator2D.h)
+    m.def("heston_call_price", [](double S0, double K, double r, double T,
+                                   double kappa, double vbar, double sigma,
+                                   double rho, double v0) {
+        HestonCF cf(kappa, vbar, sigma, rho, v0, r, T);
+        return COSPricer::callPrice(S0, K, r, T, cf);
+    }, py::arg("S0"), py::arg("K"), py::arg("r"), py::arg("T"),
+       py::arg("kappa"), py::arg("vbar"), py::arg("sigma"),
+       py::arg("rho"), py::arg("v0"),
+       "Heston call price using COS method");
 
     // =========================================================================
     // Version info

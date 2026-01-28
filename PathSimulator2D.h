@@ -452,12 +452,18 @@ protected:
  * - Leverage function L2(t,S) = σ^2_LV / E[V|S]
  * - Batch simulation (all paths simultaneously)
  *
- * Uses HestonLocalVol (COS-based analytical Dupire) for local volatility
- * which avoids IV surface interpolation artifacts that caused ~260bp errors.
+ * Two modes of operation:
+ * 1. HestonAnalytical: Uses HestonLocalVol (COS-based analytical Dupire)
+ *    - For validating SLV implementation (L≈1 everywhere)
+ * 2. ExternalSurface: Uses user-provided VolatilitySurface
+ *    - For fitting arbitrary market smiles
  */
 class HestonSLVPathSimulator2D : public PathSimulator2D
 {
 public:
+  // Source of local volatility for leverage function
+  enum class LocalVolSource { HestonAnalytical, ExternalSurface };
+
   /**
    * Constructor with HestonModel - uses COS-based analytical Dupire
    * Local volatility is computed via HestonLocalVol internally
@@ -467,6 +473,19 @@ public:
       const std::vector<double> &timeSteps, // Caller must ensure lifetime
       size_t numPaths,
       size_t numBins = 20, // Paper recommends 20 bins
+      size_t randomSeed = 42);
+
+  /**
+   * Constructor with external VolatilitySurface for local vol
+   * Allows SLV to fit arbitrary market smiles (not just Heston-consistent)
+   * @param volSurface Non-owning pointer, caller manages lifetime
+   */
+  HestonSLVPathSimulator2D(
+      const HestonModel &model,
+      const VolatilitySurface* volSurface, // Non-owning, caller manages lifetime
+      const std::vector<double> &timeSteps,
+      size_t numPaths,
+      size_t numBins = 20,
       size_t randomSeed = 42);
 
   ~HestonSLVPathSimulator2D() override;
@@ -635,6 +654,8 @@ private:
   // =========================================================================
 
   std::unique_ptr<HestonLocalVol> _hestonLocalVol; // COS-based analytical Dupire for σ_LV(S,t)
+  const VolatilitySurface* _externalVolSurface = nullptr; // Non-owning, for external surface mode
+  LocalVolSource _localVolSource = LocalVolSource::HestonAnalytical;
   size_t _numPaths;    // N: number of MC paths
   size_t _numBins;     // l: number of bins for E[V|S]
   double _psiC;        // ψ_c: QE switching threshold (default 1.5)

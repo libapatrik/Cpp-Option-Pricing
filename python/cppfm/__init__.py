@@ -18,6 +18,7 @@ from cppfm._core import (
     MaturityInterpolation,
     HestonModel,
     HestonSLVSimulator,
+    # HestonQESimulator,  # temporarily disabled
     OptionType,
     bs_call_price,
     bs_put_price,
@@ -26,6 +27,7 @@ from cppfm._core import (
     bs_vega,
     bs_theta,
     bs_implied_volatility,
+    heston_call_price,
 )
 
 from cppfm._core import __version__
@@ -39,6 +41,7 @@ __all__ = [
     "MaturityInterpolation",
     "HestonModel",
     "HestonSLVSimulator",
+    # "HestonQESimulator",  # temporarily disabled
     "OptionType",
     "bs_call_price",
     "bs_put_price",
@@ -47,5 +50,6 @@ __all__ = [
     "bs_vega",
     "bs_theta",
     "bs_implied_volatility",
+    "heston_call_price",
     "__version__",
 ]
