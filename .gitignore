@@ -6,7 +6,11 @@
 *.iml
 
 # VS Code
-# .vscode/
+.vscode/
+
+# Reference papers
+*.pdf
+pdfs/
 
 # Language Server Protocol / clangd
 .cache/
