@@ -1,54 +1,24 @@
 # Onboarding
 
-Quick guide to get productive with the C++ option pricing library.
-
-## Quick Start
-
-### Dependencies
-
-- C++20
-- CMake 3.18+
-- Google Test 1.14.0 (fetched automatically)
-- Boost, libomp, TBB (Homebrew on macOS)
-
-```bash
-# macOS install
-brew install boost libomp tbb
-```
-
-Paths expected at `/opt/homebrew/opt/{boost,libomp,tbb}`.
-
-### Build
-
-```bash
-cmake -S . -B build && cmake --build build
-```
-
-### Run Tests
-
-```bash
-cd build && ctest
-# or single test
-./build/test_heston_model
-```
-
-## Directory Structure
+## Repository Structure
 
 ```
-CppFM/
-├── include/cppfm/           # Public headers
-│   ├── models/              # Model hierarchy (BS, Dupire, Heston)
-│   ├── simulators/          # Path simulation (1D Euler/Milstein, 2D Heston)
-│   ├── pricers/             # Closed-form, MC, FD pricers
-│   ├── pde/                 # Finite difference framework
-│   ├── market/              # Vol surfaces, discount curves, instruments
-│   ├── montecarlo/          # MC engine + variance reduction (WIP)
-│   └── utils/               # COS method, interpolation, tridiagonal solver
-├── src/                     # Implementation files (mirrors include/)
-│   └── bindings/            # Python bindings (pybind11)
-├── tests/                   # Google Test suite
-├── python/examples/         # Jupyter notebooks
-└── docs/                    # ONBOARDING.md, OPTIMIZATION.md
+Cpp-Option-Pricing/
+├── include/cppfm/        # Public headers
+│   ├── models/           # BS, Dupire, Heston
+│   ├── simulators/       # Path simulation (1D, 2D Heston)
+│   ├── pricers/          # MC, FD, COS, closed-form
+│   ├── pde/              # Finite difference framework
+│   ├── market/           # Vol surfaces, discount curves
+│   └── utils/            # COS internals, interpolation, tridiagonal
+├── src/                  # Implementation (mirrors include/)
+│   └── bindings/         # pybind11 Python bindings
+├── tests/                # Google Test suite
+├── python/               # Python package + Jupyter examples
+├── .github/workflows/    # CI
+├── CMakeLists.txt
+├── pyproject.toml        # pip install config
+└── README.md
 ```
 
 ## Architecture
@@ -65,7 +35,7 @@ PathSimulator (1D)
 ├── EulerPathSimulator
 └── MilsteinPathSimulator
 
-PathSimulator2D (Heston schemes - Andersen 2008)
+PathSimulator2D (Heston - Andersen 2008)
 ├── EulerPathSimulator2D     (Eq. 6-7, full truncation)
 ├── TGPathSimulator2D        (Eq. 13 + 33)
 ├── QEPathSimulator2D        (Eq. 23/26 + 33)
@@ -83,8 +53,8 @@ Pricers
 
 ## File Map
 
-| Module | Headers | Implementation |
-|--------|---------|----------------|
+| Module | Header | Implementation |
+|--------|--------|----------------|
 | Models | `include/cppfm/models/Model.h` | `src/models/Model.cpp` |
 | Path Sim 1D | `include/cppfm/simulators/PathSimulator.h` | `src/simulators/PathSimulator.cpp` |
 | Path Sim 2D | `include/cppfm/simulators/PathSimulator2D.h` | `src/simulators/PathSimulator2D.cpp` |
@@ -93,62 +63,47 @@ Pricers
 | Discount Curve | `include/cppfm/market/DiscountCurve.h` | `src/market/DiscountCurve.cpp` |
 | Utils/COS | `include/cppfm/utils/Utils.h` | `src/utils/Utils.cpp` |
 | PDE | `include/cppfm/pde/*.h` | `src/pde/*.cpp` |
-| Interpolation | `include/cppfm/utils/InterpolationSchemes.h` | `src/utils/InterpolationSchemes.cpp` |
 
-## Heston Discretization Schemes
+## Heston Discretization
 
-The library's main complexity is in `PathSimulator2D`. All schemes reference Andersen (2008).
+All schemes reference Andersen (2008).
 
-**Variance (V) discretization:**
-- Euler: Full truncation (Eq. 6-7) - use V⁺ = max(V, 0) everywhere
-- TG: Truncated Gaussian (Eq. 13) - moment matching
-- QE: Quadratic-Exponential (Eq. 23/26) - switches based on ψ threshold
+**Variance (V):**
+- Euler: Full truncation (Eq. 6-7)
+- TG: Truncated Gaussian (Eq. 13)
+- QE: Quadratic-Exponential (Eq. 23/26)
 
-**Log-price (X) discretization:**
+**Log-price (X):**
 - Euler: Standard (Eq. 6)
-- Eq. 33: Correlation-preserving, uses γ₁V(t) + γ₂V(t+Δ) approximation for ∫V
-- Eq. 11: Exact SDE representation (Broadie-Kaya)
+- Eq. 33: Correlation-preserving
+- Eq. 11: Exact (Broadie-Kaya)
 
-**Scheme combinations:**
+**Combinations:**
 ```
-X scheme    V scheme       Class
-────────────────────────────────────────
-Euler       Euler          EulerPathSimulator2D
-Eq.33       TG (Eq.13)     TGPathSimulator2D
-Eq.33       QE (Eq.23/26)  QEPathSimulator2D
-Eq.11       TG + approx    BKTGPathSimulator2D
-Eq.11       QE + approx    BKQEPathSimulator2D
-Eq.11       Exact CIR      BKExactPathSimulator2D
-```
-
-QE is the workhorse - handles Feller violation gracefully while being much faster than BKExact.
-
-## Tests
-
-Location: `tests/`
-Framework: Google Test
-
-Good starting points:
-- `test_heston_model.cpp` - Feller condition impact, scheme comparison
-- `test_heston_scheme.cpp` - scheme convergence and accuracy
-- `test_black_scholes.cpp` - basic BS pricer tests
-- `test_pde_solver.cpp` - FD convergence tests
-- `test_cos_method.cpp` - Fourier pricing tests
-- `test_heston_slv.cpp` - SLV calibration tests
-
-Run specific test:
-```bash
-./build/test_heston_model
+X        V              Class
+─────────────────────────────────────
+Euler    Euler          EulerPathSimulator2D
+Eq.33    TG             TGPathSimulator2D
+Eq.33    QE             QEPathSimulator2D
+Eq.11    TG + approx    BKTGPathSimulator2D
+Eq.11    QE + approx    BKQEPathSimulator2D
+Eq.11    Exact CIR      BKExactPathSimulator2D
 ```
 
-## Python Bindings
+QE handles Feller violation gracefully, much faster than BKExact.
 
-Python module exposes core functionality via pybind11.
+## Python
+Then from any Python project use:
+```python
+import cppfm
 
-Build:
-```bash
-cmake -S . -B build -DBUILD_PYTHON_BINDINGS=ON
-cmake --build build
+# Heston pricing
+price = cppfm.heston_call_price(S=100, K=100, T=1.0, r=0.05,
+                                 V0=0.04, kappa=2.0, theta=0.04,
+                                 sigma=0.3, rho=-0.7)
+
+# Black-Scholes
+call = cppfm.bs_call_price(S=100, K=100, T=1.0, r=0.05, sigma=0.2)
 ```
 
 Example notebooks in `python/examples/`.
