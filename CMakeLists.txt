@@ -134,47 +134,17 @@ target_link_libraries(CppFM_lib PUBLIC TBB::tbb)
 # Installation
 # ============================================================================
 
-include(CMakePackageConfigHelpers)
-
 # Install headers (includes third_party/pcg under cppfm/)
 install(DIRECTORY include/cppfm
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
 )
 
-# Install library with export
+# Install library
 install(TARGETS CppFM_lib
-    EXPORT cppfmTargets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-)
-
-# Generate version file
-write_basic_package_version_file(
-    "${CMAKE_CURRENT_BINARY_DIR}/cppfmConfigVersion.cmake"
-    VERSION ${PROJECT_VERSION}
-    COMPATIBILITY SameMajorVersion
-)
-
-# Generate config file
-configure_package_config_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cppfmConfig.cmake.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/cppfmConfig.cmake"
-    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cppfm
-)
-
-# Install CMake config files
-install(EXPORT cppfmTargets
-    FILE cppfmTargets.cmake
-    NAMESPACE cppfm::
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cppfm
-)
-
-install(FILES
-    "${CMAKE_CURRENT_BINARY_DIR}/cppfmConfig.cmake"
-    "${CMAKE_CURRENT_BINARY_DIR}/cppfmConfigVersion.cmake"
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cppfm
 )
 
 # ============================================================================
