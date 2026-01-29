@@ -59,7 +59,11 @@ message(STATUS "pybind11 found: ${pybind11_VERSION}")
 # =============================================================================
 
 pybind11_add_module(_core
-    bindings.cpp
+    ${CMAKE_SOURCE_DIR}/src/bindings/module_main.cpp
+    ${CMAKE_SOURCE_DIR}/src/bindings/bind_market.cpp
+    ${CMAKE_SOURCE_DIR}/src/bindings/bind_models.cpp
+    ${CMAKE_SOURCE_DIR}/src/bindings/bind_simulators.cpp
+    ${CMAKE_SOURCE_DIR}/src/bindings/bind_pricers.cpp
 )
 
 # Link against the core CppFM library
@@ -67,8 +71,7 @@ target_link_libraries(_core PRIVATE CppFM_lib)
 
 # Include directories
 target_include_directories(_core PRIVATE
-    ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/PDEs
+    ${CMAKE_SOURCE_DIR}/src/bindings
 )
 
 # C++20 standard

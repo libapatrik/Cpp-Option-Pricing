@@ -4,7 +4,7 @@
 #include <cmath>
 #include <iostream>
 #include <iomanip>
-#include "../InterpolationSchemes.h"
+#include <cppfm/utils/InterpolationSchemes.h>
 
 // ============================================================================
 // Test Constants and Utilities

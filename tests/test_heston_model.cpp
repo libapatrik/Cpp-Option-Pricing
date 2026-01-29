@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
-#include "../Model.h"
-#include "../DiscountCurve.h"
-#include "../PathSimulator2D.h"
+#include <cppfm/models/Model.h>
+#include <cppfm/market/DiscountCurve.h>
+#include <cppfm/simulators/PathSimulator2D.h>
 #include <iostream>
 #include <iomanip>
 #include <vector>

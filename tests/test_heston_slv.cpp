@@ -1,7 +1,7 @@
-#include "../PathSimulator2D.h"
-#include "../VolatilitySurface.h"
-#include "../BlackScholesFormulas.h"
-#include "../Utils.h"
+#include <cppfm/simulators/PathSimulator2D.h>
+#include <cppfm/market/VolatilitySurface.h>
+#include <cppfm/pricers/BlackScholesFormulas.h>
+#include <cppfm/utils/Utils.h>
 #include <cmath>
 #include <gtest/gtest.h>
 #include <iomanip>

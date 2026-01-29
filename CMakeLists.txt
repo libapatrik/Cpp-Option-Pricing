@@ -6,7 +6,7 @@ if(POLICY CMP0167)
 endif()
 
 
-project(CppFM)
+project(CppFM VERSION 0.1.0)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -64,50 +64,59 @@ find_package(TBB REQUIRED)
 # Enable testing
 enable_testing()
 
+# Standard install paths
+include(GNUInstallDirs)
+
 # ============================================================================
 # Core Library
 # ============================================================================
-add_library(CppFM_lib STATIC
-    # Core Models
-    Model.cpp
-    Model.h
-    Utils.cpp
-    Utils.h
-    
-    # Path Simulators
-    PathSimulator.cpp
-    PathSimulator.h
-    PathSimulator2D.cpp
-    PathSimulator2D.h
-    
-    # Financial Instruments
-    FinancialInstrument.cpp
-    FinancialInstrument.h
-    Pricer.cpp
-    Pricer.h
-    
-    # Market Data
-    DiscountCurve.cpp
-    DiscountCurve.h
-    VolatilitySurface.cpp
-    VolatilitySurface.h
-    InterpolationSchemes.cpp
-    InterpolationSchemes.h
-    BlackScholesFormulas.cpp
-    BlackScholesFormulas.h
-    
-    # PDE Solver
-    PDEs/PDE.cpp
-    PDEs/PDE.h
-    PDEs/Grid.cpp
-    PDEs/Grid.h
-    PDEs/BoundaryConditions.cpp
-    PDEs/BoundaryConditions.h
-    PDEs/Solver.cpp
-    PDEs/Solver.h
-    PDEs/PDEGreeksCalculator.cpp
-    PDEs/PDEGreeksCalculator.h
+
+# Public headers
+set(CPPFM_HEADERS
+    include/cppfm/models/Model.h
+    include/cppfm/pricers/Pricer.h
+    include/cppfm/pricers/BlackScholesFormulas.h
+    include/cppfm/simulators/PathSimulator.h
+    include/cppfm/simulators/PathSimulator2D.h
+    include/cppfm/market/DiscountCurve.h
+    include/cppfm/market/VolatilitySurface.h
+    include/cppfm/market/FinancialInstrument.h
+    include/cppfm/utils/Utils.h
+    include/cppfm/utils/InterpolationSchemes.h
+    include/cppfm/pde/PDE.h
+    include/cppfm/pde/Grid.h
+    include/cppfm/pde/Solver.h
+    include/cppfm/pde/BoundaryConditions.h
+    include/cppfm/pde/PDEGreeksCalculator.h
 )
+
+# Implementation files
+set(CPPFM_SOURCES
+    src/models/Model.cpp
+    src/pricers/Pricer.cpp
+    src/pricers/BlackScholesFormulas.cpp
+    src/simulators/PathSimulator.cpp
+    src/simulators/PathSimulator2D.cpp
+    src/market/DiscountCurve.cpp
+    src/market/VolatilitySurface.cpp
+    src/market/FinancialInstrument.cpp
+    src/utils/Utils.cpp
+    src/utils/InterpolationSchemes.cpp
+    src/pde/PDE.cpp
+    src/pde/Grid.cpp
+    src/pde/Solver.cpp
+    src/pde/BoundaryConditions.cpp
+    src/pde/PDEGreeksCalculator.cpp
+)
+
+add_library(CppFM_lib STATIC ${CPPFM_HEADERS} ${CPPFM_SOURCES})
+
+# Public include directory - generator expression for build vs install
+target_include_directories(CppFM_lib PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
+
 
 # Link Boost to the library
 # Use PUBLIC SYSTEM to:
@@ -120,6 +129,53 @@ target_link_libraries(CppFM_lib PUBLIC OpenMP::OpenMP_CXX)
 
 # Link TBB for parallel algorithms
 target_link_libraries(CppFM_lib PUBLIC TBB::tbb)
+
+# ============================================================================
+# Installation
+# ============================================================================
+
+include(CMakePackageConfigHelpers)
+
+# Install headers (includes third_party/pcg under cppfm/)
+install(DIRECTORY include/cppfm
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
+)
+
+# Install library with export
+install(TARGETS CppFM_lib
+    EXPORT cppfmTargets
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+# Generate version file
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/cppfmConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+# Generate config file
+configure_package_config_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cppfmConfig.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/cppfmConfig.cmake"
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cppfm
+)
+
+# Install CMake config files
+install(EXPORT cppfmTargets
+    FILE cppfmTargets.cmake
+    NAMESPACE cppfm::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cppfm
+)
+
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/cppfmConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/cppfmConfigVersion.cmake"
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cppfm
+)
 
 # ============================================================================
 # Main Executable

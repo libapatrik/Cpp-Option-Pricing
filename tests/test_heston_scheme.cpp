@@ -3,9 +3,9 @@
 //
 
 #include <gtest/gtest.h>
-#include "../PathSimulator2D.h"
-#include "../Model.h"
-#include "../DiscountCurve.h"
+#include <cppfm/simulators/PathSimulator2D.h>
+#include <cppfm/models/Model.h>
+#include <cppfm/market/DiscountCurve.h>
 #include <cmath>
 #include <chrono>
 #include <iomanip>

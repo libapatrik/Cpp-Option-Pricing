@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
-#include "../PDEs/PDEGreeksCalculator.h"
-#include "../PDEs/PDE.h"
-#include "../PDEs/Grid.h"
-#include "../PDEs/BoundaryConditions.h"
-#include "../BlackScholesFormulas.h"
+#include <cppfm/pde/PDEGreeksCalculator.h>
+#include <cppfm/pde/PDE.h>
+#include <cppfm/pde/Grid.h>
+#include <cppfm/pde/BoundaryConditions.h>
+#include <cppfm/pricers/BlackScholesFormulas.h>
 #include <cmath>
 
 // ============================================================================

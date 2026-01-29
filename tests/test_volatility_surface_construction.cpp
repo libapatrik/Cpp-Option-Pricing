@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "../VolatilitySurface.h"
+#include <cppfm/market/VolatilitySurface.h>
 // TODO: Include test_utils.h when ready
 
 /*

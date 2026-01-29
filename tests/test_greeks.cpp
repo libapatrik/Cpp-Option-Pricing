@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
-#include "../BlackScholesFormulas.h"
-#include "../FinancialInstrument.h"
-#include "../DiscountCurve.h"
+#include <cppfm/pricers/BlackScholesFormulas.h>
+#include <cppfm/market/FinancialInstrument.h>
+#include <cppfm/market/DiscountCurve.h>
 #include <cmath>
 
 /*

@@ -1,10 +1,10 @@
-#include "Model.h"
-#include "PathSimulator.h"
-#include "Pricer.h"
-#include "FinancialInstrument.h"
-#include "DiscountCurve.h"
-#include "InterpolationSchemes.h"
-#include "VolatilitySurface.h"
+#include <cppfm/models/Model.h>
+#include <cppfm/simulators/PathSimulator.h>
+#include <cppfm/pricers/Pricer.h>
+#include <cppfm/market/FinancialInstrument.h>
+#include <cppfm/market/DiscountCurve.h>
+#include <cppfm/utils/InterpolationSchemes.h>
+#include <cppfm/market/VolatilitySurface.h>
 
 #include <iostream>
 #include <vector>

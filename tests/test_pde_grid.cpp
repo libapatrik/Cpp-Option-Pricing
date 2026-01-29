@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "../PDEs/Grid.h"
+#include <cppfm/pde/Grid.h>
 #include <cmath>
 
 // ============================================================================

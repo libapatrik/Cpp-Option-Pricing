@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "../Utils.h"
+#include <cppfm/utils/Utils.h>
 #include <cmath>
 #include <complex>
 #include <chrono>

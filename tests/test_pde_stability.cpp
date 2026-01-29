@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
-#include "../PDEs/PDE.h"
-#include "../PDEs/Grid.h"
-#include "../PDEs/BoundaryConditions.h"
-#include "../PDEs/Solver.h"
+#include <cppfm/pde/PDE.h>
+#include <cppfm/pde/Grid.h>
+#include <cppfm/pde/BoundaryConditions.h>
+#include <cppfm/pde/Solver.h>
 #include <cmath>
 #include <iostream>
 #include <iomanip>

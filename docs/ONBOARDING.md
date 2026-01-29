@@ -32,6 +32,25 @@ cd build && ctest
 ./build/test_heston_model
 ```
 
+## Directory Structure
+
+```
+CppFM/
+├── include/cppfm/           # Public headers
+│   ├── models/              # Model hierarchy (BS, Dupire, Heston)
+│   ├── simulators/          # Path simulation (1D Euler/Milstein, 2D Heston)
+│   ├── pricers/             # Closed-form, MC, FD pricers
+│   ├── pde/                 # Finite difference framework
+│   ├── market/              # Vol surfaces, discount curves, instruments
+│   ├── montecarlo/          # MC engine + variance reduction (WIP)
+│   └── utils/               # COS method, interpolation, tridiagonal solver
+├── src/                     # Implementation files (mirrors include/)
+│   └── bindings/            # Python bindings (pybind11)
+├── tests/                   # Google Test suite
+├── python/examples/         # Jupyter notebooks
+└── docs/                    # ONBOARDING.md, OPTIMIZATION.md
+```
+
 ## Architecture
 
 ```
@@ -62,21 +81,19 @@ Pricers
 └── COSPricer           (Fang & Oosterlee 2008)
 ```
 
-
 ## File Map
 
-| File | Purpose |
-|------|---------|
-| `Model.h/cpp` | Model hierarchy (BS, Dupire, Heston) |
-| `PathSimulator.h/cpp` | 1D Euler/Milstein |
-| `PathSimulator2D.h/cpp` | Heston schemes (TG, QE, BK family, SLV) |
-| `Pricer.h/cpp` | BS, MC, FD pricers |
-| `VolatilitySurface.h/cpp` | IV surface + Dupire local vol |
-| `DiscountCurve.h/cpp` | Flat/forward rate curves |
-| `Utils.h/cpp` | COS method, CIR sampler, HestonLocalVol |
-| `PDEs/` | Grid, PDE, ThetaMethodSolver, BoundaryConditions |
-| `BlackScholesFormulas.h/cpp` | Closed-form BS formulas |
-| `InterpolationSchemes.h/cpp` | Linear, cubic spline interpolation |
+| Module | Headers | Implementation |
+|--------|---------|----------------|
+| Models | `include/cppfm/models/Model.h` | `src/models/Model.cpp` |
+| Path Sim 1D | `include/cppfm/simulators/PathSimulator.h` | `src/simulators/PathSimulator.cpp` |
+| Path Sim 2D | `include/cppfm/simulators/PathSimulator2D.h` | `src/simulators/PathSimulator2D.cpp` |
+| Pricers | `include/cppfm/pricers/Pricer.h` | `src/pricers/Pricer.cpp` |
+| Vol Surface | `include/cppfm/market/VolatilitySurface.h` | `src/market/VolatilitySurface.cpp` |
+| Discount Curve | `include/cppfm/market/DiscountCurve.h` | `src/market/DiscountCurve.cpp` |
+| Utils/COS | `include/cppfm/utils/Utils.h` | `src/utils/Utils.cpp` |
+| PDE | `include/cppfm/pde/*.h` | `src/pde/*.cpp` |
+| Interpolation | `include/cppfm/utils/InterpolationSchemes.h` | `src/utils/InterpolationSchemes.cpp` |
 
 ## Heston Discretization Schemes
 
@@ -92,7 +109,7 @@ The library's main complexity is in `PathSimulator2D`. All schemes reference And
 - Eq. 33: Correlation-preserving, uses γ₁V(t) + γ₂V(t+Δ) approximation for ∫V
 - Eq. 11: Exact SDE representation (Broadie-Kaya)
 
-**Scheme combinations (PathSimulator2D.h:49-86):**
+**Scheme combinations:**
 ```
 X scheme    V scheme       Class
 ────────────────────────────────────────
@@ -108,16 +125,30 @@ QE is the workhorse - handles Feller violation gracefully while being much faste
 
 ## Tests
 
-Location: `/tests/`
+Location: `tests/`
 Framework: Google Test
 
 Good starting points:
 - `test_heston_model.cpp` - Feller condition impact, scheme comparison
+- `test_heston_scheme.cpp` - scheme convergence and accuracy
 - `test_black_scholes.cpp` - basic BS pricer tests
 - `test_pde_solver.cpp` - FD convergence tests
 - `test_cos_method.cpp` - Fourier pricing tests
+- `test_heston_slv.cpp` - SLV calibration tests
 
 Run specific test:
 ```bash
 ./build/test_heston_model
 ```
+
+## Python Bindings
+
+Python module exposes core functionality via pybind11.
+
+Build:
+```bash
+cmake -S . -B build -DBUILD_PYTHON_BINDINGS=ON
+cmake --build build
+```
+
+Example notebooks in `python/examples/`.
