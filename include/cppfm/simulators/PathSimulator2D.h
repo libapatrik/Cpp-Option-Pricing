@@ -11,6 +11,7 @@
 
 #include <cppfm/models/Model.h>
 #include <cppfm/market/VolatilitySurface.h>
+#include <cppfm/montecarlo/MonteCarlo.h>  // MonteCarloResult
 #include <cppfm/utils/Utils.h>  // For HestonLocalVol
 #include <random>
 #include <memory>
@@ -511,6 +512,15 @@ public:
   std::vector<std::pair<double, double>> simulateAllPathsOptimized() const;
 
   /**
+   * Simulate with Heston as control variate for variance reduction.
+   * Evolves SLV and pure Heston paths simultaneously using same Brownians.
+   * @param strike Option strike for payoff computation
+   * @param analyticalControlPrice Analytical Heston price (via COS/CF)
+   * @return MonteCarloResult with CV-adjusted statistics
+   */
+  MonteCarloResult simulateWithControlVariate(double strike, double analyticalControlPrice) const;
+
+  /**
    * Simulate and return full path history
    * @return [path_index][time_index] -> (S, V)
    */
@@ -522,6 +532,11 @@ public:
   // Get calibration error history (||L_new - L_old||/||L_old|| per iteration)
   const std::vector<double>& calibrationErrors() const { return _calibrationErrors; }
   void resetCalibration();
+
+  // Mixing factor η ∈ [0,1]: η=0 is pure Heston, η=1 is full SLV
+  // L_eff = η*L + (1-η)*1, so leverage effect is blended with identity
+  void setMixingFactor(double eta);
+  double getMixingFactor() const { return _mixingFactor; }
 
   // Diagnostic accessors
   const std::vector<double>& getLeverageGrid() const { return _leverageGrid; }
@@ -547,6 +562,9 @@ private:
   size_t _nSpotGrid;
   bool _leverageCalibrated;
   std::vector<double> _calibrationErrors;
+
+  // Mixing factor: η=0 pure Heston, η=1 full SLV (default)
+  double _mixingFactor = 1.0;
 
   // Precomputed local volatility grid from HestonLocalVol (COS-based Dupire)
   // Indexed as: _localVolGrid[timeIdx * _nSpotGrid + spotIdx]

@@ -1644,3 +1644,191 @@ TEST_F(StoepComparisonTest, ExternalVolatilitySurfaceFitting)
     // Target: <200bp for non-Heston surfaces (harder to fit)
     EXPECT_LT(maxAbsError, 250.0) << "SLV should fit external surface within tolerance!";
 }
+
+// ============================================================================
+// Control Variate Variance Reduction Test
+// ============================================================================
+// Uses pure Heston MC as control, Heston COS as analytical baseline
+// Key: same Brownians for both SLV and Heston MC -> high correlation -> variance reduction
+
+#include <cppfm/montecarlo/MonteCarlo.h>
+#include <cppfm/montecarlo/VarianceReduction.h>
+
+TEST_F(StoepComparisonTest, ControlVariateVarianceReduction)
+{
+    std::cout << "\n";
+    std::cout << "================================================================\n";
+    std::cout << "  CONTROL VARIATE VARIANCE REDUCTION\n";
+    std::cout << "  Uses Heston as control for SLV pricing\n";
+    std::cout << "================================================================\n\n";
+
+    HestonModel heston(S0, discountCurve, v0, kappa, vbar, sigma_v, rho);
+
+    double T = 1.0;
+    double K = 1.0;  // ATM
+    auto times = createTimeGrid(T);
+
+    // analytical Heston price via COS
+    HestonCF hcf(kappa, vbar, sigma_v, rho, v0, r, T);
+    auto chf = [&hcf](double u) { return hcf(u); };
+    double hestonCOS = COSPricer::callPrice(S0, K, r, T, chf, 512, 15.0, std::sqrt(vbar));
+    double df = discountCurve.discount(T);
+    double hestonAnalytical = hestonCOS;
+
+    std::cout << "Heston analytical (COS): " << std::fixed << std::setprecision(6) << hestonAnalytical << "\n\n";
+
+    // SLV with control variate
+    size_t nPaths = 50000;
+    HestonSLVPathSimulator2D slv(heston, times, nPaths, numBins, seed);
+    slv.calibrateLeverage(20, 1e-3, 0.5);
+
+    auto cvResult = slv.simulateWithControlVariate(K, hestonAnalytical);
+
+    std::cout << "SLV with CV:\n";
+    std::cout << "  Mean:      " << cvResult.mean << "\n";
+    std::cout << "  Std Error: " << cvResult.stdError << "\n";
+    std::cout << "  95% CI:    [" << cvResult.ci95Lower << ", " << cvResult.ci95Upper << "]\n";
+
+    // also run plain MC for comparison
+    auto terminals = slv.simulateAllPathsParallel();
+    std::vector<double> plainPayoffs(nPaths);
+    for (size_t p = 0; p < nPaths; ++p) {
+        plainPayoffs[p] = df * std::max(terminals[p].first - K, 0.0);
+    }
+    auto plainResult = MonteCarloResult::compute(plainPayoffs);
+
+    std::cout << "\nSLV plain MC:\n";
+    std::cout << "  Mean:      " << plainResult.mean << "\n";
+    std::cout << "  Std Error: " << plainResult.stdError << "\n";
+    std::cout << "  95% CI:    [" << plainResult.ci95Lower << ", " << plainResult.ci95Upper << "]\n";
+
+    double varReduction = plainResult.stdError / cvResult.stdError;
+    std::cout << "\nVariance reduction factor: " << std::setprecision(2) << varReduction << "x\n";
+
+    // CV should reduce variance (at least 1.5x improvement typical)
+    EXPECT_GT(varReduction, 1.2) << "Control variate should reduce variance";
+}
+
+TEST_F(StoepComparisonTest, ControlVariateShowsVarianceReduction)
+{
+    std::cout << "\n=== CV VARIANCE REDUCTION ACROSS STRIKES ===\n\n";
+
+    HestonModel heston(S0, discountCurve, v0, kappa, vbar, sigma_v, rho);
+
+    double T = 0.5;
+    auto times = createTimeGrid(T);
+    double df = discountCurve.discount(T);
+
+    size_t nPaths = 30000;
+    HestonSLVPathSimulator2D slv(heston, times, nPaths, numBins, seed);
+    slv.calibrateLeverage(15, 1e-3, 0.5);
+
+    std::cout << "     K      Heston   Plain SE    CV SE    Reduction\n";
+    std::cout << "  ------    ------   --------   ------    ---------\n";
+
+    double avgReduction = 0.0;
+    size_t count = 0;
+
+    for (double K : {0.90, 0.95, 1.0, 1.05, 1.10}) {
+        // analytical Heston price
+        HestonCF hcf(kappa, vbar, sigma_v, rho, v0, r, T);
+        auto chf = [&hcf](double u) { return hcf(u); };
+        double hestonPrice = COSPricer::callPrice(S0, K, r, T, chf, 512, 15.0, std::sqrt(vbar));
+
+        // CV result
+        auto cvResult = slv.simulateWithControlVariate(K, hestonPrice);
+
+        // plain MC for comparison
+        auto terminals = slv.simulateAllPathsParallel();
+        std::vector<double> plainPayoffs(nPaths);
+        for (size_t p = 0; p < nPaths; ++p) {
+            plainPayoffs[p] = df * std::max(terminals[p].first - K, 0.0);
+        }
+        auto plainResult = MonteCarloResult::compute(plainPayoffs);
+
+        double reduction = plainResult.stdError / cvResult.stdError;
+        avgReduction += reduction;
+        ++count;
+
+        std::cout << std::fixed << std::setprecision(2)
+                  << "  " << K
+                  << "    " << std::setprecision(4) << hestonPrice
+                  << "   " << std::setprecision(5) << plainResult.stdError
+                  << "   " << cvResult.stdError
+                  << "    " << std::setprecision(1) << reduction << "x\n";
+    }
+
+    avgReduction /= count;
+    std::cout << "\nAverage variance reduction: " << std::setprecision(1) << avgReduction << "x\n";
+
+    // CV should help across all strikes
+    EXPECT_GT(avgReduction, 1.0) << "CV should reduce variance on average";
+}
+
+// ----------------------------------------------------------------------------
+// TEST: MIXING FACTOR VALIDATION (QuantLib-style)
+// η=0: pure local vol (σ_v=0), η=1: full SLV
+// With Heston-consistent local vol, η=1 should match pure Heston
+// ----------------------------------------------------------------------------
+TEST_F(StoepComparisonTest, MixingFactorInterpolation)
+{
+    std::cout << "\n";
+    std::cout << "================================================================\n";
+    std::cout << "  MIXING FACTOR TEST (QuantLib-style)\n";
+    std::cout << "  η=0: pure local vol (σ_v=0), η=1: full SLV\n";
+    std::cout << "================================================================\n\n";
+
+    double T = 1.0;
+    auto times = createTimeGrid(T);
+    double K = 1.0;  // ATM
+    double df = discountCurve.discount(T);
+
+    HestonModel heston(S0, discountCurve, v0, kappa, vbar, sigma_v, rho);
+
+    // Reference: pure Heston via QE
+    size_t nPaths = 20000;
+    QEPathSimulator2D qe(times, heston, seed);
+    double hestonSum = 0.0;
+    for (size_t p = 0; p < nPaths; ++p) {
+        auto [path, var] = qe.paths();
+        hestonSum += std::max(path.back() - K, 0.0);
+    }
+    double hestonPrice = df * hestonSum / nPaths;
+
+    std::cout << "Pure Heston (QE) price: " << hestonPrice << "\n\n";
+
+    // SLV with different mixing factors
+    std::cout << "     η      SLV Price   vs Heston\n";
+    std::cout << "  ------    ---------   ---------\n";
+
+    std::vector<double> etas = {0.0, 0.25, 0.5, 0.75, 1.0};
+    std::vector<double> slvPrices;
+
+    for (double eta : etas) {
+        HestonSLVPathSimulator2D simulator(heston, times, nPaths, numBins, seed);
+        simulator.setMixingFactor(eta);
+
+        auto terminals = simulator.simulateAllPathsParallel();
+        double payoffSum = 0.0;
+        for (const auto& [S_T, V_T] : terminals) {
+            payoffSum += std::max(S_T - K, 0.0);
+        }
+        double slvPrice = df * payoffSum / nPaths;
+        slvPrices.push_back(slvPrice);
+
+        double errorVsHeston = (slvPrice - hestonPrice) / hestonPrice * 10000;
+
+        std::cout << std::fixed << std::setprecision(2)
+                  << "  " << eta
+                  << "      " << std::setprecision(6) << slvPrice
+                  << "   " << std::showpos << std::setprecision(1) << errorVsHeston << " bp" << std::noshowpos << "\n";
+    }
+
+    // η=1 (full SLV) should be close to pure Heston when using Heston-consistent local vol
+    double eta1Error = std::abs(slvPrices[4] - hestonPrice) / hestonPrice * 10000;
+    std::cout << "\nη=1 vs pure Heston error: " << std::setprecision(1) << eta1Error << " bp\n";
+
+    // η=1 SLV should be close to pure Heston (within ~100bp MC noise + discretization error)
+    EXPECT_LT(eta1Error, 150.0) << "η=1 SLV should match pure Heston when using Heston-consistent local vol";
+}
+

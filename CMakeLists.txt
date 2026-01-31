@@ -81,6 +81,7 @@ set(CPPFM_HEADERS
     include/cppfm/market/DiscountCurve.h
     include/cppfm/market/VolatilitySurface.h
     include/cppfm/market/FinancialInstrument.h
+    include/cppfm/market/SVICalibration.h
     include/cppfm/utils/Utils.h
     include/cppfm/utils/InterpolationSchemes.h
     include/cppfm/pde/PDE.h
@@ -88,6 +89,11 @@ set(CPPFM_HEADERS
     include/cppfm/pde/Solver.h
     include/cppfm/pde/BoundaryConditions.h
     include/cppfm/pde/PDEGreeksCalculator.h
+    include/cppfm/optimization/LinearAlgebra.h
+    include/cppfm/optimization/Optimizer.h
+    include/cppfm/montecarlo/MonteCarlo.h
+    include/cppfm/montecarlo/RandomNumberGenerator.h
+    include/cppfm/montecarlo/VarianceReduction.h
 )
 
 # Implementation files
@@ -100,6 +106,7 @@ set(CPPFM_SOURCES
     src/market/DiscountCurve.cpp
     src/market/VolatilitySurface.cpp
     src/market/FinancialInstrument.cpp
+    src/market/SVICalibration.cpp
     src/utils/Utils.cpp
     src/utils/InterpolationSchemes.cpp
     src/pde/PDE.cpp
@@ -107,6 +114,11 @@ set(CPPFM_SOURCES
     src/pde/Solver.cpp
     src/pde/BoundaryConditions.cpp
     src/pde/PDEGreeksCalculator.cpp
+    src/optimization/LinearAlgebra.cpp
+    src/optimization/Optimizer.cpp
+    src/montecarlo/MonteCarlo.cpp
+    src/montecarlo/RandomNumberGenerator.cpp
+    src/montecarlo/VarianceReduction.cpp
 )
 
 add_library(CppFM_lib STATIC ${CPPFM_HEADERS} ${CPPFM_SOURCES})
@@ -207,11 +219,23 @@ target_link_libraries(test_heston_scheme CppFM_lib gtest_main)
 add_executable(test_heston_slv tests/test_heston_slv.cpp)
 target_link_libraries(test_heston_slv CppFM_lib gtest_main)
 
+add_executable(test_stoep tests/test_stoep.cpp)
+target_link_libraries(test_stoep CppFM_lib gtest_main)
+
 add_executable(test_pde_grid tests/test_pde_grid.cpp)
 target_link_libraries(test_pde_grid CppFM_lib gtest_main)
 
 add_executable(test_bessel_function tests/test_bessel_function.cpp)
 target_link_libraries(test_bessel_function CppFM_lib gtest_main)
+
+add_executable(test_linear_algebra tests/test_linear_algebra.cpp)
+target_link_libraries(test_linear_algebra CppFM_lib gtest_main)
+
+add_executable(test_levenberg_marquardt tests/test_levenberg_marquardt.cpp)
+target_link_libraries(test_levenberg_marquardt CppFM_lib gtest_main)
+
+add_executable(test_svi_calibration tests/test_svi_calibration.cpp)
+target_link_libraries(test_svi_calibration CppFM_lib gtest_main)
 
 # ============================================================================
 # CTest Configuration
@@ -232,8 +256,12 @@ add_test(NAME NewtonMethods COMMAND test_newton_methods)
 add_test(NAME HestonModel COMMAND test_heston_model)
 add_test(NAME HestonScheme COMMAND test_heston_scheme)
 add_test(NAME HestonSLV COMMAND test_heston_slv)
+add_test(NAME StoepValidation COMMAND test_stoep)
 add_test(NAME PDEGrid COMMAND test_pde_grid)
 add_test(NAME BesselFunction COMMAND test_bessel_function)
+add_test(NAME LinearAlgebra COMMAND test_linear_algebra)
+add_test(NAME LevenbergMarquardt COMMAND test_levenberg_marquardt)
+add_test(NAME SVICalibration COMMAND test_svi_calibration)
 
 # ============================================================================
 # Python Bindings - to use in QFB

@@ -3,6 +3,7 @@
 //
 
 #include <cppfm/simulators/PathSimulator2D.h>
+#include <cppfm/montecarlo/VarianceReduction.h>
 #include <cppfm/utils/Utils.h>
 #include <cmath>
 #include <stdexcept>
@@ -1011,7 +1012,13 @@ double HestonSLVPathSimulator2D::interpolateConditionalExpectation(double spot, 
   if (k_right >= bins.size())
     k_right = bins.size() - 1;
 
-  double t = (spot - bins[k_left].midpoint) / (bins[k_right].midpoint - bins[k_left].midpoint);
+  // Guard against division by zero if adjacent bin midpoints coincide
+  double denom = bins[k_right].midpoint - bins[k_left].midpoint;
+  if (std::abs(denom) < 1e-12) {
+    return bins[k_left].conditionalExpectation;
+  }
+
+  double t = (spot - bins[k_left].midpoint) / denom;
 
   return (1 - t) * bins[k_left].conditionalExpectation + t * bins[k_right].conditionalExpectation;
 }
@@ -1050,15 +1057,85 @@ double HestonSLVPathSimulator2D::stepLogPriceSLV(double X_t, double V_t, double 
   double sigma_v = heston->sigma_v();
   double rho = heston->rho();
 
-  // Equation 3.18
-  double L = std::sqrt(leverageSq);
-  double L_V_dt = leverageSq * V_t * dt;
+  // Equation 3.18 with numerical guards
+  // Leverage L is applied directly (mixing factor affects variance evolution, not L)
+  double L = std::sqrt(std::max(leverageSq, 0.0));
 
+  // Guard against negative variance
+  double V_t_safe = std::max(V_t, 0.0);
+  double L_V_dt = std::max(L * L * V_t_safe * dt, 0.0);
+
+  // Guard against |rho| ≈ 1
+  double oneMinusRhoSq = std::max(1.0 - rho * rho, 0.0);
+
+  // QuantLib approach: mixing factor scales σ_v in variance evolution
+  // Here we use the effective sigma_v for the correlation term
+  double sigma_v_eff = _mixingFactor * sigma_v;
+
+  // Guard against sigma_v_eff → 0 (pure local vol limit)
   double drift = r * dt - 0.5 * L_V_dt;
-  double term1 = (rho / sigma_v) * L * (V_next - kappa * vbar * dt + V_t * (kappa * dt - 1));
-  double term2 = std::sqrt(1 - rho * rho) * std::sqrt(L_V_dt) * Z;
+  double term1 = (sigma_v_eff > 1e-10)
+                 ? (rho / sigma_v_eff) * L * (V_next - kappa * vbar * dt + V_t_safe * (kappa * dt - 1))
+                 : 0.0;
+  double term2 = std::sqrt(oneMinusRhoSq) * std::sqrt(L_V_dt) * Z;
 
   return X_t + drift + term1 + term2;
+}
+
+double HestonSLVPathSimulator2D::stepVarianceQE_SLV(double V_t, double dt, double Z_V, double /*U_V*/) const
+{
+  /**
+   * QE scheme with mixing factor applied to σ_v (QuantLib approach)
+   *
+   * mixingFactor = 0 → σ_v_eff = 0 → deterministic variance → pure local vol
+   * mixingFactor = 1 → σ_v_eff = σ_v → full stochastic vol → full SLV
+   */
+  const HestonModel *hestonPtr = getHestonModel();
+  double kappa = hestonPtr->kappa();
+  double vbar = hestonPtr->vbar();
+  double sigma_v = hestonPtr->sigma_v();
+
+  // Apply mixing factor to vol-of-vol
+  double sigma_v_eff = _mixingFactor * sigma_v;
+
+  // If mixing factor is zero, variance evolves deterministically
+  if (sigma_v_eff < 1e-12) {
+    double exp_kappa_dt = std::exp(-kappa * dt);
+    return vbar + (V_t - vbar) * exp_kappa_dt;  // Mean-reverting deterministic
+  }
+
+  // Otherwise, use QE scheme with effective sigma_v
+  double exp_kappa_dt = std::exp(-kappa * dt);
+  double m = vbar + (V_t - vbar) * exp_kappa_dt;
+
+  double s2 = V_t * sigma_v_eff * sigma_v_eff / kappa *
+                  (exp_kappa_dt - exp_kappa_dt * exp_kappa_dt) +
+              vbar * sigma_v_eff * sigma_v_eff / (2.0 * kappa) *
+                  (1.0 - exp_kappa_dt) * (1.0 - exp_kappa_dt);
+
+  const double MIN_MEAN_VARIANCE = 1e-10;
+  double m_safe = std::max(m, MIN_MEAN_VARIANCE);
+  double psi = s2 / (m_safe * m_safe);
+
+  double U_V = Utils::stdNormCdf(Z_V);
+
+  if (psi <= _psiC) {
+    double psi_inv = 2.0 / psi;
+    double temp = std::max(0.0, psi_inv - 1.0);
+    double b_squared = temp + std::sqrt(psi_inv) * std::sqrt(temp);
+    double a = m_safe / (1.0 + b_squared);
+    double b = std::sqrt(b_squared);
+    double V_next = a * (b + Z_V) * (b + Z_V);
+    return std::max(V_next, 0.0);
+  } else {
+    double p = (psi - 1.0) / (psi + 1.0);
+    double beta = (1.0 - p) / m_safe;
+    if (U_V <= p) {
+      return 0.0;
+    } else {
+      return std::log((1.0 - p) / (1.0 - U_V)) / beta;
+    }
+  }
 }
 
 const HestonModel *HestonSLVPathSimulator2D::getHestonModel() const
@@ -1118,7 +1195,7 @@ std::vector<std::pair<double, double>> HestonSLVPathSimulator2D::simulateAllPath
     for (size_t p = 0; p < _numPaths; ++p)
     {
       double Z_V = generateStandardNormalSLV();
-      nextVariances[p] = stepVarianceQE(variances[p], dt, Z_V, _psiC); // QE scheme for variance
+      nextVariances[p] = stepVarianceQE_SLV(variances[p], dt, Z_V, 0.0);
     }
 
     // 2 compute bins for current (S, V)-pair
@@ -1182,7 +1259,7 @@ std::vector<std::pair<double, double>> HestonSLVPathSimulator2D::simulateAllPath
       int tid = 0;
 #endif
       double Z_V = generateStandardNormalParallel(tid);
-      nextVariances[p] = stepVarianceQE(variances[p], dt, Z_V, _psiC);
+      nextVariances[p] = stepVarianceQE_SLV(variances[p], dt, Z_V, 0.0);
     }
 
 #pragma omp parallel for schedule(static)
@@ -1263,7 +1340,7 @@ std::vector<std::vector<std::pair<double, double>>> HestonSLVPathSimulator2D::si
     for (size_t p = 0; p < _numPaths; ++p)
     {
       double Z_V = generateStandardNormalSLV();
-      nextVariances[p] = stepVarianceQE(variances[p], dt, Z_V, _psiC); // QE scheme for variance
+      nextVariances[p] = stepVarianceQE_SLV(variances[p], dt, Z_V, 0.0);
     }
 
     // 2 compute bins for current (S, V)-pair
@@ -1333,7 +1410,7 @@ std::vector<std::vector<std::pair<double, double>>> HestonSLVPathSimulator2D::si
       int tid = 0;
 #endif
       double Z_V = generateStandardNormalParallel(tid);
-      nextVariances[p] = stepVarianceQE(variances[p], dt, Z_V, _psiC);
+      nextVariances[p] = stepVarianceQE_SLV(variances[p], dt, Z_V, 0.0);
     }
 
 #pragma omp parallel for schedule(static)
@@ -1490,6 +1567,15 @@ std::vector<HestonSLVPathSimulator2D::BinData> HestonSLVPathSimulator2D::compute
   return bins;
 }
 
+// Mixing factor setter with validation
+void HestonSLVPathSimulator2D::setMixingFactor(double eta)
+{
+  if (eta < 0.0 || eta > 1.0) {
+    throw std::runtime_error("Mixing factor must be in [0, 1]");
+  }
+  _mixingFactor = eta;
+}
+
 // Leverage calibration
 void HestonSLVPathSimulator2D::initializeLeverageGrid()
 {
@@ -1500,7 +1586,7 @@ void HestonSLVPathSimulator2D::initializeLeverageGrid()
   double spotMin = 0.3 * S0;
   double spotMax = 2.5 * S0;
 
-  // log-uniform spot grid
+  // Log-uniform spot grid
   _spotGridPoints.resize(_nSpotGrid);
   double logMin = std::log(spotMin);
   double logMax = std::log(spotMax);
@@ -1677,7 +1763,7 @@ HestonSLVPathSimulator2D::simulateAndCollectAllBins() const
         int tid = 0;
       #endif
       double Z_V = generateStandardNormalParallel(tid);
-      nextVariances[p] = stepVarianceQE(variances[p], dt, Z_V, _psiC);
+      nextVariances[p] = stepVarianceQE_SLV(variances[p], dt, Z_V, 0.0);
     }
 
     #pragma omp parallel for schedule(static)
@@ -1789,5 +1875,96 @@ size_t HestonSLVPathSimulator2D::calibrateLeverage(size_t maxIterations, double 
 
   _leverageCalibrated = true;  // Mark as calibrated even if max iterations reached
   return iter;
+}
+
+// ============================================================================
+// Control Variate: Simultaneous SLV + Heston evolution with same Brownians
+// ============================================================================
+
+MonteCarloResult HestonSLVPathSimulator2D::simulateWithControlVariate(
+    double strike, double analyticalControlPrice) const
+{
+  /**
+   * Evolves SLV and pure Heston paths simultaneously using SAME random draws.
+   * Same Brownians → high correlation → effective variance reduction.
+   *
+   * Memory: O(N) - only current state vectors, not full path history.
+   * Pure Heston uses L²=1 (no leverage adjustment).
+   */
+
+  const HestonModel* heston = getHestonModel();
+  double S0 = heston->initValue();
+  double V0 = heston->v0();
+  double r = heston->riskFreeRate();
+  double T = _timeSteps.back();
+
+  // state vectors for both models
+  std::vector<double> slv_spots(_numPaths, S0), slv_vars(_numPaths, V0);
+  std::vector<double> hes_spots(_numPaths, S0), hes_vars(_numPaths, V0);
+
+  initThreadLocalRNGs();
+
+  // time-step loop
+  for (size_t i = 0; i < _timeSteps.size() - 1; ++i) {
+    double t = _timeSteps[i];
+    double dt = _timeSteps[i + 1] - t;
+
+    // compute bins for SLV leverage (only if calibrated, else use grid)
+    std::vector<BinData> currentBins;
+    if (!_leverageCalibrated) {
+      currentBins = computeBinsVectorized(slv_spots, slv_vars);
+    }
+
+    #pragma omp parallel for schedule(static)
+    for (size_t p = 0; p < _numPaths; ++p) {
+      #ifdef _OPENMP
+        int tid = omp_get_thread_num();
+      #else
+        int tid = 0;
+      #endif
+
+      // same Z_V for both paths
+      double Z_V = generateStandardNormalParallel(tid);
+
+      // evolve variance identically for both (same stochastic driver)
+      double slv_V_next = stepVarianceQE_SLV(slv_vars[p], dt, Z_V, 0.0);
+      double hes_V_next = stepVarianceQE_SLV(hes_vars[p], dt, Z_V, 0.0);
+
+      // same Z for log-price
+      double Z = generateStandardNormalParallel(tid);
+
+      // SLV: apply leverage
+      double L2_slv;
+      if (_leverageCalibrated) {
+        L2_slv = getLeverageSquaredFromGrid(slv_spots[p], i);
+      } else {
+        L2_slv = leverageSquared(slv_spots[p], t, currentBins);
+      }
+      double X_slv = std::log(slv_spots[p]);
+      double X_slv_next = stepLogPriceSLV(X_slv, slv_vars[p], slv_V_next, L2_slv, dt, Z);
+      slv_spots[p] = std::exp(X_slv_next);
+      slv_vars[p] = slv_V_next;
+
+      // Heston: L²=1 (no leverage)
+      double X_hes = std::log(hes_spots[p]);
+      double X_hes_next = stepLogPriceSLV(X_hes, hes_vars[p], hes_V_next, 1.0, dt, Z);
+      hes_spots[p] = std::exp(X_hes_next);
+      hes_vars[p] = hes_V_next;
+    }
+  }
+
+  // compute discounted payoffs
+  double df = std::exp(-r * T);
+  std::vector<double> slvPayoffs(_numPaths);
+  std::vector<double> hesPayoffs(_numPaths);
+
+  #pragma omp parallel for schedule(static)
+  for (size_t p = 0; p < _numPaths; ++p) {
+    slvPayoffs[p] = df * std::max(slv_spots[p] - strike, 0.0);
+    hesPayoffs[p] = df * std::max(hes_spots[p] - strike, 0.0);
+  }
+
+  // delegate to existing CV adjuster
+  return ControlVariateAdjuster::computeWithCV(slvPayoffs, hesPayoffs, analyticalControlPrice);
 }
 

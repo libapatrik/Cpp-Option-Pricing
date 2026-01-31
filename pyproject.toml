@@ -26,7 +26,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Mathematics",
-    "Topic :: Office/Business :: Financial :: Investment",
+    "Topic :: Financial",
 ]
 keywords = ["finance", "options", "heston", "volatility", "derivatives", "monte-carlo", "black-scholes"]
 
@@ -35,7 +35,8 @@ Homepage = "https://github.com/libapatrik/Cpp-Option-Pricing"
 Repository = "https://github.com/libapatrik/Cpp-Option-Pricing"
 
 [project.optional-dependencies]
-dev = ["pytest", "numpy"]
+dev = ["pytest", "numpy", "pdoc3"]
+docs = ["pdoc3"]
 
 [tool.scikit-build]
 cmake.args = ["-DBUILD_PYTHON_BINDINGS=ON"]

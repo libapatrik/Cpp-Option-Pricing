@@ -11,6 +11,20 @@ struct HestonSLVSimulatorWrapper
     std::unique_ptr<HestonSLVPathSimulator2D> simulator;
     std::unique_ptr<VolatilitySurface> owned_vol_surface; // for external surface mode
 
+    // Simulate with control variate (Heston as control)
+    py::dict simulate_with_cv(double strike, double analytical_price)
+    {
+        auto result = simulator->simulateWithControlVariate(strike, analytical_price);
+        py::dict d;
+        d["mean"] = result.mean;
+        d["std_error"] = result.stdError;
+        d["variance"] = result.variance;
+        d["ci95_lower"] = result.ci95Lower;
+        d["ci95_upper"] = result.ci95Upper;
+        d["num_paths"] = result.numPaths;
+        return d;
+    }
+
     // constructor 1: HestonModel only (uses internal HestonLocalVol)
     HestonSLVSimulatorWrapper(const HestonModel &model,
                               std::vector<double> ts,
@@ -74,6 +88,17 @@ struct HestonSLVSimulatorWrapper
     void reset_calibration()
     {
         simulator->resetCalibration();
+    }
+
+    // Mixing factor: η=0 pure Heston, η=1 full SLV
+    void set_mixing_factor(double eta)
+    {
+        simulator->setMixingFactor(eta);
+    }
+
+    double get_mixing_factor() const
+    {
+        return simulator->getMixingFactor();
     }
 };
 
@@ -155,5 +180,24 @@ void bind_simulators(py::module_ &m)
         .def("get_calibration_errors", &HestonSLVSimulatorWrapper::get_calibration_errors,
              "Get convergence history")
         .def("reset_calibration", &HestonSLVSimulatorWrapper::reset_calibration,
-             "Reset calibration to single-pass mode");
+             "Reset calibration to single-pass mode")
+        .def_property("mixing_factor",
+             &HestonSLVSimulatorWrapper::get_mixing_factor,
+             &HestonSLVSimulatorWrapper::set_mixing_factor,
+             "Mixing factor η ∈ [0,1]: η=0 pure Heston, η=1 full SLV")
+        .def("simulate_with_cv", &HestonSLVSimulatorWrapper::simulate_with_cv,
+             py::arg("strike"), py::arg("analytical_price"),
+             R"pbdoc(
+            Simulate with control variate (Heston as control).
+
+            Evolves SLV and pure Heston paths simultaneously using same Brownians.
+            High correlation → effective variance reduction (typically 2-5x).
+
+            Args:
+                strike: Option strike for payoff computation
+                analytical_price: Analytical Heston price (e.g., from COS method)
+
+            Returns:
+                dict with keys: mean, std_error, variance, ci95_lower, ci95_upper, num_paths
+        )pbdoc");
 }

@@ -12,6 +12,10 @@
 *.pdf
 pdfs/
 
+# LaTeX files
+*.tex
+docs/latex/
+
 # Language Server Protocol / clangd
 .cache/
 compile_commands.json
@@ -109,4 +113,9 @@ __pycache__/
 .eggs/
 dist/
 .ipynb_checkpoints/
+
+# ============================================
+# Generated Documentation
+# ============================================
+docs/api/
 
