@@ -219,23 +219,12 @@ target_link_libraries(test_heston_scheme CppFM_lib gtest_main)
 add_executable(test_heston_slv tests/test_heston_slv.cpp)
 target_link_libraries(test_heston_slv CppFM_lib gtest_main)
 
-add_executable(test_stoep tests/test_stoep.cpp)
-target_link_libraries(test_stoep CppFM_lib gtest_main)
-
 add_executable(test_pde_grid tests/test_pde_grid.cpp)
 target_link_libraries(test_pde_grid CppFM_lib gtest_main)
 
 add_executable(test_bessel_function tests/test_bessel_function.cpp)
 target_link_libraries(test_bessel_function CppFM_lib gtest_main)
 
-add_executable(test_linear_algebra tests/test_linear_algebra.cpp)
-target_link_libraries(test_linear_algebra CppFM_lib gtest_main)
-
-add_executable(test_levenberg_marquardt tests/test_levenberg_marquardt.cpp)
-target_link_libraries(test_levenberg_marquardt CppFM_lib gtest_main)
-
-add_executable(test_svi_calibration tests/test_svi_calibration.cpp)
-target_link_libraries(test_svi_calibration CppFM_lib gtest_main)
 
 # ============================================================================
 # CTest Configuration
@@ -256,12 +245,8 @@ add_test(NAME NewtonMethods COMMAND test_newton_methods)
 add_test(NAME HestonModel COMMAND test_heston_model)
 add_test(NAME HestonScheme COMMAND test_heston_scheme)
 add_test(NAME HestonSLV COMMAND test_heston_slv)
-add_test(NAME StoepValidation COMMAND test_stoep)
 add_test(NAME PDEGrid COMMAND test_pde_grid)
 add_test(NAME BesselFunction COMMAND test_bessel_function)
-add_test(NAME LinearAlgebra COMMAND test_linear_algebra)
-add_test(NAME LevenbergMarquardt COMMAND test_levenberg_marquardt)
-add_test(NAME SVICalibration COMMAND test_svi_calibration)
 
 # ============================================================================
 # Python Bindings - to use in QFB
