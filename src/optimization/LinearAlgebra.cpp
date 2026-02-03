@@ -1,4 +1,5 @@
 #include <cppfm/optimization/LinearAlgebra.h>
+#include <algorithm>
 
 // ===========================================================================
 // Matrix Operations
