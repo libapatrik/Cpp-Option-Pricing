@@ -1,7 +1,7 @@
 #include <cppfm/optimization/Optimizer.h>
 #include <iostream>
 
-Matrix LevenbergMarquardt::numericalJacobian(ResidualFunc f, const std::vector<double>& x, double h)
+Matrix LevenbergMarquardt::numericalJacobian(ResidualFunc f, const std::vector<double> &x, double h)
 {
     size_t n = x.size();
     std::vector<double> xp = x, xm = x;
@@ -21,7 +21,8 @@ Matrix LevenbergMarquardt::numericalJacobian(ResidualFunc f, const std::vector<d
     xm[0] = x[0];
 
     // remaining columns
-    for (size_t j = 1; j < n; ++j) {
+    for (size_t j = 1; j < n; ++j)
+    {
         double hj = std::max(h, h * std::abs(x[j]));
         xp[j] = x[j] + hj;
         xm[j] = x[j] - hj;
@@ -35,31 +36,34 @@ Matrix LevenbergMarquardt::numericalJacobian(ResidualFunc f, const std::vector<d
     return J;
 }
 
-std::vector<double> LevenbergMarquardt::clamp(const std::vector<double>& x,
-    const std::vector<double>& lb,
-    const std::vector<double>& ub)
+std::vector<double> LevenbergMarquardt::clamp(const std::vector<double> &x,
+                                              const std::vector<double> &lb,
+                                              const std::vector<double> &ub)
 {
     std::vector<double> xc = x;
     clampInPlace(xc, lb, ub);
     return xc;
 }
 
-void LevenbergMarquardt::clampInPlace(std::vector<double>& x,
-    const std::vector<double>& lb,
-    const std::vector<double>& ub)
+void LevenbergMarquardt::clampInPlace(std::vector<double> &x,
+                                      const std::vector<double> &lb,
+                                      const std::vector<double> &ub)
 {
-    for (size_t i = 0; i < x.size(); ++i) {
-        if (!lb.empty()) x[i] = std::max(x[i], lb[i]);
-        if (!ub.empty()) x[i] = std::min(x[i], ub[i]);
+    for (size_t i = 0; i < x.size(); ++i)
+    {
+        if (!lb.empty())
+            x[i] = std::max(x[i], lb[i]);
+        if (!ub.empty())
+            x[i] = std::min(x[i], ub[i]);
     }
 }
 
 LMResult LevenbergMarquardt::solve(ResidualFunc residuals,
-    const std::vector<double>& x0,
-    const std::vector<double>& lb,
-    const std::vector<double>& ub,
-    JacobianFunc jacobian,
-    const LMOptions& opts)
+                                   const std::vector<double> &x0,
+                                   const std::vector<double> &lb,
+                                   const std::vector<double> &ub,
+                                   JacobianFunc jacobian,
+                                   const LMOptions &opts)
 {
     LMResult result;
     std::vector<double> x = clamp(x0, lb, ub);
@@ -77,7 +81,8 @@ LMResult LevenbergMarquardt::solve(ResidualFunc residuals,
     std::vector<double> delta(n);
     double xNorm = MatrixOps::norm2(x);
 
-    while (iter < opts.maxIter) {
+    while (iter < opts.maxIter)
+    {
         Matrix J = jacobian ? jacobian(x) : numericalJacobian(residuals, x);
 
         // compute J^T*J and -J^T*r directly without forming J^T
@@ -94,10 +99,13 @@ LMResult LevenbergMarquardt::solve(ResidualFunc residuals,
 
         // try Cholesky first (faster), fall back to SVD if not positive definite
         bool usedSVD = false;
-        try {
+        try
+        {
             auto L = Cholesky::decompose(JtJ);
             delta = Cholesky::solve(L, negJtr);
-        } catch (const std::runtime_error&) {
+        }
+        catch (const std::runtime_error &)
+        {
             // Cholesky failed, fall back to SVD
             auto svd = SVD::decompose(JtJ);
             delta = SVD::solve(svd, negJtr);
@@ -112,7 +120,8 @@ LMResult LevenbergMarquardt::solve(ResidualFunc residuals,
         auto rNew = residuals(xNew);
         double rNewNorm2 = MatrixOps::dot(rNew, rNew);
 
-        if (rNewNorm2 < rNorm2) {
+        if (rNewNorm2 < rNorm2)
+        {
             x = xNew;
             r = rNew;
             rNorm2 = rNewNorm2;
@@ -123,32 +132,39 @@ LMResult LevenbergMarquardt::solve(ResidualFunc residuals,
             double gradNorm = MatrixOps::norm2(Jtr);
             xNorm = MatrixOps::norm2(x);
 
-            if (opts.verbose) {
+            if (opts.verbose)
+            {
                 std::cout << "iter " << iter << ": ||r||^2 = " << rNorm2
                           << ", λ = " << lambda
                           << (usedSVD ? " (SVD)" : "") << "\n";
             }
 
-            if (stepNorm < opts.tol * (1.0 + xNorm)) {
+            if (stepNorm < opts.tol * (1.0 + xNorm))
+            {
                 result.converged = true;
                 result.message = "converged: step size below tolerance";
                 break;
             }
-            if (gradNorm < opts.gradTol) {
+            if (gradNorm < opts.gradTol)
+            {
                 result.converged = true;
                 result.message = "converged: gradient below tolerance";
                 break;
             }
-        } else {
+        }
+        else
+        {
             lambda *= opts.lambdaUp;
-            if (lambda > 1e16) {
+            if (lambda > 1e16)
+            {
                 result.converged = false;
                 result.message = "failed: lambda overflow";
                 break;
             }
         }
 
-        if (iter >= opts.maxIter && !result.converged) {
+        if (iter >= opts.maxIter && !result.converged)
+        {
             result.message = "stopped: max iterations reached";
         }
     }
