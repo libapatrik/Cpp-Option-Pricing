@@ -32,8 +32,7 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 # Fetch and build googletest
 FetchContent_MakeAvailable(googletest)
 
-# Make Google Test headers available for IDE indexing
-# This helps CLion find the headers for code completion and error checking
+# gtest headers for IDE indexing
 include_directories(${googletest_SOURCE_DIR}/googletest/include)
 include_directories(${googletest_SOURCE_DIR}/googlemock/include)
 
@@ -225,6 +224,11 @@ target_link_libraries(test_pde_grid CppFM_lib gtest_main)
 add_executable(test_bessel_function tests/test_bessel_function.cpp)
 target_link_libraries(test_bessel_function CppFM_lib gtest_main)
 
+add_executable(test_linear_algebra tests/test_linear_algebra.cpp)
+target_link_libraries(test_linear_algebra CppFM_lib gtest_main)
+
+add_executable(test_optimizer tests/test_optimizer.cpp)
+target_link_libraries(test_optimizer CppFM_lib gtest_main)
 
 # ============================================================================
 # CTest Configuration
@@ -247,6 +251,8 @@ add_test(NAME HestonScheme COMMAND test_heston_scheme)
 add_test(NAME HestonSLV COMMAND test_heston_slv)
 add_test(NAME PDEGrid COMMAND test_pde_grid)
 add_test(NAME BesselFunction COMMAND test_bessel_function)
+add_test(NAME LinearAlgebra COMMAND test_linear_algebra)
+add_test(NAME Optimizer COMMAND test_optimizer)
 
 # ============================================================================
 # Python Bindings - to use in QFB

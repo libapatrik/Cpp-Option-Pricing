@@ -1665,12 +1665,13 @@ TEST_F(StoepComparisonTest, ControlVariateVarianceReduction)
     HestonModel heston(S0, discountCurve, v0, kappa, vbar, sigma_v, rho);
 
     double T = 1.0;
-    double K = 1.0;  // ATM
+    double K = 1.0; // ATM
     auto times = createTimeGrid(T);
 
     // analytical Heston price via COS
     HestonCF hcf(kappa, vbar, sigma_v, rho, v0, r, T);
-    auto chf = [&hcf](double u) { return hcf(u); };
+    auto chf = [&hcf](double u)
+    { return hcf(u); };
     double hestonCOS = COSPricer::callPrice(S0, K, r, T, chf, 512, 15.0, std::sqrt(vbar));
     double df = discountCurve.discount(T);
     double hestonAnalytical = hestonCOS;
@@ -1692,7 +1693,8 @@ TEST_F(StoepComparisonTest, ControlVariateVarianceReduction)
     // also run plain MC for comparison
     auto terminals = slv.simulateAllPathsParallel();
     std::vector<double> plainPayoffs(nPaths);
-    for (size_t p = 0; p < nPaths; ++p) {
+    for (size_t p = 0; p < nPaths; ++p)
+    {
         plainPayoffs[p] = df * std::max(terminals[p].first - K, 0.0);
     }
     auto plainResult = MonteCarloResult::compute(plainPayoffs);
@@ -1729,10 +1731,12 @@ TEST_F(StoepComparisonTest, ControlVariateShowsVarianceReduction)
     double avgReduction = 0.0;
     size_t count = 0;
 
-    for (double K : {0.90, 0.95, 1.0, 1.05, 1.10}) {
+    for (double K : {0.90, 0.95, 1.0, 1.05, 1.10})
+    {
         // analytical Heston price
         HestonCF hcf(kappa, vbar, sigma_v, rho, v0, r, T);
-        auto chf = [&hcf](double u) { return hcf(u); };
+        auto chf = [&hcf](double u)
+        { return hcf(u); };
         double hestonPrice = COSPricer::callPrice(S0, K, r, T, chf, 512, 15.0, std::sqrt(vbar));
 
         // CV result
@@ -1741,7 +1745,8 @@ TEST_F(StoepComparisonTest, ControlVariateShowsVarianceReduction)
         // plain MC for comparison
         auto terminals = slv.simulateAllPathsParallel();
         std::vector<double> plainPayoffs(nPaths);
-        for (size_t p = 0; p < nPaths; ++p) {
+        for (size_t p = 0; p < nPaths; ++p)
+        {
             plainPayoffs[p] = df * std::max(terminals[p].first - K, 0.0);
         }
         auto plainResult = MonteCarloResult::compute(plainPayoffs);
@@ -1780,7 +1785,7 @@ TEST_F(StoepComparisonTest, MixingFactorInterpolation)
 
     double T = 1.0;
     auto times = createTimeGrid(T);
-    double K = 1.0;  // ATM
+    double K = 1.0; // ATM
     double df = discountCurve.discount(T);
 
     HestonModel heston(S0, discountCurve, v0, kappa, vbar, sigma_v, rho);
@@ -1789,7 +1794,8 @@ TEST_F(StoepComparisonTest, MixingFactorInterpolation)
     size_t nPaths = 20000;
     QEPathSimulator2D qe(times, heston, seed);
     double hestonSum = 0.0;
-    for (size_t p = 0; p < nPaths; ++p) {
+    for (size_t p = 0; p < nPaths; ++p)
+    {
         auto [path, var] = qe.paths();
         hestonSum += std::max(path.back() - K, 0.0);
     }
@@ -1804,13 +1810,15 @@ TEST_F(StoepComparisonTest, MixingFactorInterpolation)
     std::vector<double> etas = {0.0, 0.25, 0.5, 0.75, 1.0};
     std::vector<double> slvPrices;
 
-    for (double eta : etas) {
+    for (double eta : etas)
+    {
         HestonSLVPathSimulator2D simulator(heston, times, nPaths, numBins, seed);
         simulator.setMixingFactor(eta);
 
         auto terminals = simulator.simulateAllPathsParallel();
         double payoffSum = 0.0;
-        for (const auto& [S_T, V_T] : terminals) {
+        for (const auto &[S_T, V_T] : terminals)
+        {
             payoffSum += std::max(S_T - K, 0.0);
         }
         double slvPrice = df * payoffSum / nPaths;
@@ -1831,4 +1839,3 @@ TEST_F(StoepComparisonTest, MixingFactorInterpolation)
     // η=1 SLV should be close to pure Heston (within ~100bp MC noise + discretization error)
     EXPECT_LT(eta1Error, 150.0) << "η=1 SLV should match pure Heston when using Heston-consistent local vol";
 }
-

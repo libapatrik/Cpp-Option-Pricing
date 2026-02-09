@@ -106,8 +106,8 @@ private:
     // diagonalize bidiagonal matrix via implicit QR
     static void diagonalize(Matrix &U, std::vector<double> &d, std::vector<double> &e, Matrix &V);
 
-    // Givens rotation
-    static void givens(double a, double b, double &c, double &s);
+    // Givens rotation, returns radius r = sqrt(a^2 + b^2)
+    static void givens(double a, double b, double &c, double &s, double &r);
 
     SVD() = delete;
 };

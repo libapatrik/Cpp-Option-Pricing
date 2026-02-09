@@ -1,8 +1,8 @@
 /**
     Optimizer
+    - Gradient Descent (backtracking Armijo)
+    - L-BFGS (Nocedal & Wright Ch. 7)
     - Levenberg-Marquardt
-    - Trust region
-
 */
 
 #ifndef CPPFM_OPTIMIZER_H
@@ -13,12 +13,46 @@
 #include <string>
 #include <vector>
 
+// ---- function types ----
+
+using ResidualFunc = std::function<std::vector<double>(const std::vector<double>&)>;
+using JacobianFunc = std::function<Matrix(const std::vector<double>&)>;
+using ObjectiveFunc = std::function<double(const std::vector<double>&)>;
+using GradientFunc = std::function<std::vector<double>(const std::vector<double>&)>;
+
+// ---- result structs ----
+
+struct OptResult {
+    std::vector<double> params;
+    double finalValue = 0.0;
+    int iterations = 0;
+    bool converged = false;
+    std::string message;
+};
+
 struct LMResult {
     std::vector<double> params;
-    double finalResidual;
-    int iterations;
-    bool converged;
+    double finalResidual = 0.0;
+    int iterations = 0;
+    bool converged = false;
     std::string message;
+};
+
+// ---- options ----
+
+struct GDOptions {
+    double tol = 1e-8;
+    double gradTol = 1e-10;
+    int maxIter = 10000;
+    bool verbose = false;
+};
+
+struct LBFGSOptions {
+    double tol = 1e-8;
+    double gradTol = 1e-10;
+    int maxIter = 1000;
+    int memory = 10;
+    bool verbose = false;
 };
 
 struct LMOptions {
@@ -31,20 +65,36 @@ struct LMOptions {
     bool verbose = false;
 };
 
-using ResidualFunc = std::function<std::vector<double>(const std::vector<double>&)>;
-using JacobianFunc = std::function<Matrix(const std::vector<double>&)>;
+// ---- Gradient Descent ----
+
+class GradientDescent {
+public:
+    OptResult solve(ObjectiveFunc f, GradientFunc grad,
+        const std::vector<double>& x0,
+        const GDOptions& opts = {});
+};
+
+// ---- L-BFGS ----
+
+class LBFGS {
+public:
+    OptResult solve(ObjectiveFunc f, GradientFunc grad,
+        const std::vector<double>& x0,
+        const LBFGSOptions& opts = {});
+};
+
+// ---- Levenberg-Marquardt ----
 
 class LevenbergMarquardt {
 public:
-    LMResult solve(ResidualFunc residuals, 
-        const std::vector<double>& x0, 
-        const std::vector<double>& lb = {}, 
-        const std::vector<double>& ub = {}, 
-        JacobianFunc jacobian = nullptr, 
+    LMResult solve(ResidualFunc residuals,
+        const std::vector<double>& x0,
+        const std::vector<double>& lb = {},
+        const std::vector<double>& ub = {},
+        JacobianFunc jacobian = nullptr,
         const LMOptions& opts = {});
 
 private:
-    // central differences for O(h2) accuracy
     Matrix numericalJacobian(ResidualFunc f, const std::vector<double>& x, double h = 1e-7);
     std::vector<double> clamp(const std::vector<double>& x,
         const std::vector<double>& lb,
@@ -53,6 +103,5 @@ private:
         const std::vector<double>& lb,
         const std::vector<double>& ub);
 };
-
 
 #endif

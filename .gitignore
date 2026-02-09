@@ -25,6 +25,7 @@ compile_commands.json
 # ============================================
 # Build directories
 build/
+build_asan/
 build_test/
 build_qfb/
 build_venv/

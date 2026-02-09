@@ -1,5 +1,219 @@
 #include <cppfm/optimization/Optimizer.h>
+#include <deque>
 #include <iostream>
+
+// ============================================================================
+// backtracking line search (Armijo condition)
+// ============================================================================
+
+static double backtrack(ObjectiveFunc f, const std::vector<double>& x,
+                        const std::vector<double>& d, double fx,
+                        const std::vector<double>& g,
+                        double c1 = 1e-4, double shrink = 0.5)
+{
+    double alpha = 1.0;
+    double slope = MatrixOps::dot(g, d);
+    size_t n = x.size();
+    std::vector<double> xTry(n);
+
+    for (int i = 0; i < 60; ++i)
+    {
+        for (size_t j = 0; j < n; ++j)
+            xTry[j] = x[j] + alpha * d[j];
+        if (f(xTry) <= fx + c1 * alpha * slope)
+            return alpha;
+        alpha *= shrink;
+    }
+    return alpha;
+}
+
+// ============================================================================
+// Gradient Descent
+// ============================================================================
+
+OptResult GradientDescent::solve(ObjectiveFunc f, GradientFunc grad,
+                                 const std::vector<double>& x0,
+                                 const GDOptions& opts)
+{
+    OptResult result;
+    result.converged = false;
+    size_t n = x0.size();
+    std::vector<double> x = x0;
+    double fx = f(x);
+
+    for (int iter = 0; iter < opts.maxIter; ++iter)
+    {
+        auto g = grad(x);
+        double gNorm = MatrixOps::norm2(g);
+
+        if (gNorm < opts.gradTol)
+        {
+            result.converged = true;
+            result.message = "converged: gradient below tolerance";
+            result.iterations = iter;
+            break;
+        }
+
+        // steepest descent direction
+        std::vector<double> d(n);
+        for (size_t i = 0; i < n; ++i)
+            d[i] = -g[i];
+
+        double alpha = backtrack(f, x, d, fx, g);
+
+        // step
+        double stepNorm2 = 0;
+        for (size_t i = 0; i < n; ++i)
+        {
+            double si = alpha * d[i];
+            x[i] += si;
+            stepNorm2 += si * si;
+        }
+        fx = f(x);
+        result.iterations = iter + 1;
+
+        if (opts.verbose)
+            std::cout << "GD iter " << result.iterations
+                      << ": f = " << fx << ", ||g|| = " << gNorm << "\n";
+
+        if (std::sqrt(stepNorm2) < opts.tol * (1.0 + MatrixOps::norm2(x)))
+        {
+            result.converged = true;
+            result.message = "converged: step size below tolerance";
+            break;
+        }
+    }
+
+    result.params = x;
+    result.finalValue = fx;
+    if (!result.converged)
+        result.message = "stopped: max iterations reached";
+    return result;
+}
+
+// ============================================================================
+// L-BFGS (two-loop recursion, Nocedal & Wright Algorithm 7.4)
+// ============================================================================
+
+OptResult LBFGS::solve(ObjectiveFunc f, GradientFunc grad,
+                       const std::vector<double>& x0,
+                       const LBFGSOptions& opts)
+{
+    OptResult result;
+    result.converged = false;
+    size_t n = x0.size();
+    std::vector<double> x = x0;
+    double fx = f(x);
+    auto g = grad(x);
+
+    // (s,y) pair storage
+    std::deque<std::vector<double>> S, Y;
+    std::deque<double> rho;
+
+    for (int iter = 0; iter < opts.maxIter; ++iter)
+    {
+        double gNorm = MatrixOps::norm2(g);
+        if (gNorm < opts.gradTol)
+        {
+            result.converged = true;
+            result.message = "converged: gradient below tolerance";
+            result.iterations = iter;
+            break;
+        }
+
+        // --- two-loop recursion ---
+        int m = static_cast<int>(S.size());
+        std::vector<double> q = g;
+        std::vector<double> alphas(m);
+
+        // first loop: newest → oldest
+        for (int i = m - 1; i >= 0; --i)
+        {
+            alphas[i] = rho[i] * MatrixOps::dot(S[i], q);
+            MatrixOps::axpy(-alphas[i], Y[i], q);
+        }
+
+        // H0 scaling: γ = s^T y / y^T y
+        double gamma = 1.0;
+        if (m > 0)
+            gamma = MatrixOps::dot(S.back(), Y.back()) /
+                    MatrixOps::dot(Y.back(), Y.back());
+
+        std::vector<double> r = q;
+        MatrixOps::scale(gamma, r);
+
+        // second loop: oldest → newest
+        for (int i = 0; i < m; ++i)
+        {
+            double beta = rho[i] * MatrixOps::dot(Y[i], r);
+            MatrixOps::axpy(alphas[i] - beta, S[i], r);
+        }
+
+        // d = -H*g
+        MatrixOps::scale(-1.0, r);
+
+        // line search
+        double alpha = backtrack(f, x, r, fx, g);
+
+        // update x
+        std::vector<double> s(n), xNew(n);
+        for (size_t i = 0; i < n; ++i)
+        {
+            s[i] = alpha * r[i];
+            xNew[i] = x[i] + s[i];
+        }
+        double fNew = f(xNew);
+        auto gNew = grad(xNew);
+
+        // curvature pair
+        std::vector<double> y(n);
+        for (size_t i = 0; i < n; ++i)
+            y[i] = gNew[i] - g[i];
+
+        double ys = MatrixOps::dot(y, s);
+        if (ys > 1e-10)
+        {
+            S.push_back(s);
+            Y.push_back(y);
+            rho.push_back(1.0 / ys);
+            if (static_cast<int>(S.size()) > opts.memory)
+            {
+                S.pop_front();
+                Y.pop_front();
+                rho.pop_front();
+            }
+        }
+
+        double stepNorm = MatrixOps::norm2(s);
+        double xNorm = MatrixOps::norm2(xNew);
+
+        x = xNew;
+        fx = fNew;
+        g = gNew;
+        result.iterations = iter + 1;
+
+        if (opts.verbose)
+            std::cout << "LBFGS iter " << result.iterations
+                      << ": f = " << fx << ", ||g|| = " << MatrixOps::norm2(g) << "\n";
+
+        if (stepNorm < opts.tol * (1.0 + xNorm))
+        {
+            result.converged = true;
+            result.message = "converged: step size below tolerance";
+            break;
+        }
+    }
+
+    result.params = x;
+    result.finalValue = fx;
+    if (!result.converged)
+        result.message = "stopped: max iterations reached";
+    return result;
+}
+
+// ============================================================================
+// Levenberg-Marquardt
+// ============================================================================
 
 Matrix LevenbergMarquardt::numericalJacobian(ResidualFunc f, const std::vector<double> &x, double h)
 {
@@ -51,9 +265,9 @@ void LevenbergMarquardt::clampInPlace(std::vector<double> &x,
 {
     for (size_t i = 0; i < x.size(); ++i)
     {
-        if (!lb.empty())
+        if (!lb.empty() && lb.size() == x.size())
             x[i] = std::max(x[i], lb[i]);
-        if (!ub.empty())
+        if (!ub.empty() && ub.size() == x.size())
             x[i] = std::min(x[i], ub[i]);
     }
 }
@@ -74,61 +288,69 @@ LMResult LevenbergMarquardt::solve(ResidualFunc residuals,
 
     double lambda = opts.lambda0;
     int iter = 0;
+    int totalIter = 0;
 
-    // pre-allocate workspace to avoid per-iteration allocations
+    // pre-allocate workspace
     std::vector<double> xNew(n);
     std::vector<double> negJtr(n);
     std::vector<double> delta(n);
+    std::vector<double> actualStep(n);
     double xNorm = MatrixOps::norm2(x);
 
-    while (iter < opts.maxIter)
-    {
-        Matrix J = jacobian ? jacobian(x) : numericalJacobian(residuals, x);
+    // compute initial Jacobian and normal equations
+    Matrix J = jacobian ? jacobian(x) : numericalJacobian(residuals, x);
+    auto JtJ = MatrixOps::multiplyAtA(J);
+    auto Jtr = MatrixOps::multiplyAtb(J, r);
 
-        // compute J^T*J and -J^T*r directly without forming J^T
-        auto JtJ = MatrixOps::multiplyAtA(J);
-        auto Jtr = MatrixOps::multiplyAtb(J, r);
+    while (iter < opts.maxIter && totalIter < 10 * opts.maxIter)
+    {
+        ++totalIter;
 
         // (J^T*J + λI) * δ = -J^T*r
+        // work on a copy so we can retry with different λ
+        auto JtJ_aug = JtJ;
         for (size_t i = 0; i < n; ++i)
-            JtJ[i][i] += lambda;
+            JtJ_aug[i][i] += lambda;
 
-        // negate Jtr in place
         for (size_t i = 0; i < n; ++i)
             negJtr[i] = -Jtr[i];
 
-        // try Cholesky first (faster), fall back to SVD if not positive definite
+        // Cholesky first, SVD fallback
         bool usedSVD = false;
         try
         {
-            auto L = Cholesky::decompose(JtJ);
+            auto L = Cholesky::decompose(JtJ_aug);
             delta = Cholesky::solve(L, negJtr);
         }
         catch (const std::runtime_error &)
         {
-            // Cholesky failed, fall back to SVD
-            auto svd = SVD::decompose(JtJ);
+            auto svd = SVD::decompose(JtJ_aug);
             delta = SVD::solve(svd, negJtr);
             usedSVD = true;
         }
 
-        // xNew = x + delta, then clamp in place
+        // trial point
         for (size_t i = 0; i < n; ++i)
             xNew[i] = x[i] + delta[i];
         clampInPlace(xNew, lb, ub);
+
+        // actual step after clamping
+        for (size_t i = 0; i < n; ++i)
+            actualStep[i] = xNew[i] - x[i];
 
         auto rNew = residuals(xNew);
         double rNewNorm2 = MatrixOps::dot(rNew, rNew);
 
         if (rNewNorm2 < rNorm2)
         {
+            // accept step
             x = xNew;
             r = rNew;
             rNorm2 = rNewNorm2;
             lambda *= opts.lambdaDown;
             ++iter;
 
-            double stepNorm = MatrixOps::norm2(delta);
+            double stepNorm = MatrixOps::norm2(actualStep);
             double gradNorm = MatrixOps::norm2(Jtr);
             xNorm = MatrixOps::norm2(x);
 
@@ -151,9 +373,15 @@ LMResult LevenbergMarquardt::solve(ResidualFunc residuals,
                 result.message = "converged: gradient below tolerance";
                 break;
             }
+
+            // recompute Jacobian at new x
+            J = jacobian ? jacobian(x) : numericalJacobian(residuals, x);
+            JtJ = MatrixOps::multiplyAtA(J);
+            Jtr = MatrixOps::multiplyAtb(J, r);
         }
         else
         {
+            // reject step, increase damping (J unchanged, skip recompute)
             lambda *= opts.lambdaUp;
             if (lambda > 1e16)
             {
@@ -162,12 +390,10 @@ LMResult LevenbergMarquardt::solve(ResidualFunc residuals,
                 break;
             }
         }
-
-        if (iter >= opts.maxIter && !result.converged)
-        {
-            result.message = "stopped: max iterations reached";
-        }
     }
+
+    if (!result.converged && result.message.empty())
+        result.message = "stopped: max iterations reached";
 
     result.params = x;
     result.finalResidual = rNorm2;

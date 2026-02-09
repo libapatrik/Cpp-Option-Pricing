@@ -34,8 +34,10 @@ Matrix MatrixOps::multiply(const Matrix &A, const Matrix &B)
 
     Matrix C = zeros(m, n);
     // i-l-j order for cache efficiency: B[l][j] now contiguous
-    for (size_t i = 0; i < m; ++i) {
-        for (size_t l = 0; l < k; ++l) {
+    for (size_t i = 0; i < m; ++i)
+    {
+        for (size_t l = 0; l < k; ++l)
+        {
             double a_il = A[i][l];
             for (size_t j = 0; j < n; ++j)
                 C[i][j] += a_il * B[l][j];
@@ -55,8 +57,10 @@ Matrix MatrixOps::transpose(const Matrix &A)
 
     // blocked transpose for cache efficiency on larger matrices
     constexpr size_t BLOCK = 8;
-    for (size_t ii = 0; ii < m; ii += BLOCK) {
-        for (size_t jj = 0; jj < n; jj += BLOCK) {
+    for (size_t ii = 0; ii < m; ii += BLOCK)
+    {
+        for (size_t jj = 0; jj < n; jj += BLOCK)
+        {
             size_t i_end = std::min(ii + BLOCK, m);
             size_t j_end = std::min(jj + BLOCK, n);
             for (size_t i = ii; i < i_end; ++i)
@@ -121,13 +125,16 @@ Matrix MatrixOps::zeros(size_t m, size_t n)
 Matrix MatrixOps::multiplyAtA(const Matrix &A)
 {
     size_t m = A.size();
-    if (m == 0) return {};
+    if (m == 0)
+        return {};
     size_t n = A[0].size();
 
     Matrix C = zeros(n, n);
     // only compute upper triangle, then mirror
-    for (size_t i = 0; i < n; ++i) {
-        for (size_t j = i; j < n; ++j) {
+    for (size_t i = 0; i < n; ++i)
+    {
+        for (size_t j = i; j < n; ++j)
+        {
             double sum = 0.0;
             for (size_t k = 0; k < m; ++k)
                 sum += A[k][i] * A[k][j];
@@ -141,7 +148,8 @@ Matrix MatrixOps::multiplyAtA(const Matrix &A)
 std::vector<double> MatrixOps::multiplyAtb(const Matrix &A, const std::vector<double> &b)
 {
     size_t m = A.size();
-    if (m == 0) return {};
+    if (m == 0)
+        return {};
     size_t n = A[0].size();
 
     std::vector<double> y(n, 0.0);
@@ -252,7 +260,8 @@ QRResult QR::decompose(const Matrix &A)
             norm += R[i][j] * R[i][j];
         norm = std::sqrt(norm);
 
-        if (norm < 1e-15) {
+        if (norm < 1e-15)
+        {
             tau[j] = 0.0;
             continue;
         }
@@ -278,7 +287,7 @@ QRResult QR::decompose(const Matrix &A)
                 R[i][c] -= R[i][j] * dot;
         }
 
-        R[j][j] = -sign * norm;  // diagonal of R
+        R[j][j] = -sign * norm; // diagonal of R
     }
 
     return {std::move(R), std::move(tau)};
@@ -294,7 +303,8 @@ std::vector<double> QR::applyQT(const QRResult &qr, const std::vector<double> &b
 
     for (size_t j = 0; j < k; ++j)
     {
-        if (std::abs(qr.tau[j]) < 1e-15) continue;
+        if (std::abs(qr.tau[j]) < 1e-15)
+            continue;
 
         double dot = c[j];
         for (size_t i = j + 1; i < m; ++i)
@@ -319,7 +329,8 @@ std::vector<double> QR::applyQ(const QRResult &qr, const std::vector<double> &x)
 
     for (int j = static_cast<int>(k) - 1; j >= 0; --j)
     {
-        if (std::abs(qr.tau[j]) < 1e-15) continue;
+        if (std::abs(qr.tau[j]) < 1e-15)
+            continue;
 
         double dot = y[j];
         for (size_t i = j + 1; i < m; ++i)
@@ -388,9 +399,8 @@ SVDResult SVD::decompose(const Matrix &A)
     std::vector<size_t> idx(d.size());
     for (size_t i = 0; i < d.size(); ++i)
         idx[i] = i;
-    std::sort(idx.begin(), idx.end(), [&](size_t a, size_t b) {
-        return std::abs(d[a]) > std::abs(d[b]);
-    });
+    std::sort(idx.begin(), idx.end(), [&](size_t a, size_t b)
+              { return std::abs(d[a]) > std::abs(d[b]); });
 
     SVDResult result;
     result.sigma.resize(d.size());
@@ -524,7 +534,7 @@ void SVD::bidiagonalize(const Matrix &A, Matrix &U, std::vector<double> &d, std:
     {
         if (std::abs(U[j][j]) > 1e-15)
         {
-            for (size_t c = j; c < k; ++c)  // only k columns, not m
+            for (size_t c = j; c < k; ++c) // only k columns, not m
             {
                 double s = 0.0;
                 for (size_t i = j; i < m; ++i)
@@ -540,6 +550,7 @@ void SVD::bidiagonalize(const Matrix &A, Matrix &U, std::vector<double> &d, std:
 
 void SVD::diagonalize(Matrix &U, std::vector<double> &d, std::vector<double> &e, Matrix &V)
 {
+    // Golub-Kahan implicit QR for bidiagonal SVD
     size_t n = d.size();
     if (n == 0)
         return;
@@ -547,18 +558,18 @@ void SVD::diagonalize(Matrix &U, std::vector<double> &d, std::vector<double> &e,
     const int maxIter = 50 * static_cast<int>(n);
     int iter = 0;
 
-    for (size_t kk = n; kk > 0; )
+    for (size_t kk = n; kk > 0;)
     {
         size_t k = kk - 1;
 
-        // find block
+        // find active block [l, k] where e[l-1] is negligible
         size_t l = k;
         while (l > 0 && std::abs(e[l - 1]) > 1e-15 * (std::abs(d[l - 1]) + std::abs(d[l])))
             --l;
 
         if (l == k)
         {
-            // converged
+            // singular value converged
             if (d[k] < 0)
             {
                 d[k] = -d[k];
@@ -572,66 +583,92 @@ void SVD::diagonalize(Matrix &U, std::vector<double> &d, std::vector<double> &e,
         if (++iter > maxIter)
             throw std::runtime_error("SVD failed to converge after " + std::to_string(maxIter) + " iterations");
 
-        // QR step with Wilkinson shift
-        double shift = d[k];
-        double g = (d[k - 1] - shift) / (2.0 * e[k - 1]);
-        double r = std::sqrt(g * g + 1.0);
-        g = d[l] - shift + e[l] / (g + (g >= 0 ? r : -r));
+        // Wilkinson shift from trailing 2x2 of B^T*B
+        double e_km2_sq = (k >= 2 && l < k - 1) ? e[k - 2] * e[k - 2] : 0.0;
+        double t11 = d[k - 1] * d[k - 1] + e_km2_sq;
+        double t22 = d[k] * d[k] + e[k - 1] * e[k - 1];
+        double t12 = d[k - 1] * e[k - 1];
 
-        double c = 1.0;
-        double s = 1.0;
-        double p = 0.0;
+        double mu = (t11 - t22) / 2.0;
+        double shift = t22 - t12 * t12 / (mu + (mu >= 0 ? 1 : -1) * std::sqrt(mu * mu + t12 * t12));
+
+        // initial bulge
+        double y = d[l] * d[l] - shift;
+        double z = d[l] * e[l];
 
         for (size_t i = l; i < k; ++i)
         {
-            double f = s * e[i];
-            double b = c * e[i];
+            double c, s, r;
 
-            givens(g, f, c, s);
+            // RIGHT Givens rotation (on columns of B)
+            givens(y, z, c, s, r);
             if (i > l)
-                e[i - 1] = std::sqrt(g * g + f * f);
+                e[i - 1] = r;
 
-            g = d[i] - p;
-            r = (d[i + 1] - g) * s + 2.0 * c * b;
-            p = s * r;
-            d[i] = g + p;
-            g = c * r - b;
+            double f = c * d[i] + s * e[i];
+            e[i] = -s * d[i] + c * e[i];
+            double g = s * d[i + 1];
+            d[i + 1] = c * d[i + 1];
 
+            // accumulate in V
             for (size_t j = 0; j < V.size(); ++j)
             {
-                double t = V[j][i + 1];
-                V[j][i + 1] = s * V[j][i] + c * t;
-                V[j][i] = c * V[j][i] - s * t;
+                double t = V[j][i];
+                V[j][i] = c * t + s * V[j][i + 1];
+                V[j][i + 1] = -s * t + c * V[j][i + 1];
             }
+
+            // LEFT Givens rotation (on rows of B)
+            givens(f, g, c, s, r);
+            d[i] = r;
+
+            f = c * e[i] + s * d[i + 1];
+            d[i + 1] = -s * e[i] + c * d[i + 1];
+
+            if (i < k - 1)
+            {
+                g = s * e[i + 1];
+                e[i + 1] = c * e[i + 1];
+            }
+
+            // accumulate in U
             for (size_t j = 0; j < U.size(); ++j)
             {
-                double t = U[j][i + 1];
-                U[j][i + 1] = s * U[j][i] + c * t;
-                U[j][i] = c * U[j][i] - s * t;
+                double t = U[j][i];
+                U[j][i] = c * t + s * U[j][i + 1];
+                U[j][i + 1] = -s * t + c * U[j][i + 1];
             }
+
+            // setup next iteration
+            y = f;
+            z = (i < k - 1) ? g : 0.0;
         }
-        d[k] -= p;
-        e[k - 1] = g;
+
+        e[k - 1] = y;
     }
 }
 
-void SVD::givens(double a, double b, double &c, double &s)
+void SVD::givens(double a, double b, double &c, double &s, double &r)
 {
+    // Givens rotation to zero b in [a; b], returns r = sqrt(a^2 + b^2)
     if (std::abs(b) < 1e-15)
     {
         c = 1.0;
         s = 0.0;
+        r = std::abs(a);
     }
     else if (std::abs(b) > std::abs(a))
     {
-        double t = -a / b;
-        s = 1.0 / std::sqrt(1.0 + t * t);
+        double t = a / b;
+        r = std::abs(b) * std::sqrt(1.0 + t * t);
+        s = (b >= 0 ? 1.0 : -1.0) / std::sqrt(1.0 + t * t);
         c = s * t;
     }
     else
     {
-        double t = -b / a;
-        c = 1.0 / std::sqrt(1.0 + t * t);
+        double t = b / a;
+        r = std::abs(a) * std::sqrt(1.0 + t * t);
+        c = (a >= 0 ? 1.0 : -1.0) / std::sqrt(1.0 + t * t);
         s = c * t;
     }
 }
@@ -642,10 +679,13 @@ void SVD::givens(double a, double b, double &c, double &s)
 
 std::vector<double> LeastSquares::solve(const Matrix &A, const std::vector<double> &b, Method method, double svdTol)
 {
-    if (method == Method::QR) {
+    if (method == Method::QR)
+    {
         auto qr = QR::decompose(A);
         return QR::solve(qr, b);
-    } else {
+    }
+    else
+    {
         auto svd = SVD::decompose(A);
         return SVD::solve(svd, b, svdTol);
     }
