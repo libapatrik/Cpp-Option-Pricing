@@ -256,7 +256,9 @@ double VolatilitySurface::computeDupireLocalVolatility(double spot, double time)
      * 4. Uses Black-Scholes d1 and d2 parameters for proper weighting
      */
     
-    double strike = spot; // S = K; for local volatility at current spot level
+    double strike = spot; // local vol at this strike level
+    // use initial spot for d1 if set, otherwise degenerate to strike=spot (d1 loses ln(S/K) term)
+    double spotForD1 = (_initialSpot > 0.0) ? _initialSpot : spot;
     
     // LECTURE NOTES: Use DiscountCurve properly for time-dependent rates
     // For time-dependent rates, we need the instantaneous rate r(t) at time t
@@ -296,7 +298,7 @@ double VolatilitySurface::computeDupireLocalVolatility(double spot, double time)
     }
     
     double volSqrtTime = impliedVol * std::sqrt(time);
-    double d1 = (std::log(spot / strike) + (riskFreeRate + 0.5 * impliedVol * impliedVol) * time) / volSqrtTime;
+    double d1 = (std::log(spotForD1 / strike) + (riskFreeRate + 0.5 * impliedVol * impliedVol) * time) / volSqrtTime;
     double d2 = d1 - volSqrtTime;
     
     // Compute the numerator: 1 + 2T/σ* × (∂σ*/∂T + r×K×∂σ*/∂K)
@@ -322,18 +324,9 @@ double VolatilitySurface::computeDupireLocalVolatility(double spot, double time)
         throw std::runtime_error("Dupire: Non-finite values detected at K=" + 
                                 std::to_string(strike) + ", T=" + std::to_string(time));
     }
-    // TODO: Add arbitrage checks for the surface + tests
-    // Check for negative denominator (potential arbitrage)
-    if (denominator <= 0.0) {
-        // WARNING: This indicates potential arbitrage in the implied volatility surface
-        // Apply correction: use absolute value and continue with warning
-        denominator = std::abs(denominator);
-    }
-
-    // Check for negative numerator
-    if (numerator < 0.0) {
-        // Apply correction: use absolute value
-        numerator = std::abs(numerator);
+    // negative denominator or numerator => surface has arbitrage, local vol undefined
+    if (denominator <= 0.0 || numerator < 0.0) {
+        return impliedVol;
     }
     
     // Apply the Dupire formula
@@ -451,10 +444,12 @@ std::pair<std::pair<double, double>, std::pair<double, double>> VolatilitySurfac
 
 std::unique_ptr<VolatilitySurface> VolatilitySurface::clone() const
 {
-    return std::make_unique<VolatilitySurface>(_strikes, _maturities, _volatilities, 
-                                 *_discountCurve, 
-                                 _smileInterpolationType, 
+    auto copy = std::make_unique<VolatilitySurface>(_strikes, _maturities, _volatilities,
+                                 *_discountCurve,
+                                 _smileInterpolationType,
                                  _maturityInterpolationType);
+    copy->_initialSpot = _initialSpot;
+    return copy;
 }
 
 bool VolatilitySurface::operator==(const VolatilitySurface& other) const
@@ -514,32 +509,121 @@ VolatilitySurfaceBuilder& VolatilitySurfaceBuilder::setMaturityInterpolationType
 }
 
 VolatilitySurfaceBuilder& VolatilitySurfaceBuilder::setDiscountCurve(const DiscountCurve& discountCurve)
-{ // Set the discount curve for forward moneyness interpolation
-    _discountCurve = std::unique_ptr<DiscountCurve>(discountCurve.clone()); 
-    // Clone the discount curve on the heap to avoid memory leaks
-    // unique_ptr is a smart pointer that automatically deletes the object when it goes out of scope
-    // if something goes wrong, the object will be deleted automatically - so no need to delete manually
+{
+    _discountCurve = std::unique_ptr<DiscountCurve>(discountCurve.clone());
+    return *this;
+}
+
+VolatilitySurfaceBuilder& VolatilitySurfaceBuilder::setInitialSpot(double spot)
+{
+    _initialSpot = spot;
     return *this;
 }
 
 std::unique_ptr<VolatilitySurface> VolatilitySurfaceBuilder::build()
 {
-    sortAndDeduplicate();       // Sort strikes/maturities and remove duplicates
-    buildVolatilityMatrix();    // Build the volatility matrix
-    
-    if (!_discountCurve) { // Check: if no discount curve was set, use a default flat discount curve
-        _discountCurve = std::make_unique<FlatDiscountCurve>(0.05);  // Default 5% rate
-        // make_unique creates object FlatDiscountCurve on the heap and sets the unique_ptr to it
-        // If FlatDiscountCurve throws an exception, the object will be deleted automatically - so no need to delete manually
+    sortAndDeduplicate();
+    buildVolatilityMatrix();
+
+    if (!_discountCurve) {
+        _discountCurve = std::make_unique<FlatDiscountCurve>(0.05);
     }
 
-    // Create the volatility surface
-    // make_unique creates object VolatilitySurface on the heap and sets the unique_ptr to it
-    // If VolatilitySurface throws an exception, the object will be deleted automatically - so no need to delete manually
-    return std::make_unique<VolatilitySurface>(_strikes, _maturities, _volatilities, *_discountCurve, 
-                                               _smileInterpolationType, _maturityInterpolationType);
-    // here we dereference the unique_ptr to get the actual DiscountCurve object
-    // returns unique_ptr to the VolatilitySurface object - the caller owns the surface
+    // run arbitrage checks before constructing surface
+    _diagnostics.clear();
+    // & not && — run both checks to collect all diagnostics
+    bool clean = checkCalendarArbitrage() & checkButterflyArbitrage();
+    if (!clean) return nullptr;
+
+    auto surface = std::make_unique<VolatilitySurface>(_strikes, _maturities, _volatilities, *_discountCurve,
+                                                       _smileInterpolationType, _maturityInterpolationType);
+    surface->_initialSpot = _initialSpot;
+    return surface;
+}
+
+bool VolatilitySurfaceBuilder::checkCalendarArbitrage()
+{
+    // total variance w(T,K) = sigma^2 * T must be non-decreasing in T at every strike
+    bool clean = true;
+    for (size_t i = 0; i + 1 < _maturities.size(); ++i) {
+        for (size_t j = 0; j < _strikes.size(); ++j) {
+            double w1 = _volatilities[i][j] * _volatilities[i][j] * _maturities[i];
+            double w2 = _volatilities[i+1][j] * _volatilities[i+1][j] * _maturities[i+1];
+            if (w2 < w1 - 1e-12) {
+                _diagnostics.push_back({(int)i, (int)j, w2 - w1, "calendar"});
+                clean = false;
+            }
+        }
+    }
+    return clean;
+}
+
+bool VolatilitySurfaceBuilder::checkButterflyArbitrage()
+{
+    // Gatheral density g(k) >= 0 required for no butterfly arbitrage
+    // g(k) = (1 - k*w'/(2w))^2 - (w')^2/4 * (1/w + 1/4) + w''/2
+    // where w(k) = sigma^2 * T is total variance in log-moneyness k = ln(K/F)
+
+    constexpr double tol = -1e-6;
+    constexpr int nPoints = 50;
+    bool clean = true;
+
+    for (size_t i = 0; i < _maturities.size(); ++i) {
+        double T = _maturities[i];
+        if (T < 1e-12) continue;
+
+        // build interpolator for this slice (IV vs strike)
+        std::unique_ptr<InterpolationScheme> smileInterp;
+        if (_smileInterpolationType == VolatilitySurface::SmileInterpolationType::CubicSpline) {
+            smileInterp = std::make_unique<CubicSplineInterpolation>(
+                _strikes, _volatilities[i], CubicSplineInterpolation::BoundaryType::Natural);
+        } else {
+            smileInterp = std::make_unique<LinearInterpolation>(_strikes, _volatilities[i]);
+        }
+
+        // total variance as function of log-moneyness
+        // use ATM strike as reference (mid of grid)
+        double Kref = _strikes[_strikes.size() / 2];
+        auto w = [&](double k) {
+            double K = Kref * std::exp(k);
+            double vol = (*smileInterp)(K);
+            return vol * vol * T;
+        };
+
+        double kMin = std::log(_strikes.front() / Kref);
+        double kMax = std::log(_strikes.back() / Kref);
+        // shrink a bit to stay away from boundary derivatives
+        double margin = 0.05 * (kMax - kMin);
+        kMin += margin;
+        kMax -= margin;
+        if (kMin >= kMax) continue;
+
+        double dk = (kMax - kMin) / (nPoints - 1);
+        double h = std::max(dk * 0.5, 1e-4);
+
+        for (int p = 0; p < nPoints; ++p) {
+            double k = kMin + p * dk;
+            double wk = w(k);
+            if (wk < 1e-14) continue;
+
+            // inline central differences — NumericalDerivatives scales h by max(|x|,1)
+            // which is wrong here since k is log-moneyness (small values near 0)
+            double wkp = w(k + h);
+            double wkm = w(k - h);
+            double wp = (wkp - wkm) / (2.0 * h);
+            double wpp = (wkp - 2.0 * wk + wkm) / (h * h);
+
+            double term1 = 1.0 - k * wp / (2.0 * wk);
+            double g = term1 * term1 - (wp * wp / 4.0) * (1.0 / wk + 0.25) + wpp / 2.0;
+
+            if (g < tol) {
+                _diagnostics.push_back({(int)i, -1, g, "butterfly"});
+                clean = false;
+                break; // one violation per slice is enough
+            }
+        }
+    }
+    return clean;
 }
 
 void VolatilitySurfaceBuilder::sortAndDeduplicate()
@@ -554,22 +638,21 @@ void VolatilitySurfaceBuilder::sortAndDeduplicate()
 
 void VolatilitySurfaceBuilder::buildVolatilityMatrix()
 {
-    // Initialize volatility matrix with default values
     _volatilities.resize(_maturities.size());
     for (auto& row : _volatilities) {
-        row.resize(_strikes.size(), 0.2); // Default 20% volatility
+        row.resize(_strikes.size());
     }
-    
-    // Fill matrix from stored volatility map
-    // Matrix indexing: _volatilities[maturity_index][strike_index]
+
     for (size_t i = 0; i < _maturities.size(); ++i) {
         for (size_t j = 0; j < _strikes.size(); ++j) {
             auto key = std::make_pair(_strikes[j], _maturities[i]);
             auto it = _volatilityMap.find(key);
-            if (it != _volatilityMap.end()) {
-                _volatilities[i][j] = it->second; // Use stored volatility
+            if (it == _volatilityMap.end()) {
+                throw std::invalid_argument(
+                    "Missing volatility for K=" + std::to_string(_strikes[j]) +
+                    ", T=" + std::to_string(_maturities[i]));
             }
-            // Otherwise keep default value (0.2)
+            _volatilities[i][j] = it->second;
         }
     }
 }

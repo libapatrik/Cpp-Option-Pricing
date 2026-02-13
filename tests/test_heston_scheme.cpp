@@ -2,12 +2,12 @@
 // Test file for PathSimulator2D discretization schemes
 //
 
-#include <gtest/gtest.h>
-#include <cppfm/simulators/PathSimulator2D.h>
-#include <cppfm/models/Model.h>
-#include <cppfm/market/DiscountCurve.h>
-#include <cmath>
 #include <chrono>
+#include <cmath>
+#include <cppfm/market/DiscountCurve.h>
+#include <cppfm/models/Model.h>
+#include <cppfm/simulators/PathSimulator2D.h>
+#include <gtest/gtest.h>
 #include <iomanip>
 #include <iostream>
 
@@ -36,12 +36,13 @@
  */
 class PathSimulator2DTest : public ::testing::Test
 {
-protected:
+  protected:
     void SetUp() override
     {
         // Standard Heston model parameters
         S0 = 100.0;    // Spot price
-        v0 = 0.04;     // Initial variance -> std_dev = sqrt(v0) = 0.2 = "usual sigma" = volatility
+        v0 = 0.04;     // Initial variance -> std_dev = sqrt(v0) = 0.2 = "usual
+                       // sigma" = volatility
         kappa = 2.0;   // Mean reversion speed
         vbar = 0.04;   // Long-term variance mean
         sigma_v = 0.3; // Volatility of volatility
@@ -52,17 +53,16 @@ protected:
         FlatDiscountCurve discountCurve(r);
 
         // Create Heston model
-        hestonModel = new HestonModel(S0, discountCurve, v0, kappa, vbar, sigma_v, rho);
+        hestonModel =
+            new HestonModel(S0, discountCurve, v0, kappa, vbar, sigma_v, rho);
 
         // Time steps: [0, 0.25, 0.5, 0.75, 1.0] (quarterly steps over 1 year)
         timeSteps = {0.0, 0.25, 0.5, 0.75, 1.0}; // equidistant time steps
-        // timeSteps = {0.0, 0.1, 0.33, 0.5, 0.7,0.88, 0.95, 1.0}; // non-equidistant time steps
+        // timeSteps = {0.0, 0.1, 0.33, 0.5, 0.7,0.88, 0.95, 1.0}; //
+        // non-equidistant time steps
     }
 
-    void TearDown() override
-    {
-        delete hestonModel;
-    }
+    void TearDown() override { delete hestonModel; }
 
     // Model parameters
     double S0, v0, kappa, vbar, sigma_v, rho, r;
@@ -79,7 +79,8 @@ TEST_F(PathSimulator2DTest, WhatRiskFreeRate)
  * TEST: Simple verification that risk-free rate affects prices
  */
 TEST_F(PathSimulator2DTest, RiskFreeRateTest)
-{ // Andersen uses no drift, we want to use drift - because we want to price the options.
+{ // Andersen uses no drift, we want to use drift -
+    // because we want to price the options.
     const size_t numPaths = 1000;
     auto seed = 1;
 
@@ -120,14 +121,18 @@ TEST_F(PathSimulator2DTest, RiskFreeRateTest)
     double expectedRatio = std::exp(0.05 * 1.0); // e^(r*T)
 
     std::cout << "\n";
-    std::cout << "Simple Risk-Free Rate Test (T=1 year, " << numPaths << " paths)\n";
+    std::cout << "Simple Risk-Free Rate Test (T=1 year, " << numPaths
+              << " paths)\n";
     std::cout << "─────────────────────────────────────────────────────\n";
-    std::cout << "Mean S(T) with r=0.00:  " << std::setprecision(5) << std::fixed << meanZero << "\n";
+    std::cout << "Mean S(T) with r=0.00:  " << std::setprecision(5)
+              << std::fixed << meanZero << "\n";
     std::cout << "Mean S(T) with r=0.05:  " << meanNormal << "\n";
-    std::cout << "Actual ratio:           " << std::setprecision(5) << actualRatio << "\n";
+    std::cout << "Actual ratio:           " << std::setprecision(5)
+              << actualRatio << "\n";
     std::cout << "Expected ratio e^(rT):  " << expectedRatio << "\n";
     std::cout << "Difference:             " << std::setprecision(5)
-              << std::abs(actualRatio - expectedRatio) / expectedRatio * 100 << "%\n";
+              << std::abs(actualRatio - expectedRatio) / expectedRatio * 100
+              << "%\n";
     std::cout << "─────────────────────────────────────────────────────\n";
     std::cout << "Risk-free rate is used correctly!\n\n";
 
@@ -140,7 +145,8 @@ TEST_F(PathSimulator2DTest, RiskFreeRateTest)
 
 /**
  * Test Broadie-Kaya (BK) - Original Newton vs. Optimized Newton method
- * Compares performance and correctness of two Newton implementations for CDF inversion:
+ * Compares performance and correctness of two Newton implementations for CDF
+ * inversion:
  * - Original: Recomputes Fourier coefficients in each iteration
  * - Optimized: Caches coefficients for faster evaluation
  */
@@ -152,7 +158,8 @@ TEST_F(PathSimulator2DTest, BKNewtonTest)
     // ========================================================================
     // Test Original Newton Method
     // ========================================================================
-    BKExactPathSimulator2D simulatorOriginal(timeSteps, *hestonModel, seed, NewtonMethod::Original);
+    BKExactPathSimulator2D simulatorOriginal(timeSteps, *hestonModel, seed,
+                                             NewtonMethod::Original);
 
     auto start = std::chrono::high_resolution_clock::now();
     std::vector<double> finalPricesOriginal;
@@ -183,12 +190,14 @@ TEST_F(PathSimulator2DTest, BKNewtonTest)
     }
 
     auto end = std::chrono::high_resolution_clock::now();
-    auto durationOriginal = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    auto durationOriginal =
+        std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
     // ========================================================================
     // Test Optimized Newton Method
     // ========================================================================
-    BKExactPathSimulator2D simulatorOptimized(timeSteps, *hestonModel, seed, NewtonMethod::Optimized);
+    BKExactPathSimulator2D simulatorOptimized(timeSteps, *hestonModel, seed,
+                                              NewtonMethod::Optimized);
 
     start = std::chrono::high_resolution_clock::now();
     std::vector<double> finalPricesOptimized;
@@ -219,7 +228,8 @@ TEST_F(PathSimulator2DTest, BKNewtonTest)
     }
 
     end = std::chrono::high_resolution_clock::now();
-    auto durationOptimized = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    auto durationOptimized =
+        std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
     auto computeStats = [](const std::vector<double> &data)
     {
@@ -236,29 +246,43 @@ TEST_F(PathSimulator2DTest, BKNewtonTest)
         return std::make_pair(mean, stddev);
     };
 
-    auto [meanPriceOriginal, stdPriceOriginal] = computeStats(finalPricesOriginal);
-    auto [meanPriceOptimized, stdPriceOptimized] = computeStats(finalPricesOptimized);
-    auto [meanVarOriginal, stdVarOriginal] = computeStats(finalVariancesOriginal);
-    auto [meanVarOptimized, stdVarOptimized] = computeStats(finalVariancesOptimized);
+    auto [meanPriceOriginal, stdPriceOriginal] =
+        computeStats(finalPricesOriginal);
+    auto [meanPriceOptimized, stdPriceOptimized] =
+        computeStats(finalPricesOptimized);
+    auto [meanVarOriginal, stdVarOriginal] =
+        computeStats(finalVariancesOriginal);
+    auto [meanVarOptimized, stdVarOptimized] =
+        computeStats(finalVariancesOptimized);
 
     std::cout << "\n";
     std::cout << "Broadie-Kaya Scheme: 2 Newton Methods Comparison\n";
 
     std::cout << "    Number of paths:  " << std::setw(4) << numPaths << "\n";
-    std::cout << "    Time steps:       " << std::setw(4) << timeSteps.size() << "\n";
-    std::cout << "    Maturity:         " << std::setw(4) << std::setprecision(2) << std::fixed << timeSteps.back() << " years\n";
+    std::cout << "    Time steps:       " << std::setw(4) << timeSteps.size()
+              << "\n";
+    std::cout << "    Maturity:         " << std::setw(4)
+              << std::setprecision(2) << std::fixed << timeSteps.back()
+              << " years\n";
     std::cout << "\n";
-    std::cout << "    Method           │  Time (ms) │   Final S(T) ± SE    │   Final V(T) ± SE      \n";
-    std::cout << "    Original Newton  │ " << std::setw(9) << durationOriginal.count()
-              << "   │ " << std::setw(6) << std::setprecision(4) << meanPriceOriginal
-              << " ± " << std::setw(4) << std::setprecision(4) << stdPriceOriginal / sqrt(numPaths)
-              << "   │ " << std::setw(6) << std::setprecision(4) << meanVarOriginal
-              << " ± " << std::setw(5) << std::setprecision(4) << stdVarOriginal / sqrt(numPaths) << "\n";
-    std::cout << "    Optimized Newton │ " << std::setw(9) << durationOptimized.count()
-              << "   │ " << std::setw(6) << std::setprecision(4) << meanPriceOptimized
-              << " ± " << std::setw(4) << std::setprecision(4) << stdPriceOptimized / sqrt(numPaths)
-              << "   │ " << std::setw(6) << std::setprecision(4) << meanVarOptimized
-              << " ± " << std::setw(5) << std::setprecision(4) << stdVarOptimized / sqrt(numPaths) << "\n";
+    std::cout << "    Method           │  Time (ms) │   Final S(T) ± SE    │   "
+                 "Final V(T) ± SE      \n";
+    std::cout << "    Original Newton  │ " << std::setw(9)
+              << durationOriginal.count() << "   │ " << std::setw(6)
+              << std::setprecision(4) << meanPriceOriginal << " ± "
+              << std::setw(4) << std::setprecision(4)
+              << stdPriceOriginal / sqrt(numPaths) << "   │ " << std::setw(6)
+              << std::setprecision(4) << meanVarOriginal << " ± "
+              << std::setw(5) << std::setprecision(4)
+              << stdVarOriginal / sqrt(numPaths) << "\n";
+    std::cout << "    Optimized Newton │ " << std::setw(9)
+              << durationOptimized.count() << "   │ " << std::setw(6)
+              << std::setprecision(4) << meanPriceOptimized << " ± "
+              << std::setw(4) << std::setprecision(4)
+              << stdPriceOptimized / sqrt(numPaths) << "   │ " << std::setw(6)
+              << std::setprecision(4) << meanVarOptimized << " ± "
+              << std::setw(5) << std::setprecision(4)
+              << stdVarOptimized / sqrt(numPaths) << "\n";
 
     std::cout << std::endl;
 
@@ -282,11 +306,13 @@ TEST_F(PathSimulator2DTest, CompareHestonScheme)
     const size_t numPaths = 50000;
 
     EulerPathSimulator2D simulatorEuler(timeSteps, *hestonModel, seed);
-    BKExactPathSimulator2D simulatorBK(timeSteps, *hestonModel, seed, NewtonMethod::Optimized);
+    BKExactPathSimulator2D simulatorBK(timeSteps, *hestonModel, seed,
+                                       NewtonMethod::Optimized);
     TGPathSimulator2D simulatorTG(timeSteps, *hestonModel, seed);
     QEPathSimulator2D simulatorQE(timeSteps, *hestonModel, seed);
     BKTGPathSimulator2D simulatorBKTG(timeSteps, *hestonModel, seed, 0.5, 0.5);
-    BKQEPathSimulator2D simulatorBKQE(timeSteps, *hestonModel, seed, 1.5, 0.5, 0.5);
+    BKQEPathSimulator2D simulatorBKQE(timeSteps, *hestonModel, seed, 1.5, 0.5,
+                                      0.5);
 
     std::vector<double> finalPricesEuler, finalVariancesEuler;
     std::vector<double> finalPricesBK, finalVariancesBK;
@@ -321,7 +347,8 @@ TEST_F(PathSimulator2DTest, CompareHestonScheme)
         }
     }
     auto endEuler = std::chrono::high_resolution_clock::now();
-    auto durationEuler = std::chrono::duration_cast<std::chrono::milliseconds>(endEuler - startEuler);
+    auto durationEuler = std::chrono::duration_cast<std::chrono::milliseconds>(
+        endEuler - startEuler);
 
     // BK
     auto startBK = std::chrono::high_resolution_clock::now();
@@ -332,7 +359,8 @@ TEST_F(PathSimulator2DTest, CompareHestonScheme)
         finalVariancesBK.push_back(variancePath.back());
     }
     auto endBK = std::chrono::high_resolution_clock::now();
-    auto durationBK = std::chrono::duration_cast<std::chrono::milliseconds>(endBK - startBK);
+    auto durationBK =
+        std::chrono::duration_cast<std::chrono::milliseconds>(endBK - startBK);
 
     // TG
     auto startTG = std::chrono::high_resolution_clock::now();
@@ -343,7 +371,8 @@ TEST_F(PathSimulator2DTest, CompareHestonScheme)
         finalVariancesTG.push_back(variancePath.back());
     }
     auto endTG = std::chrono::high_resolution_clock::now();
-    auto durationTG = std::chrono::duration_cast<std::chrono::milliseconds>(endTG - startTG);
+    auto durationTG =
+        std::chrono::duration_cast<std::chrono::milliseconds>(endTG - startTG);
 
     // QE
     auto startQE = std::chrono::high_resolution_clock::now();
@@ -354,7 +383,8 @@ TEST_F(PathSimulator2DTest, CompareHestonScheme)
         finalVariancesQE.push_back(variancePath.back());
     }
     auto endQE = std::chrono::high_resolution_clock::now();
-    auto durationQE = std::chrono::duration_cast<std::chrono::milliseconds>(endQE - startQE);
+    auto durationQE =
+        std::chrono::duration_cast<std::chrono::milliseconds>(endQE - startQE);
 
     // BKTG
     auto startBKTG = std::chrono::high_resolution_clock::now();
@@ -365,7 +395,8 @@ TEST_F(PathSimulator2DTest, CompareHestonScheme)
         finalVariancesBKTG.push_back(variancePath.back());
     }
     auto endBKTG = std::chrono::high_resolution_clock::now();
-    auto durationBKTG = std::chrono::duration_cast<std::chrono::milliseconds>(endBKTG - startBKTG);
+    auto durationBKTG = std::chrono::duration_cast<std::chrono::milliseconds>(
+        endBKTG - startBKTG);
 
     // BKQE
     auto startBKQE = std::chrono::high_resolution_clock::now();
@@ -376,7 +407,8 @@ TEST_F(PathSimulator2DTest, CompareHestonScheme)
         finalVariancesBKQE.push_back(variancePath.back());
     }
     auto endBKQE = std::chrono::high_resolution_clock::now();
-    auto durationBKQE = std::chrono::duration_cast<std::chrono::milliseconds>(endBKQE - startBKQE);
+    auto durationBKQE = std::chrono::duration_cast<std::chrono::milliseconds>(
+        endBKQE - startBKQE);
 
     // Compute statistics: mean, std dev, and standard error
     auto computeStats = [](const std::vector<double> &data)
@@ -390,13 +422,16 @@ TEST_F(PathSimulator2DTest, CompareHestonScheme)
         for (double x : data)
             variance += (x - mean) * (x - mean);
         double stddev = std::sqrt(variance / data.size());
-        double stderr = stddev / std::sqrt(data.size()); // Standard Error of Mean MC
+        double stderr =
+            stddev / std::sqrt(data.size()); // Standard Error of Mean MC
 
         return std::make_tuple(mean, stddev, stderr);
     };
 
-    auto [meanPriceEuler, stdPriceEuler, sePriceEuler] = computeStats(finalPricesEuler);
-    auto [meanVarEuler, stdVarEuler, seVarEuler] = computeStats(finalVariancesEuler);
+    auto [meanPriceEuler, stdPriceEuler, sePriceEuler] =
+        computeStats(finalPricesEuler);
+    auto [meanVarEuler, stdVarEuler, seVarEuler] =
+        computeStats(finalVariancesEuler);
 
     auto [meanPriceBK, stdPriceBK, sePriceBK] = computeStats(finalPricesBK);
     auto [meanVarBK, stdVarBK, seVarBK] = computeStats(finalVariancesBK);
@@ -407,14 +442,19 @@ TEST_F(PathSimulator2DTest, CompareHestonScheme)
     auto [meanPriceQE, stdPriceQE, sePriceQE] = computeStats(finalPricesQE);
     auto [meanVarQE, stdVarQE, seVarQE] = computeStats(finalVariancesQE);
 
-    auto [meanPriceBKTG, stdPriceBKTG, sePriceBKTG] = computeStats(finalPricesBKTG);
-    auto [meanVarBKTG, stdVarBKTG, seVarBKTG] = computeStats(finalVariancesBKTG);
+    auto [meanPriceBKTG, stdPriceBKTG, sePriceBKTG] =
+        computeStats(finalPricesBKTG);
+    auto [meanVarBKTG, stdVarBKTG, seVarBKTG] =
+        computeStats(finalVariancesBKTG);
 
-    auto [meanPriceBKQE, stdPriceBKQE, sePriceBKQE] = computeStats(finalPricesBKQE);
-    auto [meanVarBKQE, stdVarBKQE, seVarBKQE] = computeStats(finalVariancesBKQE);
+    auto [meanPriceBKQE, stdPriceBKQE, sePriceBKQE] =
+        computeStats(finalPricesBKQE);
+    auto [meanVarBKQE, stdVarBKQE, seVarBKQE] =
+        computeStats(finalVariancesBKQE);
 
     // Calculate bias vs. BK (reference method)
-    double biasEulerPrice = (meanPriceEuler - meanPriceBK) / meanPriceBK * 100.0;
+    double biasEulerPrice =
+        (meanPriceEuler - meanPriceBK) / meanPriceBK * 100.0;
     double biasEulerVar = (meanVarEuler - meanVarBK) / meanVarBK * 100.0;
     double biasTGPrice = (meanPriceTG - meanPriceBK) / meanPriceBK * 100.0;
     double biasTGVar = (meanVarTG - meanVarBK) / meanVarBK * 100.0;
@@ -434,110 +474,146 @@ TEST_F(PathSimulator2DTest, CompareHestonScheme)
     double timeBKQEMs = durationBKQE.count();
 
     std::cout << "\n";
-    std::cout << "═══════════════════════════════════════════════════════════════════════════════════════\n";
+    std::cout
+        << "═══════════════════════════════════════════════════════════════"
+           "══════════════════"
+           "══════\n";
     std::cout << "Heston Discretization Schemes Comparison\n";
-    std::cout << "═══════════════════════════════════════════════════════════════════════════════════════\n";
+    std::cout
+        << "═══════════════════════════════════════════════════════════════"
+           "══════════════════"
+           "══════\n";
     std::cout << "Simulation Parameters:\n";
     std::cout << "  • Paths:    " << numPaths << "\n";
     std::cout << "  • Steps:    " << timeSteps.size() << "\n";
-    std::cout << "  • Maturity: " << std::setprecision(2) << std::fixed << timeSteps.back() << " year\n";
+    std::cout << "  • Maturity: " << std::setprecision(2) << std::fixed
+              << timeSteps.back() << " year\n";
     std::cout << "  • Model:    S₀=" << S0 << ", v₀=" << v0 << ", κ=" << kappa
-              << ", v̄=" << vbar << ", σᵥ=" << sigma_v << ", ρ=" << rho << ", r=" << r << "\n";
-    std::cout << "───────────────────────────────────────────────────────────────────────────────────────\n\n";
+              << ", v̄=" << vbar << ", σᵥ=" << sigma_v << ", ρ=" << rho
+              << ", r=" << r << "\n";
+    std::cout
+        << "───────────────────────────────────────────────────────────────"
+           "──────────────────"
+           "──────\n\n";
 
     std::cout << "ASSET PRICE S(T) AT MATURITY:\n";
-    std::cout << "─────────────────────────────────────────────────────────────────────────────────────────────────\n";
-    std::cout << "Method         │ Time (ms) │  Mean ± SE      │ Std Dev │ Bias vs BK (%) │ Speedup vs BK\n";
-    std::cout << "───────────────┼───────────┼─────────────────┼─────────┼────────────┼──────────────\n";
+    std::cout
+        << "───────────────────────────────────────────────────────────────"
+           "──────────────────"
+           "────────────────\n";
+    std::cout
+        << "Method         │ Time (ms) │  Mean ± SE      │ Std Dev │ Bias "
+           "vs BK (%) │ "
+           "Speedup vs BK\n";
+    std::cout
+        << "───────────────┼───────────┼─────────────────┼─────────┼───────"
+           "─────┼──────────────\n";
 
     std::cout << std::fixed;
-    std::cout << "(Euler, Euler) │ " << std::setw(8) << std::setprecision(1) << timeEulerMs
-              << "  │ " << std::setw(7) << std::setprecision(4) << meanPriceEuler
-              << " ± " << std::setw(4) << std::setprecision(4) << sePriceEuler
-              << " │ " << std::setw(6) << std::setprecision(4) << stdPriceEuler
-              << "  │ " << std::setw(7) << std::setprecision(4) << std::showpos << biasEulerPrice << "%"
-              << std::noshowpos << " │ " << std::setw(10) << std::setprecision(0) << (timeBKMs / timeEulerMs) << "x\n";
+    std::cout << "(Euler, Euler) │ " << std::setw(8) << std::setprecision(1)
+              << timeEulerMs << "  │ " << std::setw(7) << std::setprecision(4)
+              << meanPriceEuler << " ± " << std::setw(4) << std::setprecision(4)
+              << sePriceEuler << " │ " << std::setw(6) << std::setprecision(4)
+              << stdPriceEuler << "  │ " << std::setw(7) << std::setprecision(4)
+              << std::showpos << biasEulerPrice << "%" << std::noshowpos
+              << " │ " << std::setw(10) << std::setprecision(0)
+              << (timeBKMs / timeEulerMs) << "x\n";
 
-    std::cout << "(BKExact) *ref* │ " << std::setw(8) << std::setprecision(1) << timeBKMs
-              << "  │ " << std::setw(7) << std::setprecision(4) << meanPriceBK
-              << " ± " << std::setw(4) << std::setprecision(4) << sePriceBK
-              << " │ " << std::setw(6) << std::setprecision(4) << stdPriceBK
-              << "  │     -      │       1x\n";
+    std::cout << "(BKExact) *ref* │ " << std::setw(8) << std::setprecision(1)
+              << timeBKMs << "  │ " << std::setw(7) << std::setprecision(4)
+              << meanPriceBK << " ± " << std::setw(4) << std::setprecision(4)
+              << sePriceBK << " │ " << std::setw(6) << std::setprecision(4)
+              << stdPriceBK << "  │     -      │       1x\n";
 
-    std::cout << "(Eq33, TG)     │ " << std::setw(8) << std::setprecision(1) << timeTGMs
-              << "  │ " << std::setw(7) << std::setprecision(4) << meanPriceTG
-              << " ± " << std::setw(4) << std::setprecision(4) << sePriceTG
-              << " │ " << std::setw(6) << std::setprecision(4) << stdPriceTG
-              << "  │ " << std::setw(7) << std::setprecision(4) << std::showpos << biasTGPrice << "%"
-              << std::noshowpos << " │ " << std::setw(10) << std::setprecision(0) << (timeBKMs / timeTGMs) << "x\n";
+    std::cout << "(Eq33, TG)     │ " << std::setw(8) << std::setprecision(1)
+              << timeTGMs << "  │ " << std::setw(7) << std::setprecision(4)
+              << meanPriceTG << " ± " << std::setw(4) << std::setprecision(4)
+              << sePriceTG << " │ " << std::setw(6) << std::setprecision(4)
+              << stdPriceTG << "  │ " << std::setw(7) << std::setprecision(4)
+              << std::showpos << biasTGPrice << "%" << std::noshowpos << " │ "
+              << std::setw(10) << std::setprecision(0) << (timeBKMs / timeTGMs)
+              << "x\n";
 
-    std::cout << "(Eq33, QE)     │ " << std::setw(8) << std::setprecision(1) << timeQEMs
-              << "  │ " << std::setw(7) << std::setprecision(4) << meanPriceQE
-              << " ± " << std::setw(4) << std::setprecision(4) << sePriceQE
-              << " │ " << std::setw(6) << std::setprecision(4) << stdPriceQE
-              << "  │ " << std::setw(7) << std::setprecision(4) << std::showpos << biasQEPrice << "%"
-              << std::noshowpos << " │ " << std::setw(10) << std::setprecision(0) << (timeBKMs / timeQEMs) << "x\n";
+    std::cout << "(Eq33, QE)     │ " << std::setw(8) << std::setprecision(1)
+              << timeQEMs << "  │ " << std::setw(7) << std::setprecision(4)
+              << meanPriceQE << " ± " << std::setw(4) << std::setprecision(4)
+              << sePriceQE << " │ " << std::setw(6) << std::setprecision(4)
+              << stdPriceQE << "  │ " << std::setw(7) << std::setprecision(4)
+              << std::showpos << biasQEPrice << "%" << std::noshowpos << " │ "
+              << std::setw(10) << std::setprecision(0) << (timeBKMs / timeQEMs)
+              << "x\n";
 
-    std::cout << "(Eq11, BKTG)   │ " << std::setw(8) << std::setprecision(1) << timeBKTGMs
-              << "  │ " << std::setw(7) << std::setprecision(4) << meanPriceBKTG
-              << " ± " << std::setw(4) << std::setprecision(4) << sePriceBKTG
-              << " │ " << std::setw(6) << std::setprecision(4) << stdPriceBKTG
-              << "  │ " << std::setw(7) << std::setprecision(4) << std::showpos << biasBKTGPrice << "%"
-              << std::noshowpos << " │ " << std::setw(10) << std::setprecision(0) << (timeBKMs / timeBKTGMs) << "x\n";
+    std::cout << "(Eq11, BKTG)   │ " << std::setw(8) << std::setprecision(1)
+              << timeBKTGMs << "  │ " << std::setw(7) << std::setprecision(4)
+              << meanPriceBKTG << " ± " << std::setw(4) << std::setprecision(4)
+              << sePriceBKTG << " │ " << std::setw(6) << std::setprecision(4)
+              << stdPriceBKTG << "  │ " << std::setw(7) << std::setprecision(4)
+              << std::showpos << biasBKTGPrice << "%" << std::noshowpos << " │ "
+              << std::setw(10) << std::setprecision(0)
+              << (timeBKMs / timeBKTGMs) << "x\n";
 
-    std::cout << "(Eq11, BKQE)   │ " << std::setw(8) << std::setprecision(1) << timeBKQEMs
-              << "  │ " << std::setw(7) << std::setprecision(4) << meanPriceBKQE
-              << " ± " << std::setw(4) << std::setprecision(4) << sePriceBKQE
-              << " │ " << std::setw(6) << std::setprecision(4) << stdPriceBKQE
-              << "  │ " << std::setw(7) << std::setprecision(4) << std::showpos << biasBKQEPrice << "%"
-              << std::noshowpos << " │ " << std::setw(10) << std::setprecision(0) << (timeBKMs / timeBKQEMs) << "x\n";
+    std::cout << "(Eq11, BKQE)   │ " << std::setw(8) << std::setprecision(1)
+              << timeBKQEMs << "  │ " << std::setw(7) << std::setprecision(4)
+              << meanPriceBKQE << " ± " << std::setw(4) << std::setprecision(4)
+              << sePriceBKQE << " │ " << std::setw(6) << std::setprecision(4)
+              << stdPriceBKQE << "  │ " << std::setw(7) << std::setprecision(4)
+              << std::showpos << biasBKQEPrice << "%" << std::noshowpos << " │ "
+              << std::setw(10) << std::setprecision(0)
+              << (timeBKMs / timeBKQEMs) << "x\n";
 
     std::cout << "\n";
     std::cout << "VARIANCE V(T) AT MATURITY:\n";
-    std::cout << "─────────────────────────────────────────────────────────────────────────────────────\n";
+    std::cout
+        << "───────────────────────────────────────────────────────────────"
+           "──────────────────"
+           "────\n";
     std::cout << "Method         │  Mean ± SE        │ Std Dev │ Bias vs BK\n";
     std::cout << "───────────────┼───────────────────┼─────────┼────────────\n";
 
-    std::cout << "(Euler, Euler) │ " << std::setw(7) << std::setprecision(4) << meanVarEuler
-              << " ± " << std::setw(6) << std::setprecision(4) << seVarEuler
-              << " │ " << std::setw(6) << std::setprecision(4) << stdVarEuler
-              << "  │ " << std::setw(7) << std::setprecision(3) << std::showpos << biasEulerVar << "%\n"
+    std::cout << "(Euler, Euler) │ " << std::setw(7) << std::setprecision(4)
+              << meanVarEuler << " ± " << std::setw(6) << std::setprecision(4)
+              << seVarEuler << " │ " << std::setw(6) << std::setprecision(4)
+              << stdVarEuler << "  │ " << std::setw(7) << std::setprecision(3)
+              << std::showpos << biasEulerVar << "%\n"
               << std::noshowpos;
 
-    std::cout << "(BKExact) *ref* │ " << std::setw(7) << std::setprecision(4) << meanVarBK
-              << " ± " << std::setw(6) << std::setprecision(4) << seVarBK
-              << " │ " << std::setw(6) << std::setprecision(4) << stdVarBK
-              << "  │     -\n";
+    std::cout << "(BKExact) *ref* │ " << std::setw(7) << std::setprecision(4)
+              << meanVarBK << " ± " << std::setw(6) << std::setprecision(4)
+              << seVarBK << " │ " << std::setw(6) << std::setprecision(4)
+              << stdVarBK << "  │     -\n";
 
-    std::cout << "(Eq33, TG)     │ " << std::setw(7) << std::setprecision(4) << meanVarTG
-              << " ± " << std::setw(6) << std::setprecision(4) << seVarTG
-              << " │ " << std::setw(6) << std::setprecision(4) << stdVarTG
-              << "  │ " << std::setw(7) << std::setprecision(3) << std::showpos << biasTGVar << "%\n"
+    std::cout << "(Eq33, TG)     │ " << std::setw(7) << std::setprecision(4)
+              << meanVarTG << " ± " << std::setw(6) << std::setprecision(4)
+              << seVarTG << " │ " << std::setw(6) << std::setprecision(4)
+              << stdVarTG << "  │ " << std::setw(7) << std::setprecision(3)
+              << std::showpos << biasTGVar << "%\n"
               << std::noshowpos;
 
-    std::cout << "(Eq33, QE)     │ " << std::setw(7) << std::setprecision(4) << meanVarQE
-              << " ± " << std::setw(6) << std::setprecision(4) << seVarQE
-              << " │ " << std::setw(6) << std::setprecision(4) << stdVarQE
-              << "  │ " << std::setw(7) << std::setprecision(3) << std::showpos << biasQEVar << "%\n"
+    std::cout << "(Eq33, QE)     │ " << std::setw(7) << std::setprecision(4)
+              << meanVarQE << " ± " << std::setw(6) << std::setprecision(4)
+              << seVarQE << " │ " << std::setw(6) << std::setprecision(4)
+              << stdVarQE << "  │ " << std::setw(7) << std::setprecision(3)
+              << std::showpos << biasQEVar << "%\n"
               << std::noshowpos;
 
-    std::cout << "(Eq11, BKTG)   │ " << std::setw(7) << std::setprecision(4) << meanVarBKTG
-              << " ± " << std::setw(6) << std::setprecision(4) << seVarBKTG
-              << " │ " << std::setw(6) << std::setprecision(4) << stdVarBKTG
-              << "  │ " << std::setw(7) << std::setprecision(3) << std::showpos << biasBKTGVar << "%\n"
+    std::cout << "(Eq11, BKTG)   │ " << std::setw(7) << std::setprecision(4)
+              << meanVarBKTG << " ± " << std::setw(6) << std::setprecision(4)
+              << seVarBKTG << " │ " << std::setw(6) << std::setprecision(4)
+              << stdVarBKTG << "  │ " << std::setw(7) << std::setprecision(3)
+              << std::showpos << biasBKTGVar << "%\n"
               << std::noshowpos;
 
-    std::cout << "(Eq11, BKQE)   │ " << std::setw(7) << std::setprecision(4) << meanVarBKQE
-              << " ± " << std::setw(6) << std::setprecision(4) << seVarBKQE
-              << " │ " << std::setw(6) << std::setprecision(4) << stdVarBKQE
-              << "  │ " << std::setw(7) << std::setprecision(3) << std::showpos << biasBKQEVar << "%\n"
+    std::cout << "(Eq11, BKQE)   │ " << std::setw(7) << std::setprecision(4)
+              << meanVarBKQE << " ± " << std::setw(6) << std::setprecision(4)
+              << seVarBKQE << " │ " << std::setw(6) << std::setprecision(4)
+              << stdVarBKQE << "  │ " << std::setw(7) << std::setprecision(3)
+              << std::showpos << biasBKQEVar << "%\n"
               << std::noshowpos;
 }
 
 /**
- * Std Dev BK is the true volatility - methods should converge to this value as Δt -> 0
- * We would expect:
- *   Variance Bias:
+ * Std Dev BK is the true volatility - methods should converge to this value as
+ * Δt -> 0 We would expect: Variance Bias:
  * - Euler:  Large negative bias (-25% to -30%)   Known issue
  * - TG:     Small positive bias (+5% to +10%)    Better
  * - QE:     Very small bias (±1%)                Best
@@ -554,16 +630,23 @@ TEST_F(PathSimulator2DTest, DiscretizationConvergence)
     const size_t numPaths = 1000; // More paths for better MC accuracy
 
     // Test different time step sizes
-    std::vector<int> numSteps = {4, 12, 24, 48}; // Quarterly, monthly, bi-weekly, weekly
+    std::vector<int> numSteps = {4, 12, 24,
+                                 48}; // Quarterly, monthly, bi-weekly, weekly
 
     std::cout << "\n";
     std::cout << "Discretization Convergence Study: Bias vs. BK as Δt → 0\n";
     std::cout << "    Number of paths:  " << numPaths << "\n";
     std::cout << "    Maturity:         1.0 year\n";
     std::cout << "\n";
-    std::cout << "    Steps │    Δt    │  Price Bias vs. BK (abs)  │  Variance Bias vs. BK (%)  \n";
-    std::cout << "          │  (days)  │  Euler    TG      QE    │  Euler    TG      QE       \n";
-    std::cout << "    ──────┼──────────┼─────────────────────────┼────────────────────────────\n";
+    std::cout << "    Steps │    Δt    │  Price Bias vs. BK (abs)  │  Variance "
+                 "Bias vs. BK (%)  \n";
+    std::cout
+        << "          │  (days)  │  Euler    TG      QE    │  Euler    TG  "
+           "    QE       \n";
+    std::cout
+        << "    "
+           "──────┼──────────┼─────────────────────────┼───────────────────"
+           "─────────\n";
 
     for (int n : numSteps)
     {
@@ -578,7 +661,8 @@ TEST_F(PathSimulator2DTest, DiscretizationConvergence)
 
         // Create simulators with current time step
         EulerPathSimulator2D simEuler(steps, *hestonModel, seed);
-        BKExactPathSimulator2D simBK(steps, *hestonModel, seed, NewtonMethod::Optimized);
+        BKExactPathSimulator2D simBK(steps, *hestonModel, seed,
+                                     NewtonMethod::Optimized);
         TGPathSimulator2D simTG(steps, *hestonModel, seed);
         QEPathSimulator2D simQE(steps, *hestonModel, seed);
 
@@ -634,9 +718,10 @@ TEST_F(PathSimulator2DTest, DiscretizationConvergence)
         // double biasQEVar = (meanVarQE - meanVarBK);
 
         // Calculate biases in price & variances as ratios
-        // double biasEulerPrice = (meanPriceEuler - meanPriceBK) / meanPriceBK * 100.0;
-        // double biasTGPrice = (meanPriceTG - meanPriceBK) / meanPriceBK * 100.0;
-        // double biasQEPrice = (meanPriceQE - meanPriceBK) / meanPriceBK * 100.0;
+        // double biasEulerPrice = (meanPriceEuler - meanPriceBK) / meanPriceBK
+        // * 100.0; double biasTGPrice = (meanPriceTG - meanPriceBK) /
+        // meanPriceBK * 100.0; double biasQEPrice = (meanPriceQE - meanPriceBK)
+        // / meanPriceBK * 100.0;
         //
         double biasEulerVar = (meanVarEuler - meanVarBK) / meanVarBK * 100.0;
         double biasTGVar = (meanVarTG - meanVarBK) / meanVarBK * 100.0;
@@ -644,18 +729,18 @@ TEST_F(PathSimulator2DTest, DiscretizationConvergence)
 
         // Print row
         double days = dt * 252; // Convert to trading days
-        std::cout << "    " << std::setw(5) << n
-                  << " │ " << std::setw(6) << std::setprecision(1) << std::fixed << days
-                  << " │ " << std::setw(6) << std::setprecision(2) << std::showpos << biasEulerPrice
-                  << "" << std::setw(6) << biasTGPrice
-                  << "" << std::setw(6) << biasQEPrice << ""
-                  << " │ " << std::setw(6) << biasEulerVar
-                  << "" << std::setw(6) << biasTGVar
-                  << "" << std::setw(6) << biasQEVar << "%\n"
+        std::cout << "    " << std::setw(5) << n << " │ " << std::setw(6)
+                  << std::setprecision(1) << std::fixed << days << " │ "
+                  << std::setw(6) << std::setprecision(2) << std::showpos
+                  << biasEulerPrice << "" << std::setw(6) << biasTGPrice << ""
+                  << std::setw(6) << biasQEPrice << ""
+                  << " │ " << std::setw(6) << biasEulerVar << "" << std::setw(6)
+                  << biasTGVar << "" << std::setw(6) << biasQEVar << "%\n"
                   << std::noshowpos;
     }
 
     std::cout << "\n";
-    std::cout << "    Expected: All biases tend to 0% as steps increase (Δt -> 0)\n";
+    std::cout
+        << "    Expected: All biases tend to 0% as steps increase (Δt -> 0)\n";
     std::cout << std::endl;
 }

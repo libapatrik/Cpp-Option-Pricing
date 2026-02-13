@@ -442,9 +442,5 @@ double QuadraticExtrapolation::extrapolate(double x, const InterpolationScheme& 
         result = _yMax + _dyMax * dx + 0.5 * _d2yMax * dx * dx;
     }
 
-    /// TODO: Add fallbacks for min and max vols?
-    const double MIN_VOL = 0.01;   // 1%
-    const double MAX_VOL = 2.0;    // 200%
-
-    return std::clamp(result, MIN_VOL, MAX_VOL);   // return the clamped value
+    return result;
 }

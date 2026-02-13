@@ -436,7 +436,7 @@ double BlackScholesFormulas::vanna(double spot, double strike, double rate, doub
     const double d2Val = d2(spot, strike, rate, volatility, maturity);
     const double sqrtTime = std::sqrt(maturity);
 
-    return -normPdf(d1Val) * d2Val / (volatility * sqrtTime);
+    return -normPdf(d1Val) * d2Val / volatility;
 }
 
 /**

@@ -1,17 +1,5 @@
 #include <gtest/gtest.h>
 #include <cppfm/market/VolatilitySurface.h>
-// TODO: Include test_utils.h when ready
-
-/*
-TODO:
-1. Test valid construction
-2. Test invalid inputs (empty data, unsorted, negative vols)
-3. Test builder pattern
-4. Test clone/equality
-*/
-
-// TODO: Add test cases
-
 
 
 // 1. Test valid construction
@@ -97,7 +85,7 @@ TEST(VolatilitySurfaceConstructionTest, InterestRateAffectsForwardMoneyness)
 
     // The volatilities should be different due to different forward moneyness adjustments
     // Demonstrating interest rate affects the interpolation
-    EXPECT_NEAR(volLowRate, volLowRate, 1e-10);
+    EXPECT_NE(volLowRate, volHighRate);
 
     // For comparison, bilinear interpolation should be independent of rate
     VolatilitySurface vsBilinearLow(strikes, maturities, volatilitiesMatrix, lowRateCurve,
@@ -159,4 +147,87 @@ TEST(VolatilitySurfaceConstructionTest, Bounds)
     EXPECT_NEAR(bounds.first.second, 120.0, 1e-10);
     EXPECT_NEAR(bounds.second.first, 0.5, 1e-10);
     EXPECT_NEAR(bounds.second.second, 1.0, 1e-10);
+}
+
+// ============================================================================
+// Arbitrage check tests
+// ============================================================================
+
+// clean surface: monotonic total variance + mild smile -> passes both checks
+TEST(VolatilitySurfaceArbitrageTest, CleanSurfacePasses)
+{
+    // flat 20% vol everywhere — trivially arb-free
+    VolatilitySurfaceBuilder builder;
+    std::vector<double> strikes = {80, 90, 100, 110, 120};
+    std::vector<double> maturities = {0.25, 0.5, 1.0, 2.0};
+
+    for (double T : maturities)
+        for (double K : strikes)
+            builder.setVolatility(K, T, 0.20);
+
+    builder.setSmileInterpolationType(VolatilitySurface::SmileInterpolationType::CubicSpline);
+    FlatDiscountCurve dc(0.03);
+    builder.setDiscountCurve(dc);
+
+    auto surface = builder.build();
+    ASSERT_NE(surface, nullptr);
+    EXPECT_TRUE(builder.diagnostics().empty());
+}
+
+// calendar violation: shorter maturity has higher total variance than longer
+TEST(VolatilitySurfaceArbitrageTest, CalendarViolationDetected)
+{
+    VolatilitySurfaceBuilder builder;
+    std::vector<double> strikes = {90, 100, 110};
+
+    // T=0.5 slice: 40% vol -> w = 0.16*0.5 = 0.08
+    // T=1.0 slice: 20% vol -> w = 0.04*1.0 = 0.04  < 0.08 -> violation
+    for (double K : strikes) {
+        builder.setVolatility(K, 0.5, 0.40);
+        builder.setVolatility(K, 1.0, 0.20);
+    }
+
+    builder.setSmileInterpolationType(VolatilitySurface::SmileInterpolationType::Linear);
+    FlatDiscountCurve dc(0.03);
+    builder.setDiscountCurve(dc);
+
+    auto surface = builder.build();
+    EXPECT_EQ(surface, nullptr);
+
+    bool foundCalendar = false;
+    for (auto& d : builder.diagnostics()) {
+        if (d.type == "calendar") { foundCalendar = true; break; }
+    }
+    EXPECT_TRUE(foundCalendar);
+}
+
+// butterfly violation: extreme W-shaped smile that produces negative density
+TEST(VolatilitySurfaceArbitrageTest, ButterflyViolationDetected)
+{
+    VolatilitySurfaceBuilder builder;
+    // W-shaped smile: high wings, low center, high again — concavity in total variance
+    std::vector<double> strikes = {80, 90, 95, 100, 105, 110, 120};
+    // deliberately non-convex: dip then spike in the middle
+    std::vector<double> vols = {0.35, 0.15, 0.35, 0.15, 0.35, 0.15, 0.35};
+
+    double T = 1.0;
+    for (size_t j = 0; j < strikes.size(); ++j)
+        builder.setVolatility(strikes[j], T, vols[j]);
+
+    // need a second slice so the surface is valid (but make it clean)
+    for (size_t j = 0; j < strikes.size(); ++j)
+        builder.setVolatility(strikes[j], 2.0, vols[j] + 0.05);
+
+    builder.setSmileInterpolationType(VolatilitySurface::SmileInterpolationType::CubicSpline);
+    FlatDiscountCurve dc(0.03);
+    builder.setDiscountCurve(dc);
+
+    auto surface = builder.build();
+    EXPECT_EQ(surface, nullptr);
+
+    bool foundButterfly = false;
+    for (auto& d : builder.diagnostics()) {
+        if (d.type == "butterfly") { foundButterfly = true; break; }
+    }
+    EXPECT_TRUE(foundButterfly);
 }

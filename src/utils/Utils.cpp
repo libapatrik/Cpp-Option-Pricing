@@ -197,21 +197,14 @@ std::vector<double> ThomasAlgorithm::solve(const std::vector<double>& lower,
 
 double NumericalDerivatives::firstDerivative(std::function<double(double)> f, double x, double h)
 {
-    // Scale-invariant step size: h_scaled = h * max(|x|, 1.0)
-    // This ensures relative perturbation is consistent across different magnitudes
-    double h_scaled = h * std::max(std::abs(x), 1.0);
-    
-    // Central difference: f'(x) = [f(x+h) - f(x-h)] / (2h)
-    return (f(x + h_scaled) - f(x - h_scaled)) / (2.0 * h_scaled);
+    // h is absolute — callers are responsible for scaling
+    return (f(x + h) - f(x - h)) / (2.0 * h);
 }
 
 double NumericalDerivatives::secondDerivative(std::function<double(double)> f, double x, double h)
 {
-    // Scale-invariant step size
-    double h_scaled = h * std::max(std::abs(x), 1.0);
-    
-    // Central second difference: f''(x) = [f(x+h) - 2f(x) + f(x-h)] / h^2
-    return (f(x + h_scaled) - 2.0 * f(x) + f(x - h_scaled)) / (h_scaled * h_scaled);
+    // h is absolute
+    return (f(x + h) - 2.0 * f(x) + f(x - h)) / (h * h);
 }
 
 // ============================================================================
@@ -730,12 +723,10 @@ std::complex<double> ChFIntegratedVariance::modifiedBesselI(double nu, std::comp
         return (nu == 0.0) ? 1.0 : 0.0;
     }
     
-    // For large |z|, use asymptotic expansion: I_ν(z) ≈ exp(z)/√(2πz)
-    // Asymptotic expansion for large |z|
-    // NOTE: Threshold 30.0 is heuristic.
-    //  could show the transition zone - against Python's
+    // Asymptotic: I_ν(z) ≈ exp(z)/√(2πz) * [1 - (4ν²-1)/(8z)]
     if (std::abs(z) > 30.0) {
-        return std::exp(z) / std::sqrt(2.0 * PI * z);
+        double mu = 4.0 * nu * nu;
+        return std::exp(z) / std::sqrt(2.0 * PI * z) * (1.0 - (mu - 1.0) / (8.0 * z));
     }
     
     // Power series expansion

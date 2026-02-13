@@ -310,38 +310,22 @@ double PathSimulator2D::stepLogPriceEq33(double X_t, double V_t, double V_next,
 double PathSimulator2D::stepVarianceTG(double V_t, double dt,
                                        double Z_V) const
 {
-  /**
-   * Truncated Gaussian (TG) Scheme for Variance (Andersen Eq. 13)
-   *
-   * CIR process: dV = κ(θ - V)dt + σ_v√V dW_V
-   *
-   * TG scheme: V̂(t+Δ) = [V̂(t) + κ(θ - V̂(t))Δ + σ_v√(V̂(t))√Δ·Z_V]⁺
-   *
-   * where [x]⁺ = max(x, 0) is the positive part (truncation)
-   *
-   * Used by: TGPathSimulator2D, BKTGPathSimulator2D
-   */
-
+  // Moment-matching TG scheme (Andersen 2008 Sec 3.2.1)
+  // Match first two conditional moments of CIR process, sample truncated Gaussian
   const HestonModel *hestonPtr = static_cast<const HestonModel *>(_modelPtr);
   double kappa = hestonPtr->kappa();
   double vbar = hestonPtr->vbar();
-  double sigma_v = hestonPtr->sigma_v();
+  double xi = hestonPtr->sigma_v();
 
-  double sqrtDt = std::sqrt(dt);
-
-  // Apply truncation to current variance
+  double ekt = std::exp(-kappa * dt);
   double V_plus = std::max(V_t, 0.0);
 
-  // Drift term: κ(θ - V⁺)Δ
-  double drift = kappa * (vbar - V_plus) * dt;
+  // conditional mean and variance of V(t+dt) | V(t)
+  double m = vbar + (V_plus - vbar) * ekt;
+  double s2 = V_plus * (xi * xi / kappa) * (ekt - ekt * ekt)
+            + vbar * (xi * xi / (2.0 * kappa)) * (1.0 - ekt) * (1.0 - ekt);
 
-  // Diffusion term: σ_v√(V⁺)√Δ·Z_V
-  double diffusion = sigma_v * std::sqrt(V_plus) * sqrtDt * Z_V;
-
-  // Update with truncation
-  double V_next = std::max(V_t + drift + diffusion, 0.0); // Eq. 13
-
-  return V_next;
+  return std::max(m + std::sqrt(std::max(s2, 0.0)) * Z_V, 0.0);
 }
 
 double PathSimulator2D::stepVarianceQE(double V_t, double dt, double Z_V,

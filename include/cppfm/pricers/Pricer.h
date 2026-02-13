@@ -30,9 +30,9 @@ class BlackScholesPricer : public Pricer
 {
 public:
     BlackScholesPricer(); // default constructor
-    BlackScholesPricer(const BlackScholesModel& model, const DiscountCurve& discountCurve); // give the discount curve to  constructor
+    BlackScholesPricer(const BlackScholesModel& model, const DiscountCurve& discountCurve);
+    BlackScholesPricer(const BlackScholesPricer& other); // deep copy — Pricer owns raw ptrs
 
-    // Clone method
     BlackScholesPricer * clone() const override;
     // Destructor
     ~BlackScholesPricer() override;
@@ -47,10 +47,11 @@ protected:
 class MonteCarloPricer : public Pricer
 {
 public:
-    MonteCarloPricer() = default; // default constructor
+    MonteCarloPricer() = default;
     MonteCarloPricer(const Model1D &model, const DiscountCurve& discountCurve, const PathSimulator& simulator, size_t numPaths);
-    // always keep the base class arguments first, then extras
-    MonteCarloPricer * clone() const override; // Clone method
+    MonteCarloPricer(const MonteCarloPricer& other); // deep copy
+
+    MonteCarloPricer * clone() const override;
 
     ~MonteCarloPricer() override; // Destructor
 

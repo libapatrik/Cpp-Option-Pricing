@@ -315,22 +315,12 @@ std::vector<double> ThetaMethodSolver::timeStep(const std::vector<double>& u_old
         diag[i] = 1.0 - _theta * dt * beta;
         upper[i] = -_theta * dt * gamma;
         
-        /**
-         * RIGHT-HAND SIDE: u^n + (1-θ)Δt·L(u^n)
-         * ======================================
-         * Where L(u^n) = α·u[i-1] + β·u[i] + γ·u[i+1] + d
-         * 
-         * Explicit contribution weighted by (1-θ):
-         * - θ = 0.0: Full explicit, (1-θ)=1.0, Forward Euler
-         * - θ = 0.5: Half explicit, (1-θ)=0.5; CN
-         * - θ = 1.0: No explicit, (1-θ)=0.0; Backward Euler
-         * 
-         * Source term d must be inside (1-θ) weighting!
-         */
+        // RHS: u^n + (1-θ)Δt·(α u[i-1] + β u[i] + γ u[i+1]) + Δt·d
+        // source d gets full Δt weight, not (1-θ) — otherwise backward Euler loses it entirely
         double explicit_contribution = (1.0 - _theta) * dt * (
-            alpha * u_old[i-1] + beta * u_old[i] + gamma * u_old[i+1] + d
+            alpha * u_old[i-1] + beta * u_old[i] + gamma * u_old[i+1]
         );
-        rhs[i] = u_old[i] + explicit_contribution;
+        rhs[i] = u_old[i] + explicit_contribution + dt * d;
     }
     
     /**

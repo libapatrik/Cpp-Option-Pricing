@@ -80,7 +80,7 @@ set(CPPFM_HEADERS
     include/cppfm/market/DiscountCurve.h
     include/cppfm/market/VolatilitySurface.h
     include/cppfm/market/FinancialInstrument.h
-    include/cppfm/market/SVICalibration.h
+    include/cppfm/market/SviCalibration.h
     include/cppfm/utils/Utils.h
     include/cppfm/utils/InterpolationSchemes.h
     include/cppfm/pde/PDE.h
@@ -88,8 +88,8 @@ set(CPPFM_HEADERS
     include/cppfm/pde/Solver.h
     include/cppfm/pde/BoundaryConditions.h
     include/cppfm/pde/PDEGreeksCalculator.h
-    include/cppfm/optimization/LinearAlgebra.h
-    include/cppfm/optimization/Optimizer.h
+    include/cppfm/calibration/LinearAlgebra.h
+    include/cppfm/calibration/Optimizer.h
     include/cppfm/montecarlo/MonteCarlo.h
     include/cppfm/montecarlo/RandomNumberGenerator.h
     include/cppfm/montecarlo/VarianceReduction.h
@@ -105,7 +105,7 @@ set(CPPFM_SOURCES
     src/market/DiscountCurve.cpp
     src/market/VolatilitySurface.cpp
     src/market/FinancialInstrument.cpp
-    src/market/SVICalibration.cpp
+    src/market/SviCalibration.cpp
     src/utils/Utils.cpp
     src/utils/InterpolationSchemes.cpp
     src/pde/PDE.cpp
@@ -113,8 +113,8 @@ set(CPPFM_SOURCES
     src/pde/Solver.cpp
     src/pde/BoundaryConditions.cpp
     src/pde/PDEGreeksCalculator.cpp
-    src/optimization/LinearAlgebra.cpp
-    src/optimization/Optimizer.cpp
+    src/calibration/LinearAlgebra.cpp
+    src/calibration/Optimizer.cpp
     src/montecarlo/MonteCarlo.cpp
     src/montecarlo/RandomNumberGenerator.cpp
     src/montecarlo/VarianceReduction.cpp
@@ -230,6 +230,9 @@ target_link_libraries(test_linear_algebra CppFM_lib gtest_main)
 add_executable(test_optimizer tests/test_optimizer.cpp)
 target_link_libraries(test_optimizer CppFM_lib gtest_main)
 
+add_executable(test_svi_calibration tests/test_svi_calibration.cpp)
+target_link_libraries(test_svi_calibration CppFM_lib gtest_main)
+
 # ============================================================================
 # CTest Configuration
 # ============================================================================
@@ -253,6 +256,7 @@ add_test(NAME PDEGrid COMMAND test_pde_grid)
 add_test(NAME BesselFunction COMMAND test_bessel_function)
 add_test(NAME LinearAlgebra COMMAND test_linear_algebra)
 add_test(NAME Optimizer COMMAND test_optimizer)
+add_test(NAME SviCalibration COMMAND test_svi_calibration)
 
 # ============================================================================
 # Python Bindings - to use in QFB

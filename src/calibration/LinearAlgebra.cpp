@@ -1,4 +1,4 @@
-#include <cppfm/optimization/LinearAlgebra.h>
+#include <cppfm/calibration/LinearAlgebra.h>
 #include <algorithm>
 
 // ===========================================================================
@@ -356,7 +356,7 @@ std::vector<double> QR::solveR(const Matrix &R, const std::vector<double> &c)
 {
     size_t n = std::min(R.size(), R[0].size());
     std::vector<double> x(n);
-
+    
     // relative tolerance based on R norm
     double Rnorm = 0.0;
     for (size_t i = 0; i < n; ++i)
@@ -556,7 +556,7 @@ void SVD::diagonalize(Matrix &U, std::vector<double> &d, std::vector<double> &e,
         return;
 
     const int maxIter = 50 * static_cast<int>(n);
-    int iter = 0;
+    int iter = 0; 
 
     for (size_t kk = n; kk > 0;)
     {
@@ -653,7 +653,7 @@ void SVD::givens(double a, double b, double &c, double &s, double &r)
     // Givens rotation to zero b in [a; b], returns r = sqrt(a^2 + b^2)
     if (std::abs(b) < 1e-15)
     {
-        c = 1.0;
+        c = (a >= 0.0) ? 1.0 : -1.0;
         s = 0.0;
         r = std::abs(a);
     }

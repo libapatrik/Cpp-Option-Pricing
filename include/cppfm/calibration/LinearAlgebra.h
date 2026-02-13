@@ -94,7 +94,7 @@ struct SVDResult
 class SVD
 {
 public:
-    // Golub-Reinsch algorithm
+    // Golub-Kahan algorithm
     static SVDResult decompose(const Matrix &A);
     // solve min ||Ax - b||_2, truncating small singular values
     static std::vector<double> solve(const SVDResult &svd, const std::vector<double> &b, double tol = 1e-10);

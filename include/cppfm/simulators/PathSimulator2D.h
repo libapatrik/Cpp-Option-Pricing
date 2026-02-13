@@ -165,7 +165,7 @@ protected:
    */
   double stepVarianceQE(double V_t, double dt, double Z_V, double psi_c) const;
 
-  const std::vector<double> &_timeSteps;
+  std::vector<double> _timeSteps;
   const Model2D *_modelPtr; // Pointer to base class Model2D - for polymorphic 2D models
   size_t _randomSeed;
   // mutable std::default_random_engine _randomEngine;  // removing the slower variant
@@ -509,8 +509,6 @@ public:
    */
   std::vector<std::pair<double, double>> simulateAllPaths() const;
   std::vector<std::pair<double, double>> simulateAllPathsParallel() const;
-  std::vector<std::pair<double, double>> simulateAllPathsOptimized() const;
-
   /**
    * Simulate with Heston as control variate for variance reduction.
    * Evolves SLV and pure Heston paths simultaneously using same Brownians.

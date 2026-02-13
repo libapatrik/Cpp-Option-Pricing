@@ -3,7 +3,6 @@
 #ifndef MODEL_H
 #define MODEL_H
 
-
 #include <memory>
 
 // Forward declaration
@@ -12,18 +11,13 @@ class VolatilitySurface;
 
 /**
  * TODO:
- *
- *
- *
  *  Allows for extension to multidimensional models in the future
-
- * TODO: American option pricing - with FD, LSMC, COS-method (implemented in Python)
-
-*/
+ */
 
 /** NOTES:
  * Getters - if just access the data member, use i.e. rate()
- * 		   - if need to compute something, use i.e. computeDupireLocalVolatility()
+ * 		   - if need to compute something, use i.e.
+ * computeDupireLocalVolatility()
  *
  */
 
@@ -31,8 +25,8 @@ class VolatilitySurface;
  * ============================================================================
  * MODEL HIERARCHY - Pure Design
  * ============================================================================
- * 
- * ModelBase: 
+ *
+ * ModelBase:
  *   ├── Model1D: Single state variable models (S)
  *   │     ├── BlackScholesModel
  *   │     └── DupireModel
@@ -42,26 +36,29 @@ class VolatilitySurface;
  *
  * ModelBase - Minimal common base for all financial models
  * Provides only the essential shared interface
- * 
+ *
  * Abstract class = class that have at least 1 virtual pure method
  * "Incomplete" class -> cannot instantiate this class
-*/
-
+ */
 
 class ModelBase
 {
 public:
 	ModelBase(double initValue);
-	ModelBase(const ModelBase& model);
-	ModelBase& operator=(const ModelBase& model);
-	virtual ~ModelBase() = default; // ALWAYS DECLARE BASE CLASS DESTRUCTOR VIRTUAL -> Avoid memory leak
+	ModelBase(const ModelBase &model);
+	ModelBase &operator=(const ModelBase &model);
+	virtual ~ModelBase() = default; // ALWAYS DECLARE BASE CLASS DESTRUCTOR
+									// VIRTUAL -> Avoid memory leak
 
 	// Getters here
-	inline double initValue() const { return _initValue; } // do not modify any data member
+	inline double initValue() const
+	{
+		return _initValue;
+	} // do not modify any data member
 
-//private:
+	// private:
 protected:
-	double _initValue;  // S_0 - initial asset price
+	double _initValue; // S_0 - initial asset price
 };
 
 // ============================================================================
@@ -80,17 +77,19 @@ public:
 	Model1D(double initValue);
 	virtual ~Model1D() = default;
 
-	virtual double drift(double time, double assetPrice) const = 0; // Virtual Pure method
-	virtual double diffusion(double time, double assetPrice) const = 0; // Virtual Pure method
-	
-	// Note: Risk-free rates are accessed through DiscountCurve objects
-	
-	// RULE: If a pointer of this class is used as a data member of another class [here PathSimulator]
-	// then we need to delegate the copy construction and pointing to another method
-	// This method is: clone()
-	virtual Model1D* clone() const = 0; // Virtual Pure method
+	virtual double drift(double time,
+						 double assetPrice) const = 0; // Virtual Pure method
+	virtual double
+	diffusion(double time, double assetPrice) const = 0; // Virtual Pure method
 
-	virtual bool operator==(const Model1D& model) const = 0; // == operator
+	// Note: Risk-free rates are accessed through DiscountCurve objects
+
+	// RULE: If a pointer of this class is used as a data member of another
+	// class [here PathSimulator] then we need to delegate the copy construction
+	// and pointing to another method This method is: clone()
+	virtual Model1D *clone() const = 0; // Virtual Pure method
+
+	virtual bool operator==(const Model1D &model) const = 0; // == operator
 };
 
 // For backward compatibility - keep old name as alias
@@ -119,25 +118,28 @@ public:
 	 * Drift coefficients for 2D system
 	 * @return pair{μ_S, μ_V}
 	 */
-	virtual std::pair<double, double> drift2D(double time, double assetPrice, double auxVariable) const = 0; // Virtual Pure method
+	virtual std::pair<double, double>
+	drift2D(double time, double assetPrice,
+			double auxVariable) const = 0; // Virtual Pure method
 
 	/**
 	 * Diffusion coefficients for 2D system
 	 * @return pair{σ_S, σ_V}
 	 */
-	virtual std::pair<double, double> diffusion2D(double time, double assetPrice, double auxVariable) const = 0; // Virtual Pure method
+	virtual std::pair<double, double>
+	diffusion2D(double time, double assetPrice,
+				double auxVariable) const = 0; // Virtual Pure method
 
 	// RULE: Same clone() pattern as Model1D for polymorphic copying
-	virtual Model2D* clone() const = 0; // Virtual Pure method
-	virtual bool operator==(const Model2D& model) const = 0; // == operator
-	
+	virtual Model2D *clone() const = 0; // Virtual Pure method
+	virtual bool operator==(const Model2D &model) const = 0; // == operator
+
 	/**
 	 * Correlation coefficient between the two Brownian motions
 	 * @return ρ in [-1, 1]
 	 */
 	virtual double correlation() const = 0; // Virtual Pure method
 };
-
 
 // ============================================================================
 // 1D MODEL IMPLEMENTATIONS
@@ -146,36 +148,47 @@ public:
  *  Black-Scholes Model
  *  SDE: dS = rS dt + σS dW - constant volatility model
  */
-class BlackScholesModel : public Model1D  // "Is a" relationship 
+class BlackScholesModel : public Model1D // "Is a" relationship
 {
 public:
 	// Default constructor
 	BlackScholesModel() = delete;
 	// Constructor with parameters
-	BlackScholesModel(double spot, const DiscountCurve& discountCurve, double volatility);
+	BlackScholesModel(double spot, const DiscountCurve &discountCurve,
+					  double volatility);
 	// Copy constructor
-	BlackScholesModel(const BlackScholesModel& model);
+	BlackScholesModel(const BlackScholesModel &model);
 	// Clone method
-	BlackScholesModel* clone() const override;
+	BlackScholesModel *clone() const override;
 
 	// Copy Assignment Operator
-	BlackScholesModel& operator=(const BlackScholesModel& model);
+	BlackScholesModel &operator=(const BlackScholesModel &model);
 
-	bool operator==(const Model1D& model) const override // required by base class
-	{	// dynamic_cast - Derived1 vs. Derived2; safe downcasting in polymorphic hierarchies.
-		// Check at runtime if a Model reference is actually a BlackScholesModel object.
-		// CRTP - useful for static polymorphism, does not support runtime polymorphism
-		// (i.e. lose ability to use base class pointers/references for derived objects)
+	bool
+	operator==(const Model1D &model) const override // required by base class
+	{ // dynamic_cast - Derived1 vs. Derived2; safe downcasting in polymorphic
+	  // hierarchies.
+		// Check at runtime if a Model reference is actually a BlackScholesModel
+		// object. CRTP - useful for static polymorphism, does not support
+		// runtime polymorphism (i.e. lose ability to use base class
+		// pointers/references for derived objects)
 
-		// check if the Model reference passed as an argument is actually a BlackScholesModel
-		const auto* bsModel = dynamic_cast<const BlackScholesModel*>(&model); // try to convert Model to BlackScholesModel
+		// check if the Model reference passed as an argument is actually a
+		// BlackScholesModel
+		const auto *bsModel = dynamic_cast<const BlackScholesModel *>(
+			&model);  // try to convert Model to BlackScholesModel
 		if (!bsModel) // if the cast fails; ie not of type BlackScholesModel
 			return false;
 		// Compare private data members	of the two BlackScholesModel objects.
 		// -> to access the members of the bsModel pointer
-		// Check if _initvalue, _drift, _volatility are equal between current object (this) and bsModel object
-		return (_initValue == bsModel->_initValue) && (_drift == bsModel->_drift) && (_volatility == bsModel->_volatility); // access members of the pointers
-		// return is true - if the two objects are of the same type BlackScholesModel and their data members have identical values
+		// Check if _initvalue, _drift, _volatility are equal between current
+		// object (this) and bsModel object
+		return (_initValue == bsModel->_initValue) &&
+			   (_drift == bsModel->_drift) &&
+			   (_volatility ==
+				bsModel->_volatility); // access members of the pointers
+		// return is true - if the two objects are of the same type
+		// BlackScholesModel and their data members have identical values
 	} // need to be smarter
 
 	// Destructor
@@ -189,15 +202,14 @@ public:
 	double drift() const { return _drift; }
 	double volatility() const { return _volatility; }
 
-
-private: // default constructor will call the default constructor for each data member
-	//double _initValue;
+private: // default constructor will call the default constructor for each
+		 // data member
+	// double _initValue;
 	double _drift;
 	double _volatility;
 };
 
-
-/* 
+/*
  * Dupire Local Volatility Model
  * SDE: dS = rS dt + sigma(S, t) S dW
  */
@@ -210,24 +222,25 @@ public:
 	 * @param spot Initial spot price
 	 * @param volSurface Volatility surface for local volatility
 	 */
-	DupireModel(double spot, const VolatilitySurface& volSurface);
+	DupireModel(double spot, const VolatilitySurface &volSurface);
 
-	DupireModel(const DupireModel& model); // Copy constructor
-	DupireModel* clone() const override; // Clone method
-	DupireModel& operator=(const DupireModel& model); // Copy assignment operator
-	bool operator==(const Model1D& model) const override; // == operator
-	
+	DupireModel(const DupireModel &model); // Copy constructor
+	DupireModel *clone() const override;   // Clone method
+	DupireModel &
+	operator=(const DupireModel &model); // Copy assignment operator
+	bool operator==(const Model1D &model) const override; // == operator
+
 	// Virtual methods from base class
 	double drift(double time, double assetPrice) const override;
 	double diffusion(double time, double assetPrice) const override;
 	// double drift() const;
-	// double volatility() const; // Volatility is accessed through the VolatilitySurface
-	// Getters
-	const VolatilitySurface& volatilitySurface() const
-	{ 
+	// double volatility() const; // Volatility is accessed through the
+	// VolatilitySurface Getters
+	const VolatilitySurface &volatilitySurface() const
+	{
 		return *_volSurfacePtr; // pointer to the VolatilitySurface
 	}
-	
+
 	/**
 	 * Get local volatility at given spot and time
 	 * @param spot Current asset price
@@ -241,8 +254,6 @@ private:
 	std::unique_ptr<const VolatilitySurface> _volSurfacePtr;
 
 	// internal Local Vol Solver as a data member
-
-
 };
 
 // ============================================================================
@@ -251,7 +262,7 @@ private:
 
 /**
  * Heston Stochastic Volatility Model
- * 
+ *
  * 2D SDE system (S: asset price, V: variance):
  *   dS = r*S*dt + √V*S*dW^S
  *   dV = κ(v̄ - V)*dt + σ_v*√V*dW^V
@@ -270,17 +281,22 @@ public:
 	 * @param sigma_v: σ_v > 0, volatility of volatility (vol-of-vol)
 	 * @param rho: ρ in [-1,1], correlation between W_X and W_V
 	 */
-	HestonModel(double spot, const DiscountCurve& discountCurve, double v0, double kappa, double vbar, double sigma_v, double rho);
+	HestonModel(double spot, const DiscountCurve &discountCurve, double v0,
+				double kappa, double vbar, double sigma_v, double rho);
 
-	HestonModel(const HestonModel& model);                // copy constructor
-	HestonModel* clone() const override;                  // clone method
-	HestonModel& operator=(const HestonModel& model);     // copy assignment operator
-	bool operator==(const Model2D& model) const override; // equality == operator; for polymorphic comparison
-	~HestonModel() override = default;                    // destructor
+	HestonModel(const HestonModel &model); // copy constructor
+	HestonModel *clone() const override;   // clone method
+	HestonModel &
+	operator=(const HestonModel &model); // copy assignment operator
+	bool operator==(const Model2D &model)
+		const override; // equality == operator; for polymorphic comparison
+	~HestonModel() override = default; // destructor
 
 	// Implement Model2D interface
-	std::pair<double, double> drift2D(double time, double assetPrice, double variance) const override;
-	std::pair<double, double> diffusion2D(double time, double assetPrice, double variance) const override;
+	std::pair<double, double> drift2D(double time, double assetPrice,
+									  double variance) const override;
+	std::pair<double, double> diffusion2D(double time, double assetPrice,
+										  double variance) const override;
 	double correlation() const override { return _rho; }
 
 	// Accessors for parameters
@@ -290,7 +306,7 @@ public:
 	inline double sigma_v() const { return _sigma_v; }
 	inline double rho() const { return _rho; }
 	inline double riskFreeRate() const { return _riskFreeRate; }
-	
+
 	/**
 	 * Check if Feller condition is satisfied: 2κv̄ ≥ σ_v²
 	 * If satisfied, the variance process stays strictly positive almost surely
@@ -299,7 +315,7 @@ public:
 	bool satisfiesFellerCondition() const;
 
 private:
-	void validateParameters() const;       // validate parameters for Heston model
+	void validateParameters() const; // validate parameters for Heston model
 
 	double _riskFreeRate;
 	double _v0;
@@ -307,37 +323,6 @@ private:
 	double _vbar;
 	double _sigma_v;
 	double _rho;
-
 };
 
-
-// Case study Heston vs. SABR
-// Base as multiDimModel -> Model1D, Model2D inherits, etc. + sanityCheck that the size of correl matrix is square and dim #assets-1
-// Cholesky algorithm for n-dim!
-
-// For Stochastic interest rate models: Hull-White model
-// class HullWhiteModel : public Model 
-// {   // for modeling with stochastic interest rate
-// 	// simulate, short rate r(t) as Hull-White process
-// 	// in MC discounting will be pathwise exp(int_0^T r(t) dt)
-// public:
-
-// protected:
-
-// };
-
-
-// ============================================================================
-// STOEP HestonSLV
-// ============================================================================
-
-/**
- *  TIME-WISE IMPLEMENTATION
- *  For HestonSLV we require that the path processes (X, V)-tuple
- *  are generated per time step TOGETHER (X1, V1), (X2, V2), ..., (Xn, Vn)
- *
- *  Can reuse the QE for HestonSLV
- */
-
-
-#endif //MODEL_H
+#endif // MODEL_H

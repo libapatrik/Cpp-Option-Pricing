@@ -11,6 +11,7 @@
 #include <memory>
 #include <map>
 #include <utility>
+#include <string>
 
 /**
  * VolatilitySurface class for market data interpolation
@@ -77,6 +78,8 @@ public:
     const std::vector<std::vector<double>>& volatilities() const { return _volatilities; }
     const DiscountCurve& discountCurve() const { return *_discountCurve; }
 
+    friend class VolatilitySurfaceBuilder;
+
 private:
     std::vector<double> _strikes;
     std::vector<double> _maturities;
@@ -84,7 +87,8 @@ private:
     SmileInterpolationType _smileInterpolationType;
     MaturityInterpolationType _maturityInterpolationType;
     std::unique_ptr<DiscountCurve> _discountCurve;
-    
+    double _initialSpot = 0.0;  // S_0 for Dupire d1; 0 = use strike as spot (backward compat)
+
     // Interpolation objects for different dimensions
     std::vector<std::unique_ptr<InterpolationScheme>> _smileInterpolators;            // 1 per maturity interpolate across strikes
     std::vector<std::unique_ptr<InterpolationScheme>> _termStructureInterpolators;    // 1 per strike interpolate acrsso maturities
@@ -106,15 +110,19 @@ private:
     
 };
 
+// diagnostics from arbitrage checks in the builder
+struct ArbitrageDiagnostic {
+    int maturityIdx;       // which maturity slice
+    int strikeIdx;         // which strike (-1 for calendar = all strikes at that pair)
+    double value;          // offending value (density for butterfly, variance diff for calendar)
+    std::string type;      // "butterfly" or "calendar"
+};
+
 /**
  * Class to build the volatility surface from market data   - VolatilitySurfaceBuilder
  */
 class VolatilitySurfaceBuilder
 {
-/**
- * TODO:  We need to add the arbitrage checks here
- * As discussed Calendar Spread Arbitrage, Butterfly Arbitrage
- */
 public:
     VolatilitySurfaceBuilder& addStrike(double strike);
     VolatilitySurfaceBuilder& addMaturity(double maturity);
@@ -122,10 +130,17 @@ public:
     VolatilitySurfaceBuilder& setSmileInterpolationType(VolatilitySurface::SmileInterpolationType type);
     VolatilitySurfaceBuilder& setMaturityInterpolationType(VolatilitySurface::MaturityInterpolationType type);
     VolatilitySurfaceBuilder& setDiscountCurve(const DiscountCurve& discountCurve);
-    
+    VolatilitySurfaceBuilder& setInitialSpot(double spot);
+
     std::unique_ptr<VolatilitySurface> build();
-    
+
+    const std::vector<ArbitrageDiagnostic>& diagnostics() const { return _diagnostics; }
+
 private:
+    std::vector<ArbitrageDiagnostic> _diagnostics;
+    bool checkButterflyArbitrage();   // returns true if clean
+    bool checkCalendarArbitrage();    // returns true if clean
+
     std::vector<double> _strikes;
     std::vector<double> _maturities;
     std::vector<std::vector<double>> _volatilities;
@@ -133,7 +148,8 @@ private:
     VolatilitySurface::SmileInterpolationType _smileInterpolationType = VolatilitySurface::SmileInterpolationType::CubicSpline;
     VolatilitySurface::MaturityInterpolationType _maturityInterpolationType = VolatilitySurface::MaturityInterpolationType::ForwardMoneyness;
     std::unique_ptr<DiscountCurve> _discountCurve;
-    
+    double _initialSpot = 0.0;
+
     void sortAndDeduplicate(); // Sort strikes/maturities and remove duplicates
     void buildVolatilityMatrix(); // Build the volatility matrix
 };

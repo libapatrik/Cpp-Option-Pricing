@@ -40,6 +40,12 @@ BlackScholesPricer::BlackScholesPricer(const BlackScholesModel &model, const Dis
         throw std::runtime_error("BlackScholesPricer requires BlackScholesModel");
 }
 
+BlackScholesPricer::BlackScholesPricer(const BlackScholesPricer& other)
+    : Pricer(*other._modelPtr, *other._discountCurvePtr)
+{
+    _bsModelPtr = dynamic_cast<const BlackScholesModel*>(_modelPtr);
+}
+
 BlackScholesPricer::~BlackScholesPricer() = default;
 BlackScholesPricer * BlackScholesPricer::clone() const
 {
@@ -67,9 +73,16 @@ MonteCarloPricer::MonteCarloPricer(const Model1D& model, const DiscountCurve& di
 {  // NOTE: PathSimulator may need clone method for safety
 }
 
+MonteCarloPricer::MonteCarloPricer(const MonteCarloPricer& other)
+    : Pricer(*other._modelPtr, *other._discountCurvePtr),
+      _numPaths(other._numPaths),
+      _simulatorPtr(other._simulatorPtr)  // non-owning, shallow copy is correct
+{
+}
+
 MonteCarloPricer* MonteCarloPricer::clone() const
 {
-    return new MonteCarloPricer(*this); // destroyed by Pricer destructor!
+    return new MonteCarloPricer(*this);
 }
 
 MonteCarloPricer::~MonteCarloPricer() = default;
