@@ -34,6 +34,12 @@ public:
 	virtual std::unique_ptr<SmileParams> clone() const = 0;
 	// for calibrateSmile() it takes const SmileParams& but needs mutable copy
 	// for the residual function lambda
+
+	// analytical derivatives
+	virtual double dw(double k) const;
+	virtual double d2w(double k) const;
+	// Gatheral density must be >= 0 for no butterfly arbitrage
+	virtual double gFunction(double k) const; // model agnostic, uses dw/d2w
 };
 
 // ============================================================================
@@ -46,7 +52,7 @@ public:
 	double a = 0.04;
 	double b = 0.01;
 	double rho = -0.3;
-	double m = 0.0; // not shifted
+	double m = 0.0;     // shift 
 	double sigma = 0.2;
 
 	SviParams() = default;
@@ -65,6 +71,13 @@ public:
 
 	std::unique_ptr<SmileParams> clone() const override;
 	// default copy constructor copies those 5 doubles
+
+	// analytical derivatives
+	double dw(double k) const override;
+	double d2w(double k) const override;
+
+	// post-calibration checks (not checked during LM)
+	bool satisfiesConstraints() const;
 };
 
 // The results from the calibrateSmile()
@@ -81,5 +94,53 @@ SmileFitResult calibrateSmile(const SmileParams &guess,
 							  const std::vector<double> &marketVols,
 							  double forward, double T,
 							  const LMOptions &opts = {});
+
+// ============================================================================
+// SSVI
+// ============================================================================
+
+class SsviParams : public SmileParams
+{
+public:
+	// 3 params
+	double rho = -0.5;
+	double eta = 0.1;
+	double gamma = 0.5;
+
+	// per slice
+	double theta = 0.04;
+
+	SsviParams() = default;
+	SsviParams(double rho, double eta, double gamma);
+	SsviParams(const std::vector<double> &v);
+
+	// phi(theta) = eta / (theta^gamma * (1 + theta)^(1-gamma))
+	double phi() const;
+	double phi(double th) const;
+
+	// SSVI total variance
+	double totalVariance(double k) const override;
+
+	std::vector<double> toVector() const override; // { rho, eta, gamma}
+	void fromVector(const std::vector<double> &v) override;
+
+	std::vector<double> lowerBounds() const override;
+	std::vector<double> upperBounds() const override;
+	int nParams() const override;
+
+	std::unique_ptr<SmileParams> clone() const override;
+
+	// analytical derivaties in k
+	double dw(double k) const override;
+	double d2w(double k) const override;
+	// gFunction is inherited
+
+	// Gatheral constraints
+	// 1. theta * phi(theta) * (1 + |rho|) < 4    (butterfly, Thm 4.3)
+	// 2. eta * (1 + |rho|) <= 2                   (large-theta limit)
+
+	bool satisfiesConstraints() const;
+	bool satisfiesButterflyConstraint(double th) const;
+};
 
 #endif

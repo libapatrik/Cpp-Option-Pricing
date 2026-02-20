@@ -1893,7 +1893,7 @@ TEST_F(StoepComparisonTest, ControlVariateShowsVarianceReduction)
 }
 
 // ----------------------------------------------------------------------------
-// TEST: MIXING FACTOR VALIDATION (QuantLib-style)
+// TEST: MIXING FACTOR VALIDATION 
 // η=0: pure local vol (σ_v=0), η=1: full SLV
 // With Heston-consistent local vol, η=1 should match pure Heston
 // ----------------------------------------------------------------------------
