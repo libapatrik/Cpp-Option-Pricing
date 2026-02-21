@@ -2,6 +2,8 @@
 #define CPPFM_SVICALIBRATION_H
 
 #include "cppfm/calibration/Optimizer.h"
+#include "cppfm/market/DiscountCurve.h"
+#include "cppfm/market/VolatilitySurface.h"
 #include <memory>
 #include <vector>
 
@@ -36,8 +38,8 @@ public:
 	// for the residual function lambda
 
 	// analytical derivatives
-	virtual double dw(double k) const;
-	virtual double d2w(double k) const;
+	virtual double dw(double k) const = 0;
+	virtual double d2w(double k) const = 0;
 	// Gatheral density must be >= 0 for no butterfly arbitrage
 	virtual double gFunction(double k) const; // model agnostic, uses dw/d2w
 };
@@ -52,7 +54,7 @@ public:
 	double a = 0.04;
 	double b = 0.01;
 	double rho = -0.3;
-	double m = 0.0;     // shift 
+	double m = 0.0; // shift
 	double sigma = 0.2;
 
 	SviParams() = default;
@@ -130,7 +132,7 @@ public:
 
 	std::unique_ptr<SmileParams> clone() const override;
 
-	// analytical derivaties in k
+	// analytical derivatives in k
 	double dw(double k) const override;
 	double d2w(double k) const override;
 	// gFunction is inherited
@@ -142,5 +144,28 @@ public:
 	bool satisfiesConstraints() const;
 	bool satisfiesButterflyConstraint(double th) const;
 };
+
+// calibration
+struct SsviCalibrationResult
+{
+	SsviParams params;
+	std::vector<double> thetas;
+	std::vector<double> maturities;
+	double rmse = 0.0;
+	bool converged = false;
+
+	// build VolatilitySurface from the fitted SSVI
+	std::unique_ptr<VolatilitySurface> buildSurface(
+		const std::vector<double> &strikeGrid,
+		const std::vector<double> &forwards,
+		const DiscountCurve &discountCurve) const;
+};
+
+SsviCalibrationResult calibrateSsvi(
+	const std::vector<std::vector<double>> &strikesPerMaturity,
+	const std::vector<std::vector<double>> &volsPerMaturity,
+	const std::vector<double> &forwards,
+	const std::vector<double> &maturities,
+	const LMOptions &opts = {});
 
 #endif

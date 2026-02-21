@@ -1,4 +1,5 @@
 #include "cppfm/market/SviCalibration.h"
+#include "cppfm/calibration/LinearAlgebra.h"
 #include "cppfm/calibration/Optimizer.h"
 #include <cmath>
 #include <numeric>
@@ -24,7 +25,7 @@ double SviParams::d2w(double k) const
 double SmileParams::gFunction(double k) const
 {
 	// when g(k) >= 0 for all k, the implied density is non-negative - no butterfly arbitrage
-	// We check thish in the builder
+	// We check this in the builder
 	// if k=0, as long as w(0) > 0, the division is fine (4th constraint)
 	double w = totalVariance(k);
 	double wp = dw(k);
@@ -144,3 +145,128 @@ bool SviParams::satisfiesConstraints() const
 // ============================================================================
 // SSVI
 // ============================================================================
+
+SsviParams::SsviParams(double rho, double eta, double gamma)
+	: rho(rho), eta(eta), gamma(gamma) {}
+
+SsviParams::SsviParams(const std::vector<double> &v)
+{
+	fromVector(v);
+}
+
+double SsviParams::phi() const
+{
+	return phi(theta);
+}
+
+double SsviParams::phi(double th) const
+{
+	// power-law parametrization
+	return eta / (std::pow(th, gamma) * std::pow(1.0 + th, 1.0 - gamma));
+}
+
+double SsviParams::totalVariance(double k) const
+{
+	double p = phi();
+	double pk = p * k;
+	return (theta / 2.0) * (1.0 + rho * pk + std::sqrt((pk + rho) * (pk + rho) + (1.0 - rho * rho)));
+}
+
+std::vector<double> SsviParams::toVector() const
+{
+	return {rho, eta, gamma};
+}
+void SsviParams::fromVector(const std::vector<double> &v)
+{
+	rho = v[0];
+	eta = v[1];
+	gamma = v[2];
+}
+
+std::vector<double> SsviParams::lowerBounds() const
+{
+	return {-0.999, 0.001, 0.0};
+}
+std::vector<double> SsviParams::upperBounds() const
+{
+	return {0.999, 5.0, 1.0};
+}
+
+int SsviParams::nParams() const
+{
+	return 3;
+}
+
+double SsviParams::dw(double k) const
+{
+	double p = phi();
+	double pk = p * k;
+	double disc = std::sqrt((pk + rho) * (pk + rho) + (1.0 - rho * rho));
+	return (theta / 2.0) * p * (rho + (pk + rho) / disc);
+}
+
+double SsviParams::d2w(double k) const
+{
+	double p = phi();
+	double pk = p * k;
+	double inner = (pk + rho) * (pk + rho) + (1.0 - rho * rho);
+	double disc = std::sqrt(inner);
+	return (theta / 2.0) * p * p * (1.0 - rho * rho) / (disc * disc * disc);
+}
+
+bool SsviParams::satisfiesConstraints() const
+{
+	if (std::abs(rho) >= 1.0)
+		return false;
+	if (eta <= 0.0)
+		return false;
+	if (gamma < 0.0 || gamma > 1.0)
+		return false;
+	if (eta * (1.0 + std::abs(rho)) > 2.0)
+		return false; // large-theta wing bound
+	return true;
+}
+
+std::unique_ptr<SmileParams> SsviParams::clone() const
+{
+	return std::make_unique<SsviParams>(*this);
+}
+
+bool SsviParams::satisfiesButterflyConstraint(double th) const
+{
+	// Thm 4.3
+	return th * phi(th) * (1.0 + std::abs(rho)) < 4.0;
+}
+
+std::unique_ptr<VolatilitySurface> SsviCalibrationResult::buildSurface(
+	const std::vector<double> &strikeGrid,
+	const std::vector<double> &forwards,
+	const DiscountCurve &discountCurve) const
+{
+	VolatilitySurfaceBuilder builder;
+	builder.setDiscountCurve(discountCurve);
+
+	SsviParams local = params;
+
+	for (int i = 0; i < static_cast<int>(maturities.size()); ++i)
+	{
+		local.theta = thetas[i];
+		double T = maturities[i];
+		for (double K : strikeGrid)
+		{
+			double k = std::log(K / forwards[i]);
+			double iv = std::sqrt(local.totalVariance(k) / T);
+			builder.setVolatility(K, T, iv);
+		}
+	}
+	return builder.build();
+}
+
+SsviCalibrationResult calibrateSsvi(const std::vector<std::vector<double>> &strikesPerMaturity,
+									const std::vector<std::vector<double>> &volsPerMaturity,
+									const std::vector<double> &forwards,
+									const std::vector<double> &maturities,
+									const LMOptions &opts)
+{
+	return {}; // * work in progress, on paper
+}
