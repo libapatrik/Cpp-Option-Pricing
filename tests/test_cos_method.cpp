@@ -9,7 +9,8 @@
  */
 
 #include <gtest/gtest.h>
-#include <cppfm/utils/Utils.h>
+#include <cppfm/cos/COS.h>
+#include <cppfm/utils/Utils.h>  // Utils::stdNormChF, stdNormPdf
 #include <cmath>
 #include <chrono>
 #include <iomanip>

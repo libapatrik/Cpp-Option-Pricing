@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
-#include <cppfm/utils/Utils.h>
+#include <cppfm/cos/COS.h>
+#include <cppfm/utils/Utils.h>  // Utils::inverseNormalCDF
 #include <cmath>
 #include <complex>
 #include <chrono>

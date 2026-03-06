@@ -12,7 +12,8 @@
 #include <cppfm/models/Model.h>
 #include <cppfm/market/VolatilitySurface.h>
 #include <cppfm/montecarlo/MonteCarlo.h>  // MonteCarloResult
-#include <cppfm/utils/Utils.h>  // For HestonLocalVol
+#include <cppfm/cos/COS.h>  // Transforms, ChFIntegratedVariance, NewtonMethod
+#include <cppfm/market/HestonLocalVol.h>
 #include <random>
 #include <memory>
 #include <vector>
@@ -210,12 +211,6 @@ public:
 
 class MilsteinPathSimulator2D : public PathSimulator2D
 {
-};
-
-enum class NewtonMethod
-{
-  Original, // my implementation;
-  Optimized // Optimized version - cached coefficients (as default)
 };
 
 // ============================================================================

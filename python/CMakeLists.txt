@@ -64,6 +64,7 @@ pybind11_add_module(_core
     ${CMAKE_SOURCE_DIR}/src/bindings/bind_models.cpp
     ${CMAKE_SOURCE_DIR}/src/bindings/bind_simulators.cpp
     ${CMAKE_SOURCE_DIR}/src/bindings/bind_pricers.cpp
+    ${CMAKE_SOURCE_DIR}/src/bindings/bind_calibration.cpp
 )
 
 # Link against the core CppFM library

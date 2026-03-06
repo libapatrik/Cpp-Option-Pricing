@@ -2,7 +2,8 @@
 #include "bindings_common.h"
 #include <cppfm/pricers/BlackScholesFormulas.h>
 #include <cppfm/market/FinancialInstrument.h>
-#include <cppfm/utils/Utils.h>
+#include <cppfm/cos/COS.h>
+#include <cppfm/pricers/COSPricer.h>
 
 void bind_pricers(py::module_ &m)
 {

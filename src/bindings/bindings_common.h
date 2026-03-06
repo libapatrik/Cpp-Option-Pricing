@@ -12,3 +12,4 @@ void bind_market(py::module_ &m);
 void bind_models(py::module_ &m);
 void bind_simulators(py::module_ &m);
 void bind_pricers(py::module_ &m);
+void bind_calibration(py::module_ &m);

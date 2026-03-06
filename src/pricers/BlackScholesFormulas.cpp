@@ -3,6 +3,7 @@
 //
 
 #include <cppfm/pricers/BlackScholesFormulas.h>
+#include <cppfm/calibration/ImpliedVolSolver.h>
 #include <cppfm/utils/Utils.h>
 
 #include <cmath>
@@ -470,52 +471,13 @@ double BlackScholesFormulas::volga(double spot, double strike, double rate, doub
 // BS Implied Volatility - Newton-Raphson
 // ============================================================================
 
-/** GRZ Chapter 4
- * Implied Volatility with flat rate
- * Uses Newton-Raphson: σ_{n+1} = σ_n - (BS(σ_n) - Price) / Vega(σ_n)
- */
+// delegates to ImpliedVolSolver (Brent + Newton)
 double BlackScholesFormulas::impliedVolatility(double spot, double strike, double rate, double maturity,
                                                double marketPrice, Option::Type optionType,
                                                double initialGuess, size_t maxIter, double tol)
 {
-    // Edge case: at or past maturity
-    if (maturity <= 0.0) {
-        return 0.0;
-    }
-
-    double sigma = initialGuess;
-    const double minVol = 1e-6;
-    const double maxVol = 5.0;
-
-    for (size_t i = 0; i < maxIter; ++i) {
-        double bsPrice = price(spot, strike, rate, sigma, maturity, optionType);
-        double vegaVal = vega(spot, strike, rate, sigma, maturity);
-
-        double diff = bsPrice - marketPrice;
-
-        // Check convergence
-        if (std::abs(diff) < tol) {
-            return sigma;
-        }
-
-        // Safeguard against zero vega
-        if (std::abs(vegaVal) < 1e-12) {
-            // Fallback to bisection step
-            if (diff > 0) {
-                sigma *= 0.5;
-            } else {
-                sigma *= 1.5;
-            }
-        } else {
-            // Newton-Raphson update
-            sigma -= diff / vegaVal;
-        }
-
-        // Keep within bounds
-        sigma = std::max(minVol, std::min(sigma, maxVol));
-    }
-
-    return sigma; // Return best guess if not converged
+    bool isCall = (optionType == Option::Type::Call);
+    return ImpliedVolSolver::solve(marketPrice, spot, strike, rate, maturity, isCall, tol, maxIter);
 }
 
 /**

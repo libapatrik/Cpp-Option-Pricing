@@ -43,6 +43,7 @@ PYBIND11_MODULE(_core, m)
     bind_models(m);
     bind_simulators(m);
     bind_pricers(m);
+    bind_calibration(m);
 
     m.attr("__version__") = "0.1.0";
 }

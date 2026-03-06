@@ -4,8 +4,14 @@
 #include "cppfm/calibration/Optimizer.h"
 #include "cppfm/market/DiscountCurve.h"
 #include "cppfm/market/VolatilitySurface.h"
+#include "cppfm/utils/InterpolationSchemes.h"
 #include <memory>
 #include <vector>
+
+// forward declarations
+class VolatilitySurface;
+class DiscountCurve;
+class SsviSurface;
 
 // base class, abstract
 
@@ -135,6 +141,7 @@ public:
 	// analytical derivatives in k
 	double dw(double k) const override;
 	double d2w(double k) const override;
+	double dwdtheta(double k) const; // dw/dtheta for Dupire local vol
 	// gFunction is inherited
 
 	// Gatheral constraints
@@ -153,19 +160,58 @@ struct SsviCalibrationResult
 	std::vector<double> maturities;
 	double rmse = 0.0;
 	bool converged = false;
+	bool arbitrageFree = false; // Gatheral & Jacquier constraints satisfied
 
 	// build VolatilitySurface from the fitted SSVI
 	std::unique_ptr<VolatilitySurface> buildSurface(
 		const std::vector<double> &strikeGrid,
 		const std::vector<double> &forwards,
 		const DiscountCurve &discountCurve) const;
+
+	// analytical Dupire local vol -- no grid, no finite differences
+	SsviSurface buildAnalyticalSurface(const std::vector<double> &forwards) const;
 };
 
+struct SsviCalibrationOptions
+{
+	LMOptions lmOpts = {};
+	bool enforceMonotonicity = true; // PAVA on extracted thetas
+	int nGridPoints = 3;	  // number of starting points for grid search (noting 0 = skip)
+};
+
+// this gives: mkt data -> per-slice SVI -> extract theta -> global SSVI -> result
 SsviCalibrationResult calibrateSsvi(
 	const std::vector<std::vector<double>> &strikesPerMaturity,
 	const std::vector<std::vector<double>> &volsPerMaturity,
 	const std::vector<double> &forwards,
 	const std::vector<double> &maturities,
-	const LMOptions &opts = {});
+	const SsviCalibrationOptions &opts = {});
+// ============================================================================
+// SsviSurface — analytical Dupire local vol from SSVI parametric form
+// ============================================================================
+
+class SsviSurface
+{
+public:
+	SsviSurface(const SsviCalibrationResult &result,
+				const std::vector<double> &forwards);
+
+	SsviSurface(SsviSurface&&) = default;
+	SsviSurface& operator=(SsviSurface&&) = default;
+
+	double localVolatility(double spot, double time) const;
+	double impliedVolatility(double strike, double time) const;
+	double localVariance(double k, double time) const; // k-space, for diagnostics
+
+private:
+	SsviParams _params;
+	std::vector<double> _maturities, _thetas, _forwards;
+	std::unique_ptr<InterpolationScheme> _thetaInterp;
+	std::unique_ptr<InterpolationScheme> _forwardInterp;
+
+	double thetaAt(double T) const;
+	double dthetadT(double T) const;
+	double forwardAt(double T) const;
+};
 
 #endif

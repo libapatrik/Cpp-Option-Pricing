@@ -3,7 +3,11 @@
 #include <cppfm/market/VolatilitySurface.h>
 #include <cppfm/pricers/BlackScholesFormulas.h>
 #include <cppfm/simulators/PathSimulator2D.h>
-#include <cppfm/utils/Utils.h>
+#include <cppfm/calibration/ImpliedVolSolver.h>
+#include <cppfm/cos/COS.h>
+#include <cppfm/market/HestonLocalVol.h>
+#include <cppfm/pricers/COSPricer.h>
+#include <cppfm/utils/Utils.h>  // Utils::stdNormCdf
 #include <gtest/gtest.h>
 #include <iomanip>
 #include <iostream>
@@ -101,7 +105,7 @@ protected:
 				double K = strikes[k_idx];
 				double price = COSPricer::callPrice(S0, K, r, T, chf, 256, 12.0,
 													std::sqrt(vbar));
-				double iv = COSPricer::impliedVol(price, S0, K, r, T, true);
+				double iv = ImpliedVolSolver::solve(price, S0, K, r, T, true);
 				ivs[t_idx][k_idx] = iv;
 			}
 		}
@@ -257,14 +261,14 @@ TEST_F(StoepComparisonTest, PureQEHestonPricingErrors)
 			// COS price (analytical)
 			double cosPrice = COSPricer::callPrice(S0, K, r, T, chf, 512, 15.0,
 												   std::sqrt(vbar));
-			double cosIV = COSPricer::impliedVol(cosPrice, S0, K, r, T, true);
+			double cosIV = ImpliedVolSolver::solve(cosPrice, S0, K, r, T, true);
 
 			// QE MC price
 			double payoffSum = 0.0;
 			for (double s : terminalSpots)
 				payoffSum += std::max(s - K, 0.0);
 			double qePrice = discount.discount(T) * payoffSum / nPaths;
-			double qeIV = COSPricer::impliedVol(qePrice, S0, K, r, T, true);
+			double qeIV = ImpliedVolSolver::solve(qePrice, S0, K, r, T, true);
 
 			double errorBP = (qeIV - cosIV) * 10000;
 			maxError = std::max(maxError, std::abs(errorBP));
@@ -357,7 +361,7 @@ TEST_F(StoepComparisonTest, VanDerStoepParameters)
 				price = intrinsic + 1e-6;
 			}
 
-			double iv = COSPricer::impliedVol(price, stoep_S0, strike, stoep_r,
+			double iv = ImpliedVolSolver::solve(price, stoep_S0, strike, stoep_r,
 											  maturity, true);
 
 			// Sanity check IV
@@ -763,7 +767,7 @@ TEST_F(StoepComparisonTest, DupireComponentDiagnostic)
 			double price = COSPricer::callPrice(S0, K[k_idx], r, maturity, chf,
 												512, 15.0, std::sqrt(vbar));
 			ivs[t_idx][k_idx] =
-				COSPricer::impliedVol(price, S0, K[k_idx], r, maturity, true);
+				ImpliedVolSolver::solve(price, S0, K[k_idx], r, maturity, true);
 		}
 	}
 
@@ -919,7 +923,7 @@ TEST_F(HestonLocalVolTest, CompareToInterpolatedSurface)
 		{
 			double price =
 				COSPricer::callPrice(S0, K, r, T, cf, 256, 12.0, std::sqrt(v0));
-			double iv = COSPricer::impliedVol(price, S0, K, r, T, true);
+			double iv = ImpliedVolSolver::solve(price, S0, K, r, T, true);
 			ivRow.push_back(iv);
 		}
 		ivGrid.push_back(ivRow);
@@ -1009,7 +1013,7 @@ TEST_F(StoepComparisonTest, OnTheFlyVsGridPricing)
 			double price =
 				COSPricer::callPrice(S0, K_surf[k_idx], r, maturity, chf, 512,
 									 15.0, std::sqrt(vbar));
-			ivs[t_idx][k_idx] = COSPricer::impliedVol(price, S0, K_surf[k_idx],
+			ivs[t_idx][k_idx] = ImpliedVolSolver::solve(price, S0, K_surf[k_idx],
 													  r, maturity, true);
 		}
 	}
@@ -1045,13 +1049,13 @@ TEST_F(StoepComparisonTest, OnTheFlyVsGridPricing)
 	{
 		double cosPrice = COSPricer::callPrice(S0, K, r, testT, chf05, 512,
 											   15.0, std::sqrt(vbar));
-		double cosIV = COSPricer::impliedVol(cosPrice, S0, K, r, testT, true);
+		double cosIV = ImpliedVolSolver::solve(cosPrice, S0, K, r, testT, true);
 
 		double payoffSum = 0.0;
 		for (const auto &[s, v] : terminalsOTF)
 			payoffSum += std::max(s - K, 0.0);
 		double slvPrice = discount.discount(testT) * payoffSum / nPaths;
-		double slvIV = COSPricer::impliedVol(slvPrice, S0, K, r, testT, true);
+		double slvIV = ImpliedVolSolver::solve(slvPrice, S0, K, r, testT, true);
 
 		double errBp = (slvIV - cosIV) * 10000;
 		maxErrorOTF = std::max(maxErrorOTF, std::abs(errBp));
@@ -1078,13 +1082,13 @@ TEST_F(StoepComparisonTest, OnTheFlyVsGridPricing)
 	{
 		double cosPrice = COSPricer::callPrice(S0, K, r, testT, chf05, 512,
 											   15.0, std::sqrt(vbar));
-		double cosIV = COSPricer::impliedVol(cosPrice, S0, K, r, testT, true);
+		double cosIV = ImpliedVolSolver::solve(cosPrice, S0, K, r, testT, true);
 
 		double payoffSum = 0.0;
 		for (const auto &[s, v] : terminalsGrid)
 			payoffSum += std::max(s - K, 0.0);
 		double slvPrice = discount.discount(testT) * payoffSum / nPaths;
-		double slvIV = COSPricer::impliedVol(slvPrice, S0, K, r, testT, true);
+		double slvIV = ImpliedVolSolver::solve(slvPrice, S0, K, r, testT, true);
 
 		double errBp = (slvIV - cosIV) * 10000;
 		maxErrorGrid = std::max(maxErrorGrid, std::abs(errBp));
@@ -1132,7 +1136,7 @@ TEST_F(StoepComparisonTest, LeverageGridVsOnTheFly)
 			double price = COSPricer::callPrice(S0, K[k_idx], r, maturity, chf,
 												512, 15.0, std::sqrt(vbar));
 			ivs[t_idx][k_idx] =
-				COSPricer::impliedVol(price, S0, K[k_idx], r, maturity, true);
+				ImpliedVolSolver::solve(price, S0, K[k_idx], r, maturity, true);
 		}
 	}
 	auto surface = std::make_shared<VolatilitySurface>(K, T, ivs, discount);
@@ -1535,7 +1539,7 @@ TEST_F(COSPricerTest, ImpliedVolRecovery)
 	};
 
 	double price = COSPricer::callPrice(S0, K, r, T, bsCF, 256, 10.0, sigma);
-	double recoveredVol = COSPricer::impliedVol(price, S0, K, r, T, true);
+	double recoveredVol = ImpliedVolSolver::solve(price, S0, K, r, T, true);
 
 	EXPECT_NEAR(recoveredVol, sigma, 1e-4)
 		<< "Should recover input vol from COS price";

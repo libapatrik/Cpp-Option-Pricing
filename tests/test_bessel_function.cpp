@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <cppfm/utils/Utils.h>
+#include <cppfm/cos/COS.h>
 #include <cmath>
 #include <iostream>
 

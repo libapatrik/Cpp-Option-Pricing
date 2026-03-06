@@ -45,7 +45,7 @@ public:
     static double vanna(double spot, double strike, double rate, double volatility, double maturity);
     static double volga(double spot, double strike, double rate, double volatility, double maturity);
 
-    // Implied volatility (Newton-Raphson)
+    // Implied volatility (Brent + Newton via ImpliedVolSolver)
     static double impliedVolatility(double spot, double strike, double rate, double maturity,
                                     double marketPrice, Option::Type optionType,
                                     double initialGuess = 0.2, size_t maxIter = 100, double tol = 1e-8);

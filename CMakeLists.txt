@@ -90,6 +90,11 @@ set(CPPFM_HEADERS
     include/cppfm/pde/PDEGreeksCalculator.h
     include/cppfm/calibration/LinearAlgebra.h
     include/cppfm/calibration/Optimizer.h
+    include/cppfm/calibration/HestonCalibration.h
+    include/cppfm/cos/COS.h
+    include/cppfm/pricers/COSPricer.h
+    include/cppfm/market/HestonLocalVol.h
+    include/cppfm/calibration/ImpliedVolSolver.h
     include/cppfm/montecarlo/MonteCarlo.h
     include/cppfm/montecarlo/RandomNumberGenerator.h
     include/cppfm/montecarlo/VarianceReduction.h
@@ -115,6 +120,11 @@ set(CPPFM_SOURCES
     src/pde/PDEGreeksCalculator.cpp
     src/calibration/LinearAlgebra.cpp
     src/calibration/Optimizer.cpp
+    src/calibration/HestonCalibration.cpp
+    src/cos/COS.cpp
+    src/pricers/COSPricer.cpp
+    src/market/HestonLocalVol.cpp
+    src/calibration/ImpliedVolSolver.cpp
     src/montecarlo/MonteCarlo.cpp
     src/montecarlo/RandomNumberGenerator.cpp
     src/montecarlo/VarianceReduction.cpp
@@ -233,6 +243,9 @@ target_link_libraries(test_optimizer CppFM_lib gtest_main)
 add_executable(test_svi_calibration tests/test_svi_calibration.cpp)
 target_link_libraries(test_svi_calibration CppFM_lib gtest_main)
 
+add_executable(test_heston_calibration tests/test_heston_calibration.cpp)
+target_link_libraries(test_heston_calibration CppFM_lib gtest_main)
+
 # ============================================================================
 # CTest Configuration
 # ============================================================================
@@ -257,6 +270,7 @@ add_test(NAME BesselFunction COMMAND test_bessel_function)
 add_test(NAME LinearAlgebra COMMAND test_linear_algebra)
 add_test(NAME Optimizer COMMAND test_optimizer)
 add_test(NAME SviCalibration COMMAND test_svi_calibration)
+add_test(NAME HestonCalibration COMMAND test_heston_calibration)
 
 # ============================================================================
 # Python Bindings - to use in QFB

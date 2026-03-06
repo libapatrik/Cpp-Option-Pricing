@@ -100,6 +100,10 @@ struct HestonSLVSimulatorWrapper
     {
         return simulator->getMixingFactor();
     }
+
+    const std::vector<double>& get_leverage_grid() const { return simulator->getLeverageGrid(); }
+    const std::vector<double>& get_spot_grid() const { return simulator->getSpotGridPoints(); }
+    size_t get_num_spot_points() const { return simulator->getNumSpotGridPoints(); }
 };
 
 void bind_simulators(py::module_ &m)
@@ -185,6 +189,12 @@ void bind_simulators(py::module_ &m)
              &HestonSLVSimulatorWrapper::get_mixing_factor,
              &HestonSLVSimulatorWrapper::set_mixing_factor,
              "Mixing factor η ∈ [0,1]: η=0 pure Heston, η=1 full SLV")
+        .def("get_leverage_grid", &HestonSLVSimulatorWrapper::get_leverage_grid,
+             "Flattened L²(t,S) grid (numTimeSteps × numSpotPoints)")
+        .def("get_spot_grid", &HestonSLVSimulatorWrapper::get_spot_grid,
+             "Spot grid points used for leverage function")
+        .def("get_num_spot_points", &HestonSLVSimulatorWrapper::get_num_spot_points,
+             "Number of spot grid points")
         .def("simulate_with_cv", &HestonSLVSimulatorWrapper::simulate_with_cv,
              py::arg("strike"), py::arg("analytical_price"),
              R"pbdoc(
