@@ -103,18 +103,17 @@ HestonCalibrationResult calibrateHeston(
 		std::vector<double> res;
 		res.reserve(totalResiduals);
 
-		// COS domain needs to cover the wider of initial and long-term vol
-		double sigmaHint = std::sqrt(std::max(p.v0, p.vbar));
-
 		for (size_t s = 0; s < slices.size(); ++s)
 		{
 			auto &slice = slices[s];
 			HestonCF cf(p.kappa, p.vbar, p.sigma_v, p.rho, p.v0, r, slice.T);
 			auto chfFunc = [&cf](double u)
 			{ return cf(u); };
+			auto cum = cf.cumulants();
 
 			auto prices = COSPricer::callPrices(S0, slice.strikes, r, slice.T,
-												chfFunc, 256, 10.0, sigmaHint);
+												chfFunc, 256, 10.0,
+												cum.c1, cum.c2, cum.c4);
 
 			for (size_t i = 0; i < slice.strikes.size(); ++i)
 				res.push_back((prices[i] - mktPrices[s][i]) / vegas[s][i]);
@@ -139,12 +138,13 @@ HestonCalibrationResult calibrateHeston(
 	double sumSq = 0;
 	for (auto &slice : slices)
 	{
-		double sigmaHint = std::sqrt(std::max(finalP.v0, finalP.vbar));
 		HestonCF cf(finalP.kappa, finalP.vbar, finalP.sigma_v, finalP.rho, finalP.v0, r, slice.T);
 		auto chfFunc = [&cf](double u)
 		{ return cf(u); };
+		auto cum = cf.cumulants();
 		auto prices = COSPricer::callPrices(S0, slice.strikes, r, slice.T,
-											chfFunc, 256, 10.0, sigmaHint);
+											chfFunc, 256, 10.0,
+											cum.c1, cum.c2, cum.c4);
 
 		double sliceSumSq = 0;
 		for (size_t i = 0; i < slice.strikes.size(); ++i)
@@ -230,7 +230,6 @@ HestonParams hestonGridSearch(
 					for (double rho : rhoGrid)
 					{
 						double sse = 0;
-						double sigmaHint = std::sqrt(std::max(v0, vbar));
 
 						for (size_t s = 0; s < slices.size(); ++s)
 						{
@@ -238,9 +237,11 @@ HestonParams hestonGridSearch(
 							HestonCF cf(kappa, vbar, sig, rho, v0, r, slice.T);
 							auto chfFunc = [&cf](double u)
 							{ return cf(u); };
+							auto cum = cf.cumulants();
 
 							auto prices = COSPricer::callPrices(S0, slice.strikes, r, slice.T,
-																chfFunc, 128, 10.0, sigmaHint);
+																chfFunc, 96, 10.0,
+																cum.c1, cum.c2, cum.c4);
 
 							for (size_t i = 0; i < slice.strikes.size(); ++i)
 							{
@@ -354,7 +355,6 @@ HestonParams hestonGridSearchParallel(
 			double rho = rhoGrid[i4];
 
 			double sse = 0;
-			double sigmaHint = std::sqrt(std::max(v0, vbar));
 
 			for (size_t s = 0; s < slices.size(); ++s)
 			{
@@ -362,8 +362,9 @@ HestonParams hestonGridSearchParallel(
 				HestonCF cf(kappa, vbar, sig, rho, v0, r, slice.T);
 				auto chfFunc = [&cf](double u)
 				{ return cf(u); };
-
-				auto prices = COSPricer::callPrices(S0, slice.strikes, r, slice.T, chfFunc, 128, 10.0, sigmaHint);
+				auto cum = cf.cumulants();
+				auto prices = COSPricer::callPrices(S0, slice.strikes, r, slice.T, chfFunc, 96, 10.0,
+													cum.c1, cum.c2, cum.c4);
 
 				for (size_t i = 0; i < slice.strikes.size(); ++i)
 				{

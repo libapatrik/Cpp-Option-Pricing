@@ -163,7 +163,7 @@ TEST_F(HestonModelTest, FellerConditionImpactOnOptionPricing) {
         std::cout << "  Status: VIOLATED (variance may hit zero)\n\n";
 
         EulerPathSimulator2D   simEuler1(timeSteps, model1, seed);
-        BKExactPathSimulator2D simBK1(timeSteps, model1, seed, NewtonMethod::Optimized);
+        BKExactPathSimulator2D simBK1(timeSteps, model1, seed);
         TGPathSimulator2D      simTG1(timeSteps, model1, seed);
         QEPathSimulator2D      simQE1(timeSteps, model1, seed);
 
@@ -215,7 +215,7 @@ TEST_F(HestonModelTest, FellerConditionImpactOnOptionPricing) {
         std::cout << "  Status: SATISFIED (variance stays positive)\n\n";
 
         EulerPathSimulator2D   simEuler2(timeSteps, model2, seed);
-        BKExactPathSimulator2D simBK2(timeSteps, model2, seed, NewtonMethod::Optimized);
+        BKExactPathSimulator2D simBK2(timeSteps, model2, seed);
         TGPathSimulator2D      simTG2(timeSteps, model2, seed);
         QEPathSimulator2D      simQE2(timeSteps, model2, seed);
 
@@ -267,7 +267,7 @@ TEST_F(HestonModelTest, FellerConditionImpactOnOptionPricing) {
         std::cout << "  Status: barely SATISFIED (may have numerical issues)\n\n";
 
         EulerPathSimulator2D   simEuler3(timeSteps, model3, seed);
-        BKExactPathSimulator2D simBK3(timeSteps, model3, seed, NewtonMethod::Optimized);
+        BKExactPathSimulator2D simBK3(timeSteps, model3, seed);
         TGPathSimulator2D      simTG3(timeSteps, model3, seed);
         QEPathSimulator2D      simQE3(timeSteps, model3, seed);
 
@@ -319,7 +319,7 @@ TEST_F(HestonModelTest, FellerConditionImpactOnOptionPricing) {
         std::cout << "  Status:  BOUNDARY (variance can touch zero but won't cross)\n\n";
 
         EulerPathSimulator2D   simEuler4(timeSteps, model4, seed);
-        BKExactPathSimulator2D simBK4(timeSteps, model4, seed, NewtonMethod::Optimized);
+        BKExactPathSimulator2D simBK4(timeSteps, model4, seed);
         TGPathSimulator2D      simTG4(timeSteps, model4, seed);
         QEPathSimulator2D      simQE4(timeSteps, model4, seed);
 

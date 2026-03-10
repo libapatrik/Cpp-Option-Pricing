@@ -9,15 +9,14 @@
 #include <omp.h>
 #endif
 
-#include <cppfm/models/Model.h>
-#include <cppfm/market/VolatilitySurface.h>
-#include <cppfm/montecarlo/MonteCarlo.h>  // MonteCarloResult
-#include <cppfm/cos/COS.h>  // Transforms, ChFIntegratedVariance, NewtonMethod
+#include <cppfm/cos/COS.h> // Transforms, ChFIntegratedVariance
 #include <cppfm/market/HestonLocalVol.h>
-#include <random>
+#include <cppfm/market/VolatilitySurface.h>
+#include <cppfm/models/Model.h>
+#include <cppfm/montecarlo/MonteCarlo.h> // MonteCarloResult
+#include <cppfm/third_party/pcg/pcg_random.hpp>
 #include <memory>
 #include <vector>
-#include <cppfm/third_party/pcg/pcg_random.hpp>
 
 /// GOAL: Andersen -> Stoep -> Hammouda QMC
 /**
@@ -92,91 +91,91 @@
 class PathSimulator2D
 {
 public:
-  PathSimulator2D(const std::vector<double> &timeSteps, const Model2D &model,
-                  size_t randomSeed);
-  virtual ~PathSimulator2D();
-  virtual std::pair<double, double>
-  nextStep(size_t timeIndex, double assetPrice, double variance) const = 0;
+	PathSimulator2D(const std::vector<double> &timeSteps, const Model2D &model,
+					size_t randomSeed);
+	virtual ~PathSimulator2D();
+	virtual std::pair<double, double>
+	nextStep(size_t timeIndex, double assetPrice, double variance) const = 0;
 
-  // Generate full paths for both S and V
-  std::pair<std::vector<double>, std::vector<double>> paths() const;
+	// Generate full paths for both S and V
+	std::pair<std::vector<double>, std::vector<double>> paths() const;
 
 protected:
-  bool timeStepsSanityCheck() const;
+	bool timeStepsSanityCheck() const;
 
-  // Generate correlated normal random variables with correlation from model
-  // NOTE: Uses antithetic sampling internally for variance reduction
-  std::pair<double, double> generateCorrelatedNormals() const;
+	// Generate correlated normal random variables with correlation from model
+	// NOTE: Uses antithetic sampling internally for variance reduction
+	std::pair<double, double> generateCorrelatedNormals() const;
 
-  double generateUniform() const;
-  double generateStandardNormalSLV() const;
-  double generateStandardNormal() const;
+	double generateUniform() const;
+	double generateStandardNormalSLV() const;
+	double generateStandardNormal() const;
 
-  // Thread-local RNGs for parallel simulation
-  // mutable std::vector<std::default_random_engine> _threadRNGs;
-  mutable std::vector<pcg32> _threadRNGs; // PCG32: 16 bytes state vs 2.5KB, better cache efficiency for parallel
-  // initialize thread-local RNGs (call once before parallel region)
-  void initThreadLocalRNGs() const;
-  // Generate random using thread's own RNG
-  double generateStandardNormalParallel(int threadId) const;
+	// Thread-local RNGs for parallel simulation
+	// mutable std::vector<std::default_random_engine> _threadRNGs;
+	mutable std::vector<pcg32> _threadRNGs; // PCG32: 16 bytes state vs 2.5KB, better cache efficiency for parallel
+	// initialize thread-local RNGs (call once before parallel region)
+	void initThreadLocalRNGs() const;
+	// Generate random using thread's own RNG
+	double generateStandardNormalParallel(int threadId) const;
 
-  /**
-   * Correlation-preserving discretization for X (Andersen Eq. 33)
-   * Common to both TG and QE schemes
-   *
-   * Notation: X(t) = ln(S(t)) is the log-price
-   *
-   * @param X_t Current log-price X(t) = ln(S(t))
-   * @param V_t Current variance V(t)
-   * @param V_next Next variance V(t+Δ)
-   * @param dt Time step Δt
-   * @param Z Independent standard normal for X
-   * @param gamma1 γ₁ weight for V(t)
-   * @param gamma2 γ₂ weight for V(t+Δ)
-   * @return X(t+Δ) = ln(S(t+Δ))
-   */
-  double stepLogPriceEq33(double X_t, double V_t, double V_next, double dt,
-                          double Z, double gamma1, double gamma2) const;
+	/**
+	 * Correlation-preserving discretization for X (Andersen Eq. 33)
+	 * Common to both TG and QE schemes
+	 *
+	 * Notation: X(t) = ln(S(t)) is the log-price
+	 *
+	 * @param X_t Current log-price X(t) = ln(S(t))
+	 * @param V_t Current variance V(t)
+	 * @param V_next Next variance V(t+Δ)
+	 * @param dt Time step Δt
+	 * @param Z Independent standard normal for X
+	 * @param gamma1 γ₁ weight for V(t)
+	 * @param gamma2 γ₂ weight for V(t+Δ)
+	 * @return X(t+Δ) = ln(S(t+Δ))
+	 */
+	double stepLogPriceEq33(double X_t, double V_t, double V_next, double dt,
+							double Z, double gamma1, double gamma2) const;
 
-  /**
-   * Shared variance discretization methods (DRY principle)
-   * These are used by multiple schemes to avoid code duplication
-   */
+	/**
+	 * Shared variance discretization methods (DRY principle)
+	 * These are used by multiple schemes to avoid code duplication
+	 */
 
-  /**
-   * Truncated Gaussian (TG) Scheme for Variance (Andersen Eq. 13)
-   * Used by: TGPathSimulator2D, BKTGPathSimulator2D
-   *
-   * @param V_t Current variance V(t)
-   * @param dt Time step Δt
-   * @param Z_V Standard normal for variance
-   * @return V(t+Δ)
-   */
-  double stepVarianceTG(double V_t, double dt, double Z_V) const;
+	/**
+	 * Truncated Gaussian (TG) Scheme for Variance (Andersen Eq. 13)
+	 * Used by: TGPathSimulator2D, BKTGPathSimulator2D
+	 *
+	 * @param V_t Current variance V(t)
+	 * @param dt Time step Δt
+	 * @param Z_V Standard normal for variance
+	 * @return V(t+Δ)
+	 */
+	double stepVarianceTG(double V_t, double dt, double Z_V) const;
 
-  /**
-   * Quadratic-Exponential (QE) Scheme for Variance (Andersen Eq. 23/26)
-   * Used by: QEPathSimulator2D, BKQEPathSimulator2D
-   *
-   * @param V_t Current variance V(t)
-   * @param dt Time step Δt
-   * @param Z_V Standard normal for variance
-   * @param psi_c Threshold for switching between quadratic/exponential
-   * @return V(t+Δ)
-   */
-  double stepVarianceQE(double V_t, double dt, double Z_V, double psi_c) const;
+	/**
+	 * Quadratic-Exponential (QE) Scheme for Variance (Andersen Eq. 23/26)
+	 * Used by: QEPathSimulator2D, BKQEPathSimulator2D
+	 *
+	 * @param V_t Current variance V(t)
+	 * @param dt Time step Δt
+	 * @param Z_V Standard normal for variance
+	 * @param psi_c Threshold for switching between quadratic/exponential
+	 * @return V(t+Δ)
+	 */
+	double stepVarianceQE(double V_t, double dt, double Z_V, double psi_c) const;
 
-  std::vector<double> _timeSteps;
-  const Model2D *_modelPtr; // Pointer to base class Model2D - for polymorphic 2D models
-  size_t _randomSeed;
-  // mutable std::default_random_engine _randomEngine;  // removing the slower variant
-  mutable pcg32 _randomEngine;
+	std::vector<double> _timeSteps;
+	const Model2D *_modelPtr; // Pointer to base class Model2D - for polymorphic 2D models
+	size_t _randomSeed;
+	// mutable std::default_random_engine _randomEngine;  // removing the slower variant
+	mutable pcg32 _randomEngine;
 
-  // Antithetic sampling support (PATH-LEVEL for proper variance reduction)
-  // For N paths, generate N/2 with fresh randoms, then N/2 with negated randoms
-  mutable bool _antitheticMode;             // true = using cached negated values
-  mutable std::vector<double> _randomCache; // Cache ALL randoms from previous path
-  mutable size_t _cacheIndex;               // Current position in cache during replay
+	// Antithetic sampling support (PATH-LEVEL for proper variance reduction)
+	// For N paths, generate N/2 with fresh randoms, then N/2 with negated randoms
+	mutable bool _antitheticMode;			  // true = using cached negated values
+	mutable std::vector<double> _randomCache; // Cache ALL randoms from previous path
+	mutable size_t _cacheIndex;				  // Current position in cache during replay
 };
 
 /** EULER as a pair for (X, V)
@@ -196,17 +195,17 @@ protected:
 class EulerPathSimulator2D : public PathSimulator2D
 {
 public:
-  EulerPathSimulator2D(const std::vector<double> &timeSteps,
-                       const Model2D &model, size_t randomSeed);
-  /**
-   * Perform one time step using Full Truncation discretization
-   * @param timeIndex Current time index in _timeSteps
-   * @param assetPrice Current asset price S(t)
-   * @param variance Current variance V(t)
-   * @return Pair of (S(t+Δ), V(t+Δ))
-   */
-  std::pair<double, double> nextStep(size_t timeIndex, double assetPrice,
-                                     double variance) const override;
+	EulerPathSimulator2D(const std::vector<double> &timeSteps,
+						 const Model2D &model, size_t randomSeed);
+	/**
+	 * Perform one time step using Full Truncation discretization
+	 * @param timeIndex Current time index in _timeSteps
+	 * @param assetPrice Current asset price S(t)
+	 * @param variance Current variance V(t)
+	 * @return Pair of (S(t+Δ), V(t+Δ))
+	 */
+	std::pair<double, double> nextStep(size_t timeIndex, double assetPrice,
+									   double variance) const override;
 };
 
 class MilsteinPathSimulator2D : public PathSimulator2D
@@ -232,40 +231,40 @@ class MilsteinPathSimulator2D : public PathSimulator2D
 class BKSchemeBase : public PathSimulator2D
 {
 public:
-  BKSchemeBase(const std::vector<double> &timeSteps, const Model2D &model,
-               size_t randomSeed);
-  virtual ~BKSchemeBase() = default;
+	BKSchemeBase(const std::vector<double> &timeSteps, const Model2D &model,
+				 size_t randomSeed);
+	virtual ~BKSchemeBase() = default;
 
-  /**
-   * Common nextStep for all BK variants
-   * Delegates to generateVarianceAndIntegral(), then applies Equation 11
-   */
-  std::pair<double, double> nextStep(size_t timeIndex, double assetPrice,
-                                     double variance) const override final;
+	/**
+	 * Common nextStep for all BK variants
+	 * Delegates to generateVarianceAndIntegral(), then applies Equation 11
+	 */
+	std::pair<double, double> nextStep(size_t timeIndex, double assetPrice,
+									   double variance) const override final;
 
 protected:
-  /**
-   * Broadie-Kaya Equation 11 (Exact SDE Representation)
-   *
-   * From Andersen (2008) Equation 11:
-   * ln X(t+Δ) = ln X(t) + r·Δt + (ρ/ε)(V(t+Δ) - V(t) - κθΔ)
-   *                             + (κρ/ε - 1/2)∫V(s)ds
-   *                             + √(1-ρ²)·√(∫V)·Z
-   *
-   * Shared by ALL BK variants (exact and approximate)
-   */
-  double stepLogPriceEq11(double X_t, double V_t, double V_next,
-                          double integratedV, double dt, double Z) const;
+	/**
+	 * Broadie-Kaya Equation 11 (Exact SDE Representation)
+	 *
+	 * From Andersen (2008) Equation 11:
+	 * ln X(t+Δ) = ln X(t) + r·Δt + (ρ/ε)(V(t+Δ) - V(t) - κθΔ)
+	 *                             + (κρ/ε - 1/2)∫V(s)ds
+	 *                             + √(1-ρ²)·√(∫V)·Z
+	 *
+	 * Shared by ALL BK variants (exact and approximate)
+	 */
+	double stepLogPriceEq11(double X_t, double V_t, double V_next,
+							double integratedV, double dt, double Z) const;
 
-  /**
-   * Pure virtual: Generate V(t+Δ) and ∫V
-   *
-   * Different strategies:
-   * - BKExact: Exact sampling of both
-   * - BKApproximateScheme: V via TG/QE, ∫V via approximation (32)
-   */
-  virtual std::pair<double, double>
-  generateIntegratedVariance(double V_t, double dt) const = 0;
+	/**
+	 * Pure virtual: Generate V(t+Δ) and ∫V
+	 *
+	 * Different strategies:
+	 * - BKExact: Exact sampling of both
+	 * - BKApproximateScheme: V via TG/QE, ∫V via approximation (32)
+	 */
+	virtual std::pair<double, double>
+	generateIntegratedVariance(double V_t, double dt) const = 0;
 };
 
 // ============================================================================
@@ -283,25 +282,25 @@ protected:
 class BKApproximateScheme : public BKSchemeBase
 {
 public:
-  BKApproximateScheme(const std::vector<double> &timeSteps,
-                      const Model2D &model, size_t randomSeed,
-                      double gamma1 = 0.5, double gamma2 = 0.5);
+	BKApproximateScheme(const std::vector<double> &timeSteps,
+						const Model2D &model, size_t randomSeed,
+						double gamma1 = 0.5, double gamma2 = 0.5);
 
 protected:
-  /**
-   * Implements approximation (32): ∫V ≈ γ₁V(t) + γ₂V(t+Δ)
-   * Uses trapezoidal rule by default (γ₁ = γ₂ = 0.5)
-   */
-  std::pair<double, double>
-  generateIntegratedVariance(double V_t, double dt) const override final;
-  /**
-   * Pure virtual: Generate V(t+Δ)
-   * Each subclass implements its own variance discretization
-   */
-  virtual double generateNextVariance(double V_t, double dt) const = 0;
+	/**
+	 * Implements approximation (32): ∫V ≈ γ₁V(t) + γ₂V(t+Δ)
+	 * Uses trapezoidal rule by default (γ₁ = γ₂ = 0.5)
+	 */
+	std::pair<double, double>
+	generateIntegratedVariance(double V_t, double dt) const override final;
+	/**
+	 * Pure virtual: Generate V(t+Δ)
+	 * Each subclass implements its own variance discretization
+	 */
+	virtual double generateNextVariance(double V_t, double dt) const = 0;
 
-  double _gamma1; // γ₁: weight for V(t) in approximation (32)
-  double _gamma2; // γ₂: weight for V(t+Δ) in approximation (32)
+	double _gamma1; // γ₁: weight for V(t) in approximation (32)
+	double _gamma2; // γ₂: weight for V(t+Δ) in approximation (32)
 };
 
 // ============================================================================
@@ -316,12 +315,12 @@ protected:
 class BKTGPathSimulator2D : public BKApproximateScheme
 {
 public:
-  BKTGPathSimulator2D(const std::vector<double> &timeSteps,
-                      const Model2D &model, size_t randomSeed,
-                      double gamma1 = 0.5, double gamma2 = 0.5);
+	BKTGPathSimulator2D(const std::vector<double> &timeSteps,
+						const Model2D &model, size_t randomSeed,
+						double gamma1 = 0.5, double gamma2 = 0.5);
 
 protected:
-  double generateNextVariance(double V_t, double dt) const override;
+	double generateNextVariance(double V_t, double dt) const override;
 };
 
 // ============================================================================
@@ -336,16 +335,16 @@ protected:
 class BKQEPathSimulator2D : public BKApproximateScheme
 {
 public:
-  BKQEPathSimulator2D(const std::vector<double> &timeSteps,
-                      const Model2D &model, size_t randomSeed,
-                      double psi_c = 1.5, double gamma1 = 0.5,
-                      double gamma2 = 0.5);
+	BKQEPathSimulator2D(const std::vector<double> &timeSteps,
+						const Model2D &model, size_t randomSeed,
+						double psi_c = 1.5, double gamma1 = 0.5,
+						double gamma2 = 0.5);
 
 protected:
-  double generateNextVariance(double V_t, double dt) const override;
+	double generateNextVariance(double V_t, double dt) const override;
 
 private:
-  double _psi_c; // Threshold for QE switching rule
+	double _psi_c; // Threshold for QE switching rule
 };
 
 // ============================================================================
@@ -364,67 +363,62 @@ private:
 class BKExactPathSimulator2D : public BKSchemeBase
 {
 public:
-  BKExactPathSimulator2D(const std::vector<double> &timeSteps,
-                         const Model2D &model, size_t randomSeed,
-                         NewtonMethod newtonMethod = NewtonMethod::Optimized);
+	BKExactPathSimulator2D(const std::vector<double> &timeSteps,
+						   const Model2D &model, size_t randomSeed);
 
 protected:
-  std::pair<double, double>
-  generateIntegratedVariance(double V_t, double dt) const override;
-
-private:
-  NewtonMethod _newtonMethod;
+	std::pair<double, double>
+	generateIntegratedVariance(double V_t, double dt) const override;
 };
 
 // For X: (Equation 33) For V: Truncated Gaussian (TG) (Equation 13)
 class TGPathSimulator2D : public PathSimulator2D
 {
 public:
-  TGPathSimulator2D(const std::vector<double> &timeSteps, const Model2D &model,
-                    size_t randomSeed, double gamma1 = 0.5,
-                    double gamma2 = 0.5);
-  virtual ~TGPathSimulator2D() override;
+	TGPathSimulator2D(const std::vector<double> &timeSteps, const Model2D &model,
+					  size_t randomSeed, double gamma1 = 0.5, double gamma2 = 0.5);
+	virtual ~TGPathSimulator2D() override;
 
-  /**
-   * Perform one time step using TG scheme for V and Equation 33 for X
-   * @param timeIndex Current time index in _timeSteps
-   * @param assetPrice Current asset price S(t)
-   * @param variance Current variance V(t)
-   * @return Pair of (S(t+Δ), V(t+Δ))
-   */
-  std::pair<double, double> nextStep(size_t timeIndex, double assetPrice,
-                                     double variance) const override;
+	/**
+	 * Perform one time step using TG scheme for V and Equation 33 for X
+	 * @param timeIndex Current time index in _timeSteps
+	 * @param assetPrice Current asset price S(t)
+	 * @param variance Current variance V(t)
+	 * @return Pair of (S(t+Δ), V(t+Δ))
+	 */
+	std::pair<double, double> nextStep(size_t timeIndex, double assetPrice,
+									   double variance) const override;
 
 protected:
-  double _gamma1; // γ₁: weight for V(t) in integral approximation
-  double _gamma2; // γ₂: weight for V(t+Δt) in integral approximation
+	double _gamma1; // γ₁: weight for V(t) in integral approximation
+	double _gamma2; // γ₂: weight for V(t+Δt) in integral approximation
 };
 
 // For X: (Equation 33) For V: Quadratic-Exponential (QE) (Equation 23/26)
 class QEPathSimulator2D : public PathSimulator2D
 {
 public:
-  QEPathSimulator2D(const std::vector<double> &timeSteps, const Model2D &model,
-                    size_t randomSeed,
-                    double psi_c = 1.5, // for the switching rule
-                    double gamma1 = 0.5, double gamma2 = 0.5);
-  virtual ~QEPathSimulator2D() override;
+	QEPathSimulator2D(const std::vector<double> &timeSteps, const Model2D &model,
+					  size_t randomSeed,
+					  double psi_c = 1.5, // for the switching rule
+					  double gamma1 = 0.5, double gamma2 = 0.5);
+	virtual ~QEPathSimulator2D() override;
 
-  /**
-   * Perform one time step using QE scheme for V and Equation 33 for X
-   * @param timeIndex Current time index in _timeSteps
-   * @param assetPrice Current asset price S(t)
-   * @param variance Current variance V(t)
-   * @return Pair of (S(t+Δ), V(t+Δ))
-   */
-  std::pair<double, double> nextStep(size_t timeIndex, double assetPrice,
-                                     double variance) const override;
+	/**
+	 * Perform one time step using QE scheme for V and Equation 33 for X
+	 * @param timeIndex Current time index in _timeSteps
+	 * @param assetPrice Current asset price S(t)
+	 * @param variance Current variance V(t)
+	 * @return Pair of (S(t+Δ), V(t+Δ))
+	 */
+	std::pair<double, double> nextStep(size_t timeIndex, double assetPrice,
+									   double variance) const override;
 
 protected:
-  double _psi_c;  // ψ_c: Threshold parameter for switching between
-                  // quadratic/exponential
-  double _gamma1; // γ₁: weight for V(t) in integral approximation
-  double _gamma2; // γ₂: weight for V(t+Δt) in integral approximation
+	double _psi_c;	// ψ_c: Threshold parameter for switching between
+					// quadratic/exponential
+	double _gamma1; // γ₁: weight for V(t) in integral approximation
+	double _gamma2; // γ₂: weight for V(t+Δt) in integral approximation
 };
 
 // ============================================================================
@@ -457,231 +451,235 @@ protected:
 class HestonSLVPathSimulator2D : public PathSimulator2D
 {
 public:
-  // Source of local volatility for leverage function
-  enum class LocalVolSource { HestonAnalytical, ExternalSurface };
+	// Source of local volatility for leverage function
+	enum class LocalVolSource
+	{
+		HestonAnalytical,
+		ExternalSurface
+	};
 
-  /**
-   * Constructor with HestonModel - uses COS-based analytical Dupire
-   * Local volatility is computed via HestonLocalVol internally
-   */
-  HestonSLVPathSimulator2D(
-      const HestonModel &model,
-      const std::vector<double> &timeSteps, // Caller must ensure lifetime
-      size_t numPaths,
-      size_t numBins = 20, // Paper recommends 20 bins
-      size_t randomSeed = 42);
+	/**
+	 * Constructor with HestonModel - uses COS-based analytical Dupire
+	 * Local volatility is computed via HestonLocalVol internally
+	 */
+	HestonSLVPathSimulator2D(
+		const HestonModel &model,
+		const std::vector<double> &timeSteps, // Caller must ensure lifetime
+		size_t numPaths,
+		size_t numBins = 20, // Paper recommends 20 bins
+		size_t randomSeed = 42);
 
-  /**
-   * Constructor with external VolatilitySurface for local vol
-   * Allows SLV to fit arbitrary market smiles (not just Heston-consistent)
-   * @param volSurface Non-owning pointer, caller manages lifetime
-   */
-  HestonSLVPathSimulator2D(
-      const HestonModel &model,
-      const VolatilitySurface* volSurface, // Non-owning, caller manages lifetime
-      const std::vector<double> &timeSteps,
-      size_t numPaths,
-      size_t numBins = 20,
-      size_t randomSeed = 42);
+	/**
+	 * Constructor with external VolatilitySurface for local vol
+	 * Allows SLV to fit arbitrary market smiles (not just Heston-consistent)
+	 * @param volSurface Non-owning pointer, caller manages lifetime
+	 */
+	HestonSLVPathSimulator2D(
+		const HestonModel &model,
+		const VolatilitySurface *volSurface, // Non-owning, caller manages lifetime
+		const std::vector<double> &timeSteps,
+		size_t numPaths,
+		size_t numBins = 20,
+		size_t randomSeed = 42);
 
-  ~HestonSLVPathSimulator2D() override;
+	~HestonSLVPathSimulator2D() override;
 
-  HestonSLVPathSimulator2D(const HestonSLVPathSimulator2D &) = delete;
-  HestonSLVPathSimulator2D &
-  operator=(const HestonSLVPathSimulator2D &) = delete;
+	HestonSLVPathSimulator2D(const HestonSLVPathSimulator2D &) = delete;
+	HestonSLVPathSimulator2D &
+	operator=(const HestonSLVPathSimulator2D &) = delete;
 
-  /**
-   * nextStep() not used - SLV uses batch simulation
-   * @throws std::runtime_error always
-   */
-  std::pair<double, double> nextStep(size_t timeIndex, double assetPrice,
-                                     double variance) const override;
+	/**
+	 * nextStep() not used - SLV uses batch simulation
+	 * @throws std::runtime_error always
+	 */
+	std::pair<double, double> nextStep(size_t timeIndex, double assetPrice,
+									   double variance) const override;
 
-  /**
-   * Simulate ALL paths simultaneously (batch mode)
-   * Implements Algorithm 1 + Section 3.3 (QE scheme)
-   * @return vector of (S_T, V_T) pairs for all paths at terminal time
-   */
-  std::vector<std::pair<double, double>> simulateAllPaths() const;
-  std::vector<std::pair<double, double>> simulateAllPathsParallel() const;
-  /**
-   * Simulate with Heston as control variate for variance reduction.
-   * Evolves SLV and pure Heston paths simultaneously using same Brownians.
-   * @param strike Option strike for payoff computation
-   * @param analyticalControlPrice Analytical Heston price (via COS/CF)
-   * @return MonteCarloResult with CV-adjusted statistics
-   */
-  MonteCarloResult simulateWithControlVariate(double strike, double analyticalControlPrice) const;
+	/**
+	 * Simulate ALL paths simultaneously (batch mode)
+	 * Implements Algorithm 1 + Section 3.3 (QE scheme)
+	 * @return vector of (S_T, V_T) pairs for all paths at terminal time
+	 */
+	std::vector<std::pair<double, double>> simulateAllPaths() const;
+	std::vector<std::pair<double, double>> simulateAllPathsParallel() const;
+	/**
+	 * Simulate with Heston as control variate for variance reduction.
+	 * Evolves SLV and pure Heston paths simultaneously using same Brownians.
+	 * @param strike Option strike for payoff computation
+	 * @param analyticalControlPrice Analytical Heston price (via COS/CF)
+	 * @return MonteCarloResult with CV-adjusted statistics
+	 */
+	MonteCarloResult simulateWithControlVariate(double strike, double analyticalControlPrice) const;
 
-  /**
-   * Simulate and return full path history
-   * @return [path_index][time_index] -> (S, V)
-   */
-  std::vector<std::vector<std::pair<double, double>>> simulateAllPathsFull() const;
-  std::vector<std::vector<std::pair<double, double>>> simulateAllPathsFullParallel() const;
-  
-  size_t calibrateLeverage(size_t maxIterations = 10, double tol = 1e-3, double damping = 0.5);
-  bool isCalibrated() const { return _leverageCalibrated; } // check if leverage was calibrated
-  // Get calibration error history (||L_new - L_old||/||L_old|| per iteration)
-  const std::vector<double>& calibrationErrors() const { return _calibrationErrors; }
-  void resetCalibration();
+	/**
+	 * Simulate and return full path history
+	 * @return [path_index][time_index] -> (S, V)
+	 */
+	std::vector<std::vector<std::pair<double, double>>> simulateAllPathsFull() const;
+	std::vector<std::vector<std::pair<double, double>>> simulateAllPathsFullParallel() const;
 
-  // Mixing factor η ∈ [0,1]: η=0 is pure Heston, η=1 is full SLV
-  // L_eff = η*L + (1-η)*1, so leverage effect is blended with identity
-  void setMixingFactor(double eta);
-  double getMixingFactor() const { return _mixingFactor; }
+	size_t calibrateLeverage(size_t maxIterations = 10, double tol = 1e-3, double damping = 0.5);
+	bool isCalibrated() const { return _leverageCalibrated; } // check if leverage was calibrated
+	// Get calibration error history (||L_new - L_old||/||L_old|| per iteration)
+	const std::vector<double> &calibrationErrors() const { return _calibrationErrors; }
+	void resetCalibration();
 
-  // Diagnostic accessors
-  const std::vector<double>& getLeverageGrid() const { return _leverageGrid; }
-  const std::vector<double>& getSpotGridPoints() const { return _spotGridPoints; }
-  size_t getNumSpotGridPoints() const { return _nSpotGrid; }
+	// Mixing factor η ∈ [0,1]: η=0 is pure Heston, η=1 is full SLV
+	// L_eff = η*L + (1-η)*1, so leverage effect is blended with identity
+	void setMixingFactor(double eta);
+	double getMixingFactor() const { return _mixingFactor; }
+
+	// Diagnostic accessors
+	const std::vector<double> &getLeverageGrid() const { return _leverageGrid; }
+	const std::vector<double> &getSpotGridPoints() const { return _spotGridPoints; }
+	size_t getNumSpotGridPoints() const { return _nSpotGrid; }
 
 private:
-  // =========================================================================
-  // Binning Data Structure (Section 3.1)
-  // =========================================================================
-  struct BinData
-  {
-    std::vector<size_t> pathIndices; // Paths assigned to this bin (J_{i,k})
-    double lowerBound;               // b_k
-    double upperBound;               // b_{k+1}
-    double midpoint;                 // (b_k + b_{k+1}) / 2 - for interpolation
-    double conditionalExpectation;   // E[V | S in bin_k]
-  };
+	// =========================================================================
+	// Binning Data Structure (Section 3.1)
+	// =========================================================================
+	struct BinData
+	{
+		std::vector<size_t> pathIndices; // Paths assigned to this bin (J_{i,k})
+		double lowerBound;				 // b_k
+		double upperBound;				 // b_{k+1}
+		double midpoint;				 // (b_k + b_{k+1}) / 2 - for interpolation
+		double conditionalExpectation;	 // E[V | S in bin_k]
+	};
 
-  // Leverage grid for iterative calibration
-  std::vector<double> _leverageGrid;
-  std::vector<double> _spotGridPoints;
-  size_t _nSpotGrid;
-  bool _leverageCalibrated;
-  std::vector<double> _calibrationErrors;
+	// Leverage grid for iterative calibration
+	std::vector<double> _leverageGrid;
+	std::vector<double> _spotGridPoints;
+	size_t _nSpotGrid;
+	bool _leverageCalibrated;
+	std::vector<double> _calibrationErrors;
 
-  // Mixing factor: η=0 pure Heston, η=1 full SLV (default)
-  double _mixingFactor = 1.0;
+	// Mixing factor: η=0 pure Heston, η=1 full SLV (default)
+	double _mixingFactor = 1.0;
 
-  // Precomputed local volatility grid from HestonLocalVol (COS-based Dupire)
-  // Indexed as: _localVolGrid[timeIdx * _nSpotGrid + spotIdx]
-  std::vector<double> _localVolGrid;
-  void precomputeLocalVolGrid();  // Initialize local vol grid at construction
-  double getLocalVolFromGrid(double spot, size_t timeIdx) const;
+	// Precomputed local volatility grid from HestonLocalVol (COS-based Dupire)
+	// Indexed as: _localVolGrid[timeIdx * _nSpotGrid + spotIdx]
+	std::vector<double> _localVolGrid;
+	void precomputeLocalVolGrid(); // Initialize local vol grid at construction
+	double getLocalVolFromGrid(double spot, size_t timeIdx) const;
 
-  void initializeLeverageGrid(); // initialize the leverage grid with L^2=1 everywhere
-  std::vector<std::vector<BinData>> simulateAndCollectAllBins() const;
-  double updateLeverageGrid(const std::vector<std::vector<BinData>>& allTimeBins, double damping);
-  double getLeverageSquaredFromGrid(double spot, size_t timeIdx) const;
-  size_t findSpotGridIndex(double spot) const;
+	void initializeLeverageGrid(); // initialize the leverage grid with L^2=1 everywhere
+	std::vector<std::vector<BinData>> simulateAndCollectAllBins() const;
+	double updateLeverageGrid(const std::vector<std::vector<BinData>> &allTimeBins, double damping);
+	double getLeverageSquaredFromGrid(double spot, size_t timeIdx) const;
+	size_t findSpotGridIndex(double spot) const;
 
-  // =========================================================================
-  // Binning Algorithm 1
-  // =========================================================================
+	// =========================================================================
+	// Binning Algorithm 1
+	// =========================================================================
 
-  /**
-   * Compute bins and conditional expectations E[V|S] at current time step
-   * @param spotValues Current spot values for all paths
-   * @param varianceValues Current variance values for all paths
-   * @return Vector of bins with computed conditional expectations
-   */
-  std::vector<BinData> computeBins(const std::vector<double> &spotValues, const std::vector<double> &varianceValues) const;
+	/**
+	 * Compute bins and conditional expectations E[V|S] at current time step
+	 * @param spotValues Current spot values for all paths
+	 * @param varianceValues Current variance values for all paths
+	 * @return Vector of bins with computed conditional expectations
+	 */
+	std::vector<BinData> computeBins(const std::vector<double> &spotValues, const std::vector<double> &varianceValues) const;
 
-  std::vector<BinData> computeBinsVectorized(const std::vector<double> &spotValues, const std::vector<double> &varianceValues) const;
+	std::vector<BinData> computeBinsVectorized(const std::vector<double> &spotValues, const std::vector<double> &varianceValues) const;
 
-  /**
-   * Find bin index for a given spot value (binary search)
-   * @param spot Spot value to locate
-   * @param bins Computed bins
-   * @return Bin index k such that spot in [b_k, b_{k+1})
-   */
-  size_t findBinIndex(double spot, const std::vector<BinData> &bins) const;
+	/**
+	 * Find bin index for a given spot value (binary search)
+	 * @param spot Spot value to locate
+	 * @param bins Computed bins
+	 * @return Bin index k such that spot in [b_k, b_{k+1})
+	 */
+	size_t findBinIndex(double spot, const std::vector<BinData> &bins) const;
 
-  // =========================================================================
-  // Leverage Function (Eq. 2.9)
-  // =========================================================================
+	// =========================================================================
+	// Leverage Function (Eq. 2.9)
+	// =========================================================================
 
-  /**
-   * Compute leverage function squared: L2(t,S) = σ^2_LV(t,S) / E[V|S]
-   * This is the core of the SLV model (Equation 2.9)
-   * Uses linear interpolation for E[V|S] (Section 3.2)
-   *
-   * @param spot Current spot S
-   * @param time Current time t
-   * @param bins Pre-computed bins with conditional expectations
-   * @return L2(t, S)
-   */
-  double leverageSquared(double spot, double time,
-                         const std::vector<BinData> &bins) const;
+	/**
+	 * Compute leverage function squared: L2(t,S) = σ^2_LV(t,S) / E[V|S]
+	 * This is the core of the SLV model (Equation 2.9)
+	 * Uses linear interpolation for E[V|S] (Section 3.2)
+	 *
+	 * @param spot Current spot S
+	 * @param time Current time t
+	 * @param bins Pre-computed bins with conditional expectations
+	 * @return L2(t, S)
+	 */
+	double leverageSquared(double spot, double time,
+						   const std::vector<BinData> &bins) const;
 
-  /**
-   * Linear interpolation of E[V|S] between bin midpoints
-   * @param spot Spot value for interpolation
-   * @param bins Computed bins with conditional expectations
-   * @return Interpolated E[V|S]
-   */
-  double
-  interpolateConditionalExpectation(double spot,
-                                    const std::vector<BinData> &bins) const;
+	/**
+	 * Linear interpolation of E[V|S] between bin midpoints
+	 * @param spot Spot value for interpolation
+	 * @param bins Computed bins with conditional expectations
+	 * @return Interpolated E[V|S]
+	 */
+	double
+	interpolateConditionalExpectation(double spot,
+									  const std::vector<BinData> &bins) const;
 
-  // =========================================================================
-  // SLV-Specific Discretization (Section 3.3)
-  // =========================================================================
+	// =========================================================================
+	// SLV-Specific Discretization (Section 3.3)
+	// =========================================================================
 
-  /**
-   * Step variance using QE scheme with explicit uniform input
-   * Wrapper around base class stepVarianceQE for SLV batch simulation
-   * @param V_t Current variance
-   * @param dt Time step
-   * @param Z_V Standard normal for variance
-   * @param U_V Uniform(0,1) for QE switching
-   * @return V_{t+dt}
-   */
-  // ? Reuse this from before no?
-  double stepVarianceQE_SLV(double V_t, double dt, double Z_V,
-                            double U_V) const;
+	/**
+	 * Step variance using QE scheme with explicit uniform input
+	 * Wrapper around base class stepVarianceQE for SLV batch simulation
+	 * @param V_t Current variance
+	 * @param dt Time step
+	 * @param Z_V Standard normal for variance
+	 * @param U_V Uniform(0,1) for QE switching
+	 * @return V_{t+dt}
+	 */
+	// ? Reuse this from before no?
+	double stepVarianceQE_SLV(double V_t, double dt, double Z_V,
+							  double U_V) const;
 
-  /**
-   * Step log-price using SLV scheme (Equation 3.18)
-   * X_{i+1} = X_i + rΔt - ½L²V_iΔt
-   *         + (ρ/γ)L(V_{i+1} - V_i - κθΔt + κV_iΔt)
-   *         + √(1-ρ²)·√(L²V_iΔt)·Z
-   *
-   * @param X_t Current log-price ln(S)
-   * @param V_t Current variance
-   * @param V_next Next variance (already sampled)
-   * @param leverageSq L²(t, S) from leverage function
-   * @param dt Time step
-   * @param Z Standard normal for X
-   * @return X_{t+Δt}
-   */
-  double stepLogPriceSLV(double X_t, double V_t, double V_next,
-                         double leverageSq, double dt, double Z) const;
+	/**
+	 * Step log-price using SLV scheme (Equation 3.18)
+	 * X_{i+1} = X_i + rΔt - ½L²V_iΔt
+	 *         + (ρ/γ)L(V_{i+1} - V_i - κθΔt + κV_iΔt)
+	 *         + √(1-ρ²)·√(L²V_iΔt)·Z
+	 *
+	 * @param X_t Current log-price ln(S)
+	 * @param V_t Current variance
+	 * @param V_next Next variance (already sampled)
+	 * @param leverageSq L²(t, S) from leverage function
+	 * @param dt Time step
+	 * @param Z Standard normal for X
+	 * @return X_{t+Δt}
+	 */
+	double stepLogPriceSLV(double X_t, double V_t, double V_next,
+						   double leverageSq, double dt, double Z) const;
 
-  // =========================================================================
-  // SLV-Specific Member Variables
-  // =========================================================================
-  //
-  // INHERITED from PathSimulator2D (DO NOT REDECLARE):
-  // - _modelPtr (Model2D*) - use getHestonModel() to cast
-  // - _randomEngine - use generateStandardNormalSLV(), generateUniform()
-  // - _timeSteps (reference)
-  // =========================================================================
+	// =========================================================================
+	// SLV-Specific Member Variables
+	// =========================================================================
+	//
+	// INHERITED from PathSimulator2D (DO NOT REDECLARE):
+	// - _modelPtr (Model2D*) - use getHestonModel() to cast
+	// - _randomEngine - use generateStandardNormalSLV(), generateUniform()
+	// - _timeSteps (reference)
+	// =========================================================================
 
-  std::unique_ptr<HestonLocalVol> _hestonLocalVol; // COS-based analytical Dupire for σ_LV(S,t)
-  const VolatilitySurface* _externalVolSurface = nullptr; // Non-owning, for external surface mode
-  LocalVolSource _localVolSource = LocalVolSource::HestonAnalytical;
-  size_t _numPaths;    // N: number of MC paths
-  size_t _numBins;     // l: number of bins for E[V|S]
-  double _psiC;        // ψ_c: QE switching threshold (default 1.5)
+	std::unique_ptr<HestonLocalVol> _hestonLocalVol;		// COS-based analytical Dupire for σ_LV(S,t)
+	const VolatilitySurface *_externalVolSurface = nullptr; // Non-owning, for external surface mode
+	LocalVolSource _localVolSource = LocalVolSource::HestonAnalytical;
+	size_t _numPaths; // N: number of MC paths
+	size_t _numBins;  // l: number of bins for E[V|S]
+	double _psiC;	  // ψ_c: QE switching threshold (default 1.5)
 
-  // Helper to cast _modelPtr to HestonModel*
-  const HestonModel *getHestonModel() const;
-  /** What does this do?
-   *   * Allows PathSimulator2D to work with any Model2D subclass
-   * (polymorphism). But Model2D only provide generic methods like drift2D(),
-   * diffusion2D(), correlation(), initValue() - getters
-   *     HestonSLVPathSimulator2D requires Heston-specific params which are not
-   * in the Model2D - i.e. v0(), kappa(), vbar(), ... Solution: getHestonModel()
-   * - safely converts the base pointer to the derived type. Helper to cast
-   * _modelPtr
-   */
+	// Helper to cast _modelPtr to HestonModel*
+	const HestonModel *getHestonModel() const;
+	/** What does this do?
+	 *   * Allows PathSimulator2D to work with any Model2D subclass
+	 * (polymorphism). But Model2D only provide generic methods like drift2D(),
+	 * diffusion2D(), correlation(), initValue() - getters
+	 *     HestonSLVPathSimulator2D requires Heston-specific params which are not
+	 * in the Model2D - i.e. v0(), kappa(), vbar(), ... Solution: getHestonModel()
+	 * - safely converts the base pointer to the derived type. Helper to cast
+	 * _modelPtr
+	 */
 };
 
 #endif // CPPFM_PATHSIMULATOR2D_H

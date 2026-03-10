@@ -17,24 +17,29 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # Dependencies
 # ============================================================================
 
-# Google Test via FetchContent
-include(FetchContent)
-FetchContent_Declare(
-  googletest
-  GIT_REPOSITORY https://github.com/google/googletest.git
-  GIT_TAG v1.14.0
-  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-)
+# Tests off by default for pip install, on for normal dev builds
+option(BUILD_TESTING "Build test executables" ON)
 
-# For Windows: Prevent overriding the parent project's compiler/linker settings
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+if(BUILD_TESTING)
+    # Google Test via FetchContent
+    include(FetchContent)
+    FetchContent_Declare(
+      googletest
+      GIT_REPOSITORY https://github.com/google/googletest.git
+      GIT_TAG v1.14.0
+      DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    )
 
-# Fetch and build googletest
-FetchContent_MakeAvailable(googletest)
+    # For Windows: Prevent overriding the parent project's compiler/linker settings
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
-# gtest headers for IDE indexing
-include_directories(${googletest_SOURCE_DIR}/googletest/include)
-include_directories(${googletest_SOURCE_DIR}/googlemock/include)
+    # Fetch and build googletest
+    FetchContent_MakeAvailable(googletest)
+
+    # gtest headers for IDE indexing
+    include_directories(${googletest_SOURCE_DIR}/googletest/include)
+    include_directories(${googletest_SOURCE_DIR}/googlemock/include)
+endif()
 
 # Boost
 set(Boost_ROOT "/opt/homebrew/opt/boost")
@@ -60,8 +65,9 @@ if(APPLE)
 endif()
 find_package(TBB REQUIRED)
 
-# Enable testing
-enable_testing()
+if(BUILD_TESTING)
+    enable_testing()
+endif()
 
 # Standard install paths
 include(GNUInstallDirs)
@@ -169,14 +175,17 @@ install(TARGETS CppFM_lib
 )
 
 # ============================================================================
-# Main Executable
+# Main Executable (skip for Python-only builds)
 # ============================================================================
-add_executable(CppFM main.cpp)
-target_link_libraries(CppFM CppFM_lib)
+if(NOT BUILD_PYTHON_BINDINGS)
+    add_executable(CppFM main.cpp)
+    target_link_libraries(CppFM CppFM_lib)
+endif()
 
 # ============================================================================
 # Test Executables
 # ============================================================================
+if(BUILD_TESTING)
 
 # Volatility Surface Tests
 add_executable(test_volatility_surface_construction tests/test_volatility_surface_construction.cpp tests/test_utils.h)
@@ -215,6 +224,9 @@ target_link_libraries(test_pde_greeks CppFM_lib gtest_main)
 
 add_executable(test_cos_method tests/test_cos_method.cpp)
 target_link_libraries(test_cos_method CppFM_lib gtest_main)
+
+add_executable(test_N_sweep tests/test_N_sweep.cpp)
+target_link_libraries(test_N_sweep CppFM_lib gtest_main)
 
 add_executable(test_newton_methods tests/test_newton_methods.cpp)
 target_link_libraries(test_newton_methods CppFM_lib gtest_main)
@@ -271,6 +283,8 @@ add_test(NAME LinearAlgebra COMMAND test_linear_algebra)
 add_test(NAME Optimizer COMMAND test_optimizer)
 add_test(NAME SviCalibration COMMAND test_svi_calibration)
 add_test(NAME HestonCalibration COMMAND test_heston_calibration)
+
+endif() # BUILD_TESTING
 
 # ============================================================================
 # Python Bindings - to use in QFB

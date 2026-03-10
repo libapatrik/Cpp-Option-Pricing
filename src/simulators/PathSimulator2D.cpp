@@ -8,6 +8,7 @@
 #include <cppfm/simulators/PathSimulator2D.h>
 #include <cppfm/utils/Utils.h>
 #include <numeric>
+#include <random>
 #include <stdexcept>
 #include <tbb/parallel_sort.h>
 #ifdef _OPENMP
@@ -605,8 +606,8 @@ BKApproximateScheme::generateIntegratedVariance(double V_t, double dt) const
 
 BKExactPathSimulator2D::BKExactPathSimulator2D(
 	const std::vector<double> &timeSteps, const Model2D &model,
-	size_t randomSeed, NewtonMethod newtonMethod)
-	: BKSchemeBase(timeSteps, model, randomSeed), _newtonMethod(newtonMethod) {}
+	size_t randomSeed)
+	: BKSchemeBase(timeSteps, model, randomSeed) {}
 
 std::pair<double, double>
 BKExactPathSimulator2D::generateIntegratedVariance(double V_t,
@@ -654,14 +655,11 @@ BKExactPathSimulator2D::generateIntegratedVariance(double V_t,
 											  V_next, dt);
 	};
 
-	// Truncation bounds for COS method [a, b]
-	double V_avg = 0.5 * (V_t + V_next);
-	double expected_intV = V_avg * dt;
-	double std_intV = sigma_v * std::sqrt(V_avg * dt * dt * dt / 3.0);
-
-	double a = std::max(0.0, expected_intV - 10.0 * std_intV);
-	double b = expected_intV + 10.0 * std_intV;
-	size_t N = 128;
+	// cumulant-based bounds — Fang & Oosterlee (2008) Eq. 23
+	auto intVarCum = ChFIntegratedVariance::cumulants(kappa, vbar, sigma_v, V_t, V_next, dt);
+	auto [a, b] = computeTruncationBounds(intVarCum.c1, intVarCum.c2, intVarCum.c4, 10.0);
+	a = std::max(0.0, a);  // integrated variance is non-negative
+	size_t N = 48;
 
 	// ========================================================================
 	// Generate uniform for CDF inversion via antithetic mechanism
@@ -673,16 +671,8 @@ BKExactPathSimulator2D::generateIntegratedVariance(double V_t,
 	double Z_u = generateStandardNormal();
 	double u = Utils::stdNormCdf(Z_u); // Use existing forward CDF
 
-	// Invert CDF to get sample of integrated variance
-	double integratedV;
-	if (_newtonMethod == NewtonMethod::Original)
-	{
-		integratedV = Transforms::invertCDF(a, b, N, chf, u).first;
-	}
-	else
-	{
-		integratedV = Transforms::invertCDF_Optimized(a, b, N, chf, u).first;
-	}
+	// invert CDF to get sample of integrated variance
+	double integratedV = Transforms::invertCDF(a, b, N, chf, u).first;
 
 	integratedV = std::max(0.0, integratedV);
 

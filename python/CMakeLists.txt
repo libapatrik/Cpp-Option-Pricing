@@ -1,25 +1,4 @@
-# =============================================================================
-# Python Bindings CMake Configuration
-# =============================================================================
-#
-# This file configures the pybind11 Python module for CppFM.
-#
-# Usage:
-#   From the root CppFM directory:
-#     mkdir build_python && cd build_python
-#     cmake -DBUILD_PYTHON_BINDINGS=ON ..
-#     make -j
-#
-#   The module will be built as: build_python/python/cppfm.cpython-*.so
-#
-# To use in Python:
-#     import sys
-#     sys.path.insert(0, '/path/to/CppFM/build_python/python')
-#     import cppfm
-#
-# Or install with pip (after adding setup.py):
-#     pip install -e .
-# =============================================================================
+# pybind11 module for CppFM — built via scikit-build-core (pip install .)
 
 # Find pybind11
 # Try config mode first (if installed via pip or conda)

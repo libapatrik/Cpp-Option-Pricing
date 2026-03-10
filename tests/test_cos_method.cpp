@@ -10,10 +10,12 @@
 
 #include <gtest/gtest.h>
 #include <cppfm/cos/COS.h>
+#include <cppfm/pricers/COSPricer.h>
 #include <cppfm/utils/Utils.h>  // Utils::stdNormChF, stdNormPdf
 #include <cmath>
 #include <chrono>
 #include <iomanip>
+#include <tuple>
 
 
 /**
@@ -30,134 +32,52 @@
 
 class COSMethodTest : public ::testing::Test {
 protected:
-    // COS parameters as suggested in the paper by Fang & Oosterlee (2008)
-    // For N(0,1): c1 = mean, c2 = variance, c4 = fourth CUMULANT (not moment!)
-    // Note: Fourth cumulant κ₄ = 0 for normal distribution (excess kurtosis)
-    //       Fourth moment E[X⁴] = 3, but we need the CUMULANT here!
-    double c1 = 0.0;      // mean
-    double c2 = 1.0;      // variance  
-    double c4 = 0.0;      // fourth cumulant (NOT fourth moment!)
-    double L = 10.0;      // truncation parameter
-    double a = c1 - L * std::sqrt(c2 + std::sqrt(std::max(c4, 1e-10)));  // avoid sqrt of negative
-    double b = c1 + L * std::sqrt(c2 + std::sqrt(std::max(c4, 1e-10)));
-    
-    // Standard Normal N(0,1) characteristic function - use Utils implementation
-    // std::function<std::complex<double>(double)>  Utils::stdNormChF = Utils::stdNormChF;
+    // COS parameters - Fang & Oosterlee (2008)
+    // N(0,1): c1 = mean, c2 = variance, c4 = fourth cumulant
+    double L = 10.0;
+    double a, b;
+    void SetUp() override {
+        std::tie(a, b) = computeTruncationBounds(0.0, 1.0, 0.0, L);
+    }
 };
 
 
-/// TODO: Count the number of iterations taken until convergence
-/// TODO: Compare the invertCDF vs. invertCDF_Optimized methods!
-TEST_F(COSMethodTest, Comparenewtons) {
+// benchmark invertCDF convergence vs N
+TEST_F(COSMethodTest, InvertCDFBenchmark) {
     std::vector<size_t> N_values = {64, 128, 256, 512};
-    // Test at various quantiles including median and tails
     std::vector<double> test_probs = {0.01, 0.05, 0.25, 0.50, 0.75, 0.95, 0.99};
-    
+
     std::cout << "\n════════════════════════════════════════════════════════════════════════\n";
-    std::cout << "  Newton's Method Comparison: Original vs. Optimized\n";
-    std::cout << "  Testing CDF Inversion at " << test_probs.size() << " probability points\n";
+    std::cout << "  CDF Inversion Benchmark\n";
     std::cout << "════════════════════════════════════════════════════════════════════════\n\n";
-    
-    std::cout << "ORIGINAL METHOD (recomputes coefficients each iteration):\n";
-    std::cout << std::setw(8) << "N" 
-              << std::setw(18) << "Avg Time (ms)" 
-              << std::setw(18) << "Avg Iterations" << std::endl;
-    std::cout << std::string(44, '-') << std::endl;
-    
-    // Store results for comparison table
-    std::vector<double> original_times;
-    std::vector<double> original_iters;
-    
-    for (size_t N : N_values) {
-        size_t total_numIters = 0;
-        
-        auto start = std::chrono::high_resolution_clock::now();
-        
-        for (double p : test_probs) {
-            auto [quantile, numIters] = Transforms::invertCDF(a, b, N,  Utils::stdNormChF, p);
-            (void)quantile;  // Suppress unused warning
-            total_numIters += numIters;
-        }
-        
-        auto end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double, std::milli> duration = end - start;
-        
-        double ms_avg = duration.count() / test_probs.size();
-        double numIters_avg = static_cast<double>(total_numIters) / test_probs.size();
-        
-        original_times.push_back(ms_avg);
-        original_iters.push_back(numIters_avg);
-        
-        std::cout << std::setw(7) << N << " "
-                  << std::setw(18) << std::fixed << std::setprecision(5) << ms_avg
-                  << std::setw(18) << std::setprecision(2) << numIters_avg << std::endl;
-    }
-    
-    std::cout << "\n";
-    std::cout << "OPTIMIZED METHOD (caches coefficients):\n";
-    std::cout << std::setw(8) << "N" 
-              << std::setw(18) << "Avg Time (ms)" 
-              << std::setw(18) << "Avg Iterations" << std::endl;
-    std::cout << std::string(44, '-') << std::endl;
-    
-    // Store results for comparison
-    std::vector<double> optimized_times;
-    std::vector<double> optimized_iters;
-    
-    for (size_t N : N_values) {
-        size_t total_numIters = 0;
-        
-        auto start = std::chrono::high_resolution_clock::now();
-        
-        for (double p : test_probs) {
-            auto [quantile, numIters] = Transforms::invertCDF_Optimized(a, b, N,  Utils::stdNormChF, p);
-            (void)quantile;  // Suppress unused warning
-            total_numIters += numIters;
-        }
-        
-        auto end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double, std::milli> duration = end - start;
-        
-        double ms_avg = duration.count() / test_probs.size();
-        double numIters_avg = static_cast<double>(total_numIters) / test_probs.size();
-        
-        optimized_times.push_back(ms_avg);
-        optimized_iters.push_back(numIters_avg);
-        
-        std::cout << std::setw(7) << N << " "
-                  << std::setw(18) << std::fixed << std::setprecision(5) << ms_avg
-                  << std::setw(18) << std::setprecision(2) << numIters_avg << std::endl;
-    }
-    
-    std::cout << "\n";
-    std::cout << "COMPARISON SUMMARY:\n";
+
     std::cout << std::setw(8) << "N"
-              << std::setw(15) << "Speedup"
-              << std::setw(20) << "Iter. Difference" << std::endl;
-    std::cout << std::string(43, '-') << std::endl;
-    
-    for (size_t i = 0; i < N_values.size(); ++i) {
-        double speedup = original_times[i] / optimized_times[i];
-        double iter_diff = original_iters[i] - optimized_iters[i];
-        
-        std::cout << std::setw(7) << N_values[i] << " "
-                  << std::setw(14) << std::fixed << std::setprecision(2) << speedup << "x"
-                  << std::setw(20) << std::showpos << std::setprecision(2) << iter_diff 
-                  << std::noshowpos << std::endl;
+              << std::setw(18) << "Avg Time (ms)"
+              << std::setw(18) << "Avg Iterations" << std::endl;
+    std::cout << std::string(44, '-') << std::endl;
+
+    for (size_t N : N_values) {
+        size_t total_numIters = 0;
+
+        auto start = std::chrono::high_resolution_clock::now();
+
+        for (double p : test_probs) {
+            auto [quantile, numIters] = Transforms::invertCDF(a, b, N, Utils::stdNormChF, p);
+            (void)quantile;
+            total_numIters += numIters;
+        }
+
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> duration = end - start;
+
+        double ms_avg = duration.count() / test_probs.size();
+        double numIters_avg = static_cast<double>(total_numIters) / test_probs.size();
+
+        std::cout << std::setw(7) << N << " "
+                  << std::setw(18) << std::fixed << std::setprecision(5) << ms_avg
+                  << std::setw(18) << std::setprecision(2) << numIters_avg << std::endl;
     }
 }
-
-/**
- *  INTERPRETATION:
- *   • Speedup:         How many times faster Optimized vs. Original Newton method
- *   • Iter. Difference: Change in iteration count (should be ~0 if same algorithm)
- *   • Observed:        Speedup of 2.8-3.5x due to coefficient caching
- *   • Note:            Utils.h claims 5-10x, but actual speedup depends on:
- *                      - Number of Newton iterations (fewer = less caching benefit)
- *                      - ChF complexity (simple N(0,1) is fast to evaluate)
- *   • Both methods:    Converge in identical number of iterations
- * ════════════════════════════════════════════════════════════════════════
- */
 // =============================================================================================
 // Test: Accuracy vs N
 // Replicating Table 1 in Fang & Oosterlee (2008), "A Novel Pricing Method for European Options"
@@ -323,3 +243,182 @@ TEST_F(COSMethodTest, AccuracyVsN_faster) {
 }
 
 /// TODO: Add test for the bessel_function.py - just compare the modifiedBessel in Utils, against the data generated in py-file
+
+// ============================================================================
+// Truncation Bounds Tests
+// ============================================================================
+
+TEST(TruncationBounds, NormalDistribution) {
+    // N(0,1): c1=0, c2=1, c4=0
+    double L = 10.0;
+    auto [a, b] = computeTruncationBounds(0.0, 1.0, 0.0, L);
+
+    EXPECT_NEAR(a, -L, 0.01);
+    EXPECT_NEAR(b,  L, 0.01);
+    EXPECT_LT(a, 0.0);
+    EXPECT_GT(b, 0.0);
+    EXPECT_NEAR(a + b, 0.0, 1e-10);
+}
+
+TEST(TruncationBounds, WithKurtosis) {
+    double L = 10.0;
+    auto [a1, b1] = computeTruncationBounds(0.0, 1.0, 0.0, L);
+    auto [a2, b2] = computeTruncationBounds(0.0, 1.0, 9.0, L);
+
+    // c4=9: sqrt(c2 + sqrt(c4)) = sqrt(1 + 3) = 2
+    EXPECT_NEAR(a2, -20.0, 0.01);
+    EXPECT_NEAR(b2,  20.0, 0.01);
+    EXPECT_LT(a2, a1);
+    EXPECT_GT(b2, b1);
+}
+
+TEST(TruncationBounds, NonzeroMean) {
+    double L = 10.0;
+    auto [a, b] = computeTruncationBounds(2.0, 1.0, 0.0, L);
+    EXPECT_NEAR((a + b) / 2.0, 2.0, 0.01);
+}
+
+// ============================================================================
+// Heston Analytical Cumulant Tests
+// ============================================================================
+
+TEST(HestonCumulants, AnalyticalVsNumerical) {
+    // F&O Table 11 params
+    double kappa = 1.5768, vbar = 0.0398, sigma = 0.5751;
+    double rho = -0.5711, v0 = 0.0175, r = 0.025, T = 1.0;
+
+    HestonCF cf(kappa, vbar, sigma, rho, v0, r, T);
+    auto cum = cf.cumulants();
+
+    // validate against numerical cumulants at h=7e-3
+    double h = 7e-3;
+    auto lnphi = [&cf](double u) { return std::log(cf(u)); };
+
+    std::complex<double> lp1 = lnphi(h);
+    std::complex<double> lm1 = lnphi(-h);
+    std::complex<double> lp2 = lnphi(2.0 * h);
+    std::complex<double> lm2 = lnphi(-2.0 * h);
+
+    double num_c1 = std::imag(lp1 - lm1) / (2.0 * h);
+    double num_c2 = -std::real(lp1 + lm1) / (h * h);
+    double num_c4 = std::real(lp2 - 4.0 * lp1 - 4.0 * lm1 + lm2) / (h * h * h * h);
+
+    // c1 and c2 should match to high precision
+    EXPECT_NEAR(cum.c1, num_c1, 1e-6) << "c1 mismatch";
+    EXPECT_NEAR(cum.c2, num_c2, 1e-6) << "c2 mismatch";
+    // c4 numerical at h=7e-3 has ~1% relative error
+    EXPECT_NEAR(cum.c4, num_c4, std::abs(cum.c4) * 0.05) << "c4 mismatch";
+}
+
+TEST(HestonCumulants, SanityCheck) {
+    double kappa = 1.5768, vbar = 0.0398, sigma = 0.5751;
+    double rho = -0.5711, v0 = 0.0175, r = 0.0, T = 1.0;
+
+    HestonCF cf(kappa, vbar, sigma, rho, v0, r, T);
+    auto cum = cf.cumulants();
+
+    // c1 ~ (r - vbar/2)*T + correction, should be small negative
+    EXPECT_LT(cum.c1, 0.0);
+    EXPECT_GT(cum.c1, -0.1);
+
+    // c2 = variance of log-returns, positive
+    EXPECT_GT(cum.c2, 0.0);
+    EXPECT_LT(cum.c2, 1.0);
+
+    EXPECT_TRUE(std::isfinite(cum.c4));
+}
+
+TEST(HestonCumulants, BoundsAreReasonable) {
+    double kappa = 1.5768, vbar = 0.0398, sigma = 0.5751;
+    double rho = -0.5711, v0 = 0.0175, r = 0.0, T = 10.0;
+
+    HestonCF cf(kappa, vbar, sigma, rho, v0, r, T);
+    auto cum = cf.cumulants();
+
+    double x0 = 0.0; // ATM
+    auto [a, b] = computeTruncationBounds(x0 + cum.c1, cum.c2, cum.c4, 10.0);
+
+    EXPECT_TRUE(std::isfinite(a));
+    EXPECT_TRUE(std::isfinite(b));
+    EXPECT_LT(a, 0.0);
+    EXPECT_GT(b, 0.0);
+    EXPECT_GT(b - a, 0.1);
+}
+
+TEST(HestonCumulants, LongMaturityCumulantsGrowCorrectly) {
+    double kappa = 1.5768, vbar = 0.0398, sigma = 0.5751;
+    double rho = -0.5711, v0 = 0.0175, r = 0.0;
+
+    HestonCF cf1(kappa, vbar, sigma, rho, v0, r, 1.0);
+    HestonCF cf10(kappa, vbar, sigma, rho, v0, r, 10.0);
+    auto cum1 = cf1.cumulants();
+    auto cum10 = cf10.cumulants();
+
+    // variance grows with T
+    EXPECT_GT(cum10.c2, cum1.c2);
+}
+
+// ============================================================================
+// Integrated Variance Cumulant Tests
+// ============================================================================
+
+TEST(IntVarCumulants, PositiveMeanAndVariance) {
+    double kappa = 1.5, vbar = 0.04, sigma = 0.3;
+    double v_s = 0.04, v_t = 0.05, tau = 0.1;
+
+    auto cum = ChFIntegratedVariance::cumulants(kappa, vbar, sigma, v_s, v_t, tau);
+
+    // integrated variance has positive mean ~ V_avg * tau
+    double V_avg = 0.5 * (v_s + v_t);
+    EXPECT_GT(cum.c1, 0.0);
+    EXPECT_NEAR(cum.c1, V_avg * tau, V_avg * tau * 0.5);
+
+    EXPECT_GT(cum.c2, 0.0);
+    EXPECT_EQ(cum.c4, 0.0);  // explicitly set to 0
+}
+
+// ============================================================================
+// COSPricer Cumulant Bounds Tests
+// ============================================================================
+
+TEST(COSPricerCumulantBounds, HestonATMCall) {
+    double kappa = 1.5768, vbar = 0.0398, sigma = 0.5751;
+    double rho = -0.5711, v0 = 0.0175, r = 0.0, T = 1.0;
+    double S0 = 100.0, K = 100.0;
+
+    HestonCF cf(kappa, vbar, sigma, rho, v0, r, T);
+    auto chfFunc = [&cf](double u) { return cf(u); };
+    auto cum = cf.cumulants();
+
+    double price_cum = COSPricer::callPrice(S0, K, r, T, chfFunc, 128, 10.0,
+                                             cum.c1, cum.c2, cum.c4);
+
+    // reference: sigma-hint with many terms
+    double sigmaHint = std::sqrt(std::max(v0, vbar));
+    double price_ref = COSPricer::callPrice(S0, K, r, T, chfFunc, 512, 10.0, sigmaHint);
+
+    EXPECT_NEAR(price_cum, price_ref, 0.01);
+    EXPECT_GT(price_cum, 0.0);
+}
+
+TEST(COSPricerCumulantBounds, HestonMultiStrike) {
+    double kappa = 1.5768, vbar = 0.0398, sigma = 0.5751;
+    double rho = -0.5711, v0 = 0.0175, r = 0.0, T = 1.0;
+    double S0 = 100.0;
+    std::vector<double> strikes = {80, 90, 100, 110, 120};
+
+    HestonCF cf(kappa, vbar, sigma, rho, v0, r, T);
+    auto chfFunc = [&cf](double u) { return cf(u); };
+    auto cum = cf.cumulants();
+
+    auto prices_cum = COSPricer::callPrices(S0, strikes, r, T, chfFunc, 128, 10.0,
+                                             cum.c1, cum.c2, cum.c4);
+
+    double sigmaHint = std::sqrt(std::max(v0, vbar));
+    auto prices_ref = COSPricer::callPrices(S0, strikes, r, T, chfFunc, 512, 10.0, sigmaHint);
+
+    for (size_t i = 0; i < strikes.size(); ++i) {
+        EXPECT_NEAR(prices_cum[i], prices_ref[i], 0.02) << "Strike " << strikes[i];
+        EXPECT_GT(prices_cum[i], 0.0);
+    }
+}

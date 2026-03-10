@@ -20,16 +20,9 @@ docs/latex/
 .cache/
 compile_commands.json
 
-# ============================================
-# Build Artifacts
-# ============================================
 # Build directories
 build/
-build_asan/
-build_test/
-build_qfb/
-build_venv/
-build_python/
+build_*/
 cmake-build-debug/
 cmake-build-release/
 out/
@@ -119,4 +112,6 @@ dist/
 # Generated Documentation
 # ============================================
 docs/api/
-
+excalidraw/
+scripts/
+plans/

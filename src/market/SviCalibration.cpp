@@ -3,6 +3,7 @@
 #include "cppfm/calibration/Optimizer.h"
 #include "cppfm/utils/InterpolationSchemes.h"
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <memory>
 #include <numeric>
@@ -222,6 +223,8 @@ double SsviParams::dwdtheta(double k) const
 {
 	// chain rule: dw/dtheta = w/theta + k * dw/dk * (dphi/dtheta)/phi
 	// (dphi/dtheta)/phi = h = -gamma/theta - (1-gamma)/(1+theta)
+	if (theta < 1e-10)
+		return 0.0;
 	double h = -gamma / theta - (1.0 - gamma) / (1.0 + theta);
 	return totalVariance(k) / theta + k * dw(k) * h;
 }
@@ -296,6 +299,8 @@ static std::vector<double> enforceMonotonicity(const std::vector<double> &values
 static double interpolateAtmVol(const std::vector<double> &strikes,
 								const std::vector<double> &vols, double forward)
 {
+	// strikes may be provided as unsorted
+	assert(std::is_sorted(strikes.begin(), strikes.end()));
 	for (int i = 0; i < static_cast<int>(strikes.size()) - 1; ++i)
 	{
 		if (strikes[i] <= forward && strikes[i + 1] >= forward)
@@ -387,6 +392,13 @@ SsviCalibrationResult calibrateSsvi(const std::vector<std::vector<double>> &stri
 	if (opts.enforceMonotonicity)
 		thetas = enforceMonotonicity(thetas);
 
+	// nudge the flat regions so dthetadT > 0 for local vol
+	for (int i = 1; i < nMat; ++i)
+	{
+		if (thetas[i] <= thetas[i - 1])
+			thetas[i] = thetas[i - 1] + 1e-8;
+	}
+
 	// stage 2: global SSVI fit
 	SsviParams local;
 
@@ -440,16 +452,14 @@ SsviCalibrationResult calibrateSsvi(const std::vector<std::vector<double>> &stri
 	};
 
 	// grid search - pick best starting point
-	double warmRho = (nConverged > 0) ? sumRho / nConverged : -0.3;
+	double warmRho = (nConverged > 0) ? sumRho / nConverged : -0.3; // warm starter on the rhos
 	std::vector<SsviParams> candidates;
 
-	if (opts.nGridPoints > 0)
+	if (opts.useGridSearch)
 	{
 		candidates.push_back(SsviParams(warmRho, 0.5, 0.5));
 		candidates.push_back(SsviParams(-0.3, 0.3, 0.3));
 		candidates.push_back(SsviParams(-0.7, 0.8, 0.7));
-		if (static_cast<int>(candidates.size()) > opts.nGridPoints)
-			candidates.resize(opts.nGridPoints);
 	}
 	else
 	{

@@ -6,7 +6,7 @@
 |-----------|-------------|
 | Models | Black-Scholes, Dupire local vol, Heston stochastic vol |
 | Monte Carlo | 4 Heston schemes from Andersen (2008), SLV |
-| Fourier | COS method, CDF/PDF recovery, Newton inversion |
+| Fourier | COS method with cumulant-based truncation, CDF inversion |
 | Finite Difference | Theta-method PDE solver, automatic Greeks |
 | Market Data | Vol surface builder, Dupire local vol, discount curves |
 | Calibration | SVI/SSVI smile fitting, Levenberg-Marquardt, arbitrage checks |
@@ -31,14 +31,14 @@ HestonModel model(S0, V0, r, kappa, theta, sigma, rho);
 
 - Euler (full truncation, Eq. 6-7)
 - Truncated Gaussian (Eq. 13), Quadratic-Exponential (Eq. 23/26)
-- Broadie-Kaya family (TG, QE, Exact) - exact log-price distribution via Eq. 11
+- Broadie-Kaya family (TG, QE, Exact) - exact log-price distribution via Eq. 11, COS-based integrated variance sampling with cumulant bounds (N=48)
 - Heston SLV (van der Stoep et al.) - stochastic-local vol hybrid with leverage function
 
 QE is the main choice - handles Feller violation, much faster than exact sampling.
 
 **Finite Difference**: theta-method solver (explicit/implicit/Crank-Nicolson), Dirichlet boundaries, automatic Greeks via bump-and-revalue (delta, gamma, vega, rho, vanna, volga).
 
-**Fourier**: COS method for fast European pricing, CDF/PDF recovery from characteristic function, Newton-based CDF inversion for sampling.
+**Fourier**: COS method for European pricing with cumulant-based truncation bounds (Fang & Oosterlee 2008 Eq. 23). Analytical Heston cumulants from Le Floc'h (2018). CDF/PDF recovery from characteristic function, Newton-based CDF inversion with coefficient caching for BK exact sampling.
 
 ## Volatility Surface
 
@@ -130,8 +130,10 @@ include/cppfm/
 ├── calibration/
 │   ├── LinearAlgebra.h      MatrixOps, Cholesky, QR, SVD, LeastSquares
 │   └── Optimizer.h          LM, L-BFGS, GradientDescent
+├── cos/
+│   └── COS.h                COS transforms, HestonCF + cumulants, ChFIntegratedVariance, truncation bounds
 └── utils/
-    ├── Utils.h              COS method, CIR sampler, HestonCF, Thomas algorithm
+    ├── Utils.h              CIR sampler, Thomas algorithm
     └── InterpolationSchemes.h Linear, cubic spline
 
 src/                         Implementation (mirrors include/)
@@ -157,5 +159,6 @@ docs/                        ONBOARDING.md - further details about the codebase
 - Andersen (2008) - Efficient Simulation of the Heston Process
 - Broadie & Kaya (2006) - Exact Simulation of Stochastic Volatility
 - Fang & Oosterlee (2008) - A Novel Pricing Method for European Options Based on Fourier-Cosine Series Expansions
+- Le Floc'h (2018) - Analytical Heston Cumulants (arXiv:2005.13248, corrects F&O Table 2)
 - van der Stoep, Grzelak & Oosterlee (2013) - The Heston Stochastic-Local Volatility Model
 - Albrecher et al. (2007) - The Little Heston Trap

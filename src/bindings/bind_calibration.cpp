@@ -169,7 +169,7 @@ void bind_calibration(py::module_ &m)
         .def(py::init<>())
         .def_readwrite("lm_opts", &SsviCalibrationOptions::lmOpts)
         .def_readwrite("enforce_monotonicity", &SsviCalibrationOptions::enforceMonotonicity)
-        .def_readwrite("n_grid_points", &SsviCalibrationOptions::nGridPoints);
+        .def_readwrite("use_grid_search", &SsviCalibrationOptions::useGridSearch);
 
     // calibrateSsvi
     m.def("calibrate_ssvi", &calibrateSsvi,

@@ -339,11 +339,11 @@ TEST(SsviTest, GridSearchImprovesFit)
 	}
 
 	SsviCalibrationOptions optsGrid;
-	optsGrid.nGridPoints = 3;
+	optsGrid.useGridSearch = true;
 	auto resultGrid = calibrateSsvi(strikes, vols, forwards, maturities, optsGrid);
 
 	SsviCalibrationOptions optsNoGrid;
-	optsNoGrid.nGridPoints = 0;
+	optsNoGrid.useGridSearch = false;
 	auto resultNoGrid = calibrateSsvi(strikes, vols, forwards, maturities, optsNoGrid);
 
 	EXPECT_LE(resultGrid.rmse, resultNoGrid.rmse + 1e-10);

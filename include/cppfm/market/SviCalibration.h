@@ -9,9 +9,8 @@
 #include <vector>
 
 // forward declarations
-class VolatilitySurface;
-class DiscountCurve;
-class SsviSurface;
+
+class SsviSurface; // used by SsviCalibrationResult before full definition
 
 // base class, abstract
 
@@ -65,7 +64,7 @@ public:
 
 	SviParams() = default;
 	SviParams(double a, double b, double rho, double m, double sigma);
-	SviParams(const std::vector<double> &v);
+	explicit SviParams(const std::vector<double> &v);
 
 	// w(k) = a + b * (rho*(k-m) + sqrt((k-m)^2 + sigma^2))
 	double totalVariance(double k) const override;
@@ -110,17 +109,15 @@ SmileFitResult calibrateSmile(const SmileParams &guess,
 class SsviParams : public SmileParams
 {
 public:
-	// 3 params
+	// 3 global params; theta is per-slice, set it before calling totalVariance/dw/etc..
 	double rho = -0.5;
 	double eta = 0.1;
 	double gamma = 0.5;
-
-	// per slice
-	double theta = 0.04;
+	double theta = 0.04; // * must be set externally per slice
 
 	SsviParams() = default;
 	SsviParams(double rho, double eta, double gamma);
-	SsviParams(const std::vector<double> &v);
+	explicit SsviParams(const std::vector<double> &v);
 
 	// phi(theta) = eta / (theta^gamma * (1 + theta)^(1-gamma))
 	double phi() const;
@@ -176,7 +173,7 @@ struct SsviCalibrationOptions
 {
 	LMOptions lmOpts = {};
 	bool enforceMonotonicity = true; // PAVA on extracted thetas
-	int nGridPoints = 3;	  // number of starting points for grid search (noting 0 = skip)
+	bool useGridSearch = true;		 // multi-start grid search for SSVI
 };
 
 // this gives: mkt data -> per-slice SVI -> extract theta -> global SSVI -> result
@@ -196,8 +193,8 @@ public:
 	SsviSurface(const SsviCalibrationResult &result,
 				const std::vector<double> &forwards);
 
-	SsviSurface(SsviSurface&&) = default;
-	SsviSurface& operator=(SsviSurface&&) = default;
+	SsviSurface(SsviSurface &&) = default;
+	SsviSurface &operator=(SsviSurface &&) = default;
 
 	double localVolatility(double spot, double time) const;
 	double impliedVolatility(double strike, double time) const;

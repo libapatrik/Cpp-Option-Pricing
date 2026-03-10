@@ -1,18 +1,18 @@
 #include <cmath>
+#include <cppfm/cos/COS.h>
 #include <cppfm/pricers/COSPricer.h>
+#include <limits>
 #include <numbers>
 
 constexpr double PI = std::numbers::pi;
 
 // ============================================================================
-// COS Option Pricer
+// COS Option Pricer — payoff coefficients
 // ============================================================================
 
 double COSPricer::chi(size_t k, double a, double b, double c, double d)
 {
-	// chi_k(c,d) from Fang & Oosterlee Eq. (22)
-	// k=0: chi_0 = e^d - e^c
-	// k!=0: [e^d(cos(w(d-a)) + w*sin(w(d-a))) - e^c(cos(w(c-a)) + w*sin(w(c-a)))] / (1 + w^2)
+	// Fang & Oosterlee Eq. (22)
 	double bma = b - a;
 
 	if (k == 0)
@@ -35,9 +35,7 @@ double COSPricer::chi(size_t k, double a, double b, double c, double d)
 
 double COSPricer::psi(size_t k, double a, double b, double c, double d)
 {
-	// psi_k(c,d) from Fang & Oosterlee Eq. (23)
-	// k=0: psi_0 = d - c
-	// k!=0: [sin(w(d-a)) - sin(w(c-a))] / w
+	// Fang & Oosterlee Eq. (23)
 	double bma = b - a;
 
 	if (k == 0)
@@ -52,12 +50,14 @@ double COSPricer::psi(size_t k, double a, double b, double c, double d)
 	return (std::sin(w * d_shifted) - std::sin(w * c_shifted)) / w;
 }
 
-double COSPricer::price(double S0, double K, double r, double T,
-						const std::function<std::complex<double>(double)> &chf,
-						OptionType type, size_t N, double L, double sigma)
+// ============================================================================
+// Inner pricing — explicit bounds
+// ============================================================================
+
+double COSPricer::priceWithBounds(double S0, double K, double r, double T,
+								  const std::function<std::complex<double>(double)> &chf,
+								  OptionType type, size_t N, double a, double b)
 {
-	// V = K*e^{-rT} * sum' Re[H_k] * V_k
-	// put-call parity for OTM options (numerical stability)
 	bool isCall = (type == OptionType::Call);
 
 	if (T <= 0.0)
@@ -69,11 +69,6 @@ double COSPricer::price(double S0, double K, double r, double T,
 	bool priceAsCall = isOTM ? !isCall : isCall;
 
 	double x0 = std::log(S0 / K);
-
-	double vol = (sigma > 0.0) ? sigma : 0.25;
-	double halfWidth = L * vol * std::sqrt(T);
-	double a = x0 - halfWidth;
-	double b = x0 + halfWidth;
 	double bma = b - a;
 
 	double sum = 0.0;
@@ -95,7 +90,6 @@ double COSPricer::price(double S0, double K, double r, double T,
 			V_k = (2.0 / bma) * (-chi(k, a, b, a, 0.0) + psi(k, a, b, a, 0.0));
 		}
 
-		// first term halved (Fourier convention)
 		if (k == 0)
 		{
 			V_k *= 0.5;
@@ -106,7 +100,6 @@ double COSPricer::price(double S0, double K, double r, double T,
 
 	double rawPrice = std::max(0.0, K * std::exp(-r * T) * sum);
 
-	// put-call parity if we priced the opposite option
 	if (isOTM)
 	{
 		double pv_strike = K * std::exp(-r * T);
@@ -123,32 +116,11 @@ double COSPricer::price(double S0, double K, double r, double T,
 	return std::max(0.0, rawPrice);
 }
 
-double COSPricer::callPrice(double S0, double K, double r, double T,
-							const std::function<std::complex<double>(double)> &chf,
-							size_t N, double L, double sigma)
+std::vector<double> COSPricer::pricesWithBounds(double S0, const std::vector<double> &strikes,
+												double r, double T,
+												const std::function<std::complex<double>(double)> &chf,
+												OptionType type, size_t N, double a, double b)
 {
-	return price(S0, K, r, T, chf, OptionType::Call, N, L, sigma);
-}
-
-double COSPricer::putPrice(double S0, double K, double r, double T,
-						   const std::function<std::complex<double>(double)> &chf,
-						   size_t N, double L, double sigma)
-{
-	return price(S0, K, r, T, chf, OptionType::Put, N, L, sigma);
-}
-
-// =============================================================================
-// Vectorized COS Pricing - Multiple strikes at same maturity
-// =============================================================================
-
-std::vector<double> COSPricer::prices(double S0, const std::vector<double> &strikes,
-									  double r, double T,
-									  const std::function<std::complex<double>(double)> &chf,
-									  OptionType type, size_t N, double L, double sigma)
-{
-	// precompute phi(omega_k) once, reuse for all strikes
-	// O(M * N) CF evals -> O(N) CF evals
-
 	size_t M = strikes.size();
 	std::vector<double> result(M);
 
@@ -166,23 +138,6 @@ std::vector<double> COSPricer::prices(double S0, const std::vector<double> &stri
 		return result;
 	}
 
-	// common domain [a, b] covering all strikes
-	double x0_min = std::numeric_limits<double>::max();
-	double x0_max = std::numeric_limits<double>::lowest();
-
-	for (double K : strikes)
-	{
-		double x0 = std::log(S0 / K);
-		x0_min = std::min(x0_min, x0);
-		x0_max = std::max(x0_max, x0);
-	}
-
-	double vol = (sigma > 0.0) ? sigma : 0.25;
-	double sqrtT = std::sqrt(T);
-	double halfWidth = L * vol * sqrtT;
-
-	double a = x0_min - halfWidth;
-	double b = x0_max + halfWidth;
 	double bma = b - a;
 
 	// precompute phi(omega_k)
@@ -193,7 +148,7 @@ std::vector<double> COSPricer::prices(double S0, const std::vector<double> &stri
 		phi_vals[k] = chf(w);
 	}
 
-	// precompute chi/psi for common bounds
+	// precompute chi/psi
 	std::vector<double> chi_call(N), psi_call(N);
 	std::vector<double> chi_put(N), psi_put(N);
 
@@ -207,7 +162,6 @@ std::vector<double> COSPricer::prices(double S0, const std::vector<double> &stri
 
 	double discount = std::exp(-r * T);
 
-	// price each strike
 	for (size_t j = 0; j < M; ++j)
 	{
 		double K = strikes[j];
@@ -261,6 +215,54 @@ std::vector<double> COSPricer::prices(double S0, const std::vector<double> &stri
 	return result;
 }
 
+// ============================================================================
+// Sigma-hint API (existing, delegates to priceWithBounds)
+// ============================================================================
+
+double COSPricer::price(double S0, double K, double r, double T,
+						const std::function<std::complex<double>(double)> &chf,
+						OptionType type, size_t N, double L, double sigma)
+{
+	double x0 = std::log(S0 / K);
+	double vol = (sigma > 0.0) ? sigma : 0.25;
+	double halfWidth = L * vol * std::sqrt(T);
+	return priceWithBounds(S0, K, r, T, chf, type, N, x0 - halfWidth, x0 + halfWidth);
+}
+
+double COSPricer::callPrice(double S0, double K, double r, double T,
+							const std::function<std::complex<double>(double)> &chf,
+							size_t N, double L, double sigma)
+{
+	return price(S0, K, r, T, chf, OptionType::Call, N, L, sigma);
+}
+
+double COSPricer::putPrice(double S0, double K, double r, double T,
+						   const std::function<std::complex<double>(double)> &chf,
+						   size_t N, double L, double sigma)
+{
+	return price(S0, K, r, T, chf, OptionType::Put, N, L, sigma);
+}
+
+std::vector<double> COSPricer::prices(double S0, const std::vector<double> &strikes,
+									  double r, double T,
+									  const std::function<std::complex<double>(double)> &chf,
+									  OptionType type, size_t N, double L, double sigma)
+{
+	// compute common domain covering all strikes
+	double x0_min = std::numeric_limits<double>::max();
+	double x0_max = std::numeric_limits<double>::lowest();
+	for (double K : strikes)
+	{
+		double x0 = std::log(S0 / K);
+		x0_min = std::min(x0_min, x0);
+		x0_max = std::max(x0_max, x0);
+	}
+
+	double vol = (sigma > 0.0) ? sigma : 0.25;
+	double halfWidth = L * vol * std::sqrt(T);
+	return pricesWithBounds(S0, strikes, r, T, chf, type, N, x0_min - halfWidth, x0_max + halfWidth);
+}
+
 std::vector<double> COSPricer::callPrices(double S0, const std::vector<double> &strikes,
 										  double r, double T,
 										  const std::function<std::complex<double>(double)> &chf,
@@ -275,4 +277,75 @@ std::vector<double> COSPricer::putPrices(double S0, const std::vector<double> &s
 										 size_t N, double L, double sigma)
 {
 	return prices(S0, strikes, r, T, chf, OptionType::Put, N, L, sigma);
+}
+
+// ============================================================================
+// Cumulant-based API (delegates to priceWithBounds)
+// ============================================================================
+
+double COSPricer::price(double S0, double K, double r, double T,
+						const std::function<std::complex<double>(double)> &chf,
+						OptionType type, size_t N, double L,
+						double c1, double c2, double c4)
+{
+	// cumulants describe X = ln(S_T/S_0), center around x0 + c1
+	double x0 = std::log(S0 / K);
+	auto [a, b] = computeTruncationBounds(x0 + c1, c2, c4, L);
+	return priceWithBounds(S0, K, r, T, chf, type, N, a, b);
+}
+
+double COSPricer::callPrice(double S0, double K, double r, double T,
+							const std::function<std::complex<double>(double)> &chf,
+							size_t N, double L,
+							double c1, double c2, double c4)
+{
+	return price(S0, K, r, T, chf, OptionType::Call, N, L, c1, c2, c4);
+}
+
+double COSPricer::putPrice(double S0, double K, double r, double T,
+						   const std::function<std::complex<double>(double)> &chf,
+						   size_t N, double L,
+						   double c1, double c2, double c4)
+{
+	return price(S0, K, r, T, chf, OptionType::Put, N, L, c1, c2, c4);
+}
+
+std::vector<double> COSPricer::prices(double S0, const std::vector<double> &strikes,
+									  double r, double T,
+									  const std::function<std::complex<double>(double)> &chf,
+									  OptionType type, size_t N, double L,
+									  double c1, double c2, double c4)
+{
+	// cumulants describe X = ln(S_T/S_0)
+	// x = ln(S_T/K) = X + ln(S_0/K), so shift by x0 range
+	double x0_min = std::numeric_limits<double>::max();
+	double x0_max = std::numeric_limits<double>::lowest();
+	for (double K : strikes)
+	{
+		double x0 = std::log(S0 / K);
+		x0_min = std::min(x0_min, x0);
+		x0_max = std::max(x0_max, x0);
+	}
+
+	auto [a_base, b_base] = computeTruncationBounds(c1, c2, c4, L);
+	return pricesWithBounds(S0, strikes, r, T, chf, type, N,
+							x0_min + a_base, x0_max + b_base);
+}
+
+std::vector<double> COSPricer::callPrices(double S0, const std::vector<double> &strikes,
+										  double r, double T,
+										  const std::function<std::complex<double>(double)> &chf,
+										  size_t N, double L,
+										  double c1, double c2, double c4)
+{
+	return prices(S0, strikes, r, T, chf, OptionType::Call, N, L, c1, c2, c4);
+}
+
+std::vector<double> COSPricer::putPrices(double S0, const std::vector<double> &strikes,
+										 double r, double T,
+										 const std::function<std::complex<double>(double)> &chf,
+										 size_t N, double L,
+										 double c1, double c2, double c4)
+{
+	return prices(S0, strikes, r, T, chf, OptionType::Put, N, L, c1, c2, c4);
 }

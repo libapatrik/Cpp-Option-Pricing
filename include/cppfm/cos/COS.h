@@ -5,12 +5,6 @@
 #include <functional>
 #include <vector>
 
-enum class NewtonMethod
-{
-    Original,
-    Optimized
-};
-
 // COS Method: Fourier-Cosine Expansion for density/CDF recovery
 // Fang & Oosterlee (2008), "A Novel Pricing Method for European Options"
 class Transforms
@@ -31,19 +25,14 @@ public:
     static double evaluateCDF(const Coefficients& coeffs, double x);
     static double evaluatePDF(const Coefficients& coeffs, double x);
 
-public:
     // recover CDF/PDF from characteristic function at points x
     static std::vector<double> recoverCDF(double a, double b, size_t N, const std::function<std::complex<double>(double)>& chf, const std::vector<double>& x);
     static std::vector<double> recoverPDF(double a, double b, size_t N, const std::function<std::complex<double>(double)>& chf, const std::vector<double>& x);
 
     // Newton-Raphson CDF inversion: find x s.t. F(x) = p
-    // Original version recomputes F_k each iteration
+    // precomputes F_k once, bisection initial guess, then Newton iteration
     static std::pair<double, size_t> invertCDF(double a, double b, size_t N, const std::function<std::complex<double>(double)>& chf,
                                                double p, size_t max_iter = 100, double tol = 1e-8);
-
-    // Optimized version: precomputes F_k once, 5-10x faster
-     static std::pair<double, size_t> invertCDF_Optimized(double a, double b, size_t N, const std::function<std::complex<double>(double)>& chf,
-                                                          double p, size_t max_iter = 100, double tol = 1e-8);
 
 private:
     Transforms() = delete;
@@ -58,6 +47,12 @@ public:
     // phi(omega) = E[exp(i*omega * integral_s^t V(u)du)]
     // Uses modified Bessel functions I_nu(z)
     static std::complex<double> compute(double omega, double kappa, double vbar, double sigma, double v_s, double v_t, double tau);
+
+    // numerical cumulants of integrated variance (c1, c2 only; c4=0)
+    // Bessel noise makes c4 unreliable numerically
+    struct Cumulants { double c1, c2, c4; };
+    static Cumulants cumulants(double kappa, double vbar, double sigma,
+                                double v_s, double v_t, double tau);
 
 private:
     // I_nu(z) for complex z - Boost doesn't support complex Bessel
@@ -80,8 +75,16 @@ public:
 
     double maturity() const { return _T; }
 
+    // analytical cumulants of X = ln(S_T/S_0)
+    // Le Floc'h (2018), verified against algorithmic differentiation
+    struct Cumulants { double c1, c2, c4; };
+    Cumulants cumulants() const;
+
 private:
     double _kappa, _vbar, _sigma, _rho, _v0, _r, _T;
 };
+
+// Fang & Oosterlee (2008) Eq. 23 — truncation bounds from cumulants
+std::pair<double, double> computeTruncationBounds(double c1, double c2, double c4, double L = 10.0);
 
 #endif // CPPFM_COS_H
