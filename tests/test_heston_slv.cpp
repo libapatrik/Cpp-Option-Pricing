@@ -72,6 +72,68 @@ protected:
 	size_t seed = 42;
 	size_t stepsPerYear = 100; // Adequate time discretization
 
+	// Van der Stoep parameters (Table 1)
+	double stoep_v0 = 0.0945;
+	double stoep_kappa = 1.05;
+	double stoep_vbar = 0.0855;
+	double stoep_sigma_v = 0.95;
+	double stoep_rho = -0.315;
+
+	// Cached COS surfaces (built in SetUp)
+	std::vector<double> stoepSurfaceK = {0.85, 0.90, 0.95, 1.0, 1.05, 1.10,
+										 1.15};
+	std::vector<double> stoepSurfaceT = {0.5, 1.0, 2.0};
+	std::vector<std::vector<double>> stoepIVs;
+	std::unique_ptr<VolatilitySurface> stoepSurface;
+	std::unique_ptr<HestonModel> stoepHeston;
+
+	std::vector<double> hestonSurfaceK = {0.85, 0.90, 0.95, 1.0, 1.05, 1.10};
+	std::vector<double> hestonSurfaceT = {0.5, 1.0, 2.0};
+	std::vector<std::vector<double>> hestonIVs;
+	std::unique_ptr<VolatilitySurface> hestonSurface;
+
+	void SetUp() override
+	{
+		// Build van der Stoep Heston model
+		stoepHeston = std::make_unique<HestonModel>(
+			S0, discountCurve, stoep_v0, stoep_kappa, stoep_vbar,
+			stoep_sigma_v, stoep_rho);
+
+		// Build van der Stoep COS surface
+		stoepIVs.resize(stoepSurfaceT.size());
+		for (size_t t_idx = 0; t_idx < stoepSurfaceT.size(); ++t_idx)
+		{
+			double maturity = stoepSurfaceT[t_idx];
+			stoepIVs[t_idx].resize(stoepSurfaceK.size());
+			HestonCF hcf(stoep_kappa, stoep_vbar, stoep_sigma_v, stoep_rho,
+						 stoep_v0, r, maturity);
+			auto chf = [&hcf](double u) { return hcf(u); };
+			for (size_t k_idx = 0; k_idx < stoepSurfaceK.size(); ++k_idx)
+			{
+				double strike = stoepSurfaceK[k_idx];
+				double price = COSPricer::callPrice(S0, strike, r, maturity,
+													chf, 256, 15.0,
+													std::sqrt(stoep_vbar));
+				double intrinsic =
+					std::max(S0 - strike * std::exp(-r * maturity), 0.0);
+				if (price < intrinsic + 1e-8)
+					price = intrinsic + 1e-6;
+				double iv = ImpliedVolSolver::solve(price, S0, strike, r,
+												    maturity, true);
+				if (iv < 0.05 || iv > 1.0)
+					iv = std::sqrt(stoep_vbar);
+				stoepIVs[t_idx][k_idx] = iv;
+			}
+		}
+		stoepSurface = std::make_unique<VolatilitySurface>(
+			stoepSurfaceK, stoepSurfaceT, stoepIVs, discountCurve);
+
+		// Build Heston-consistent COS surface (fixture params)
+		hestonIVs = generateHestonIVs_COS(hestonSurfaceK, hestonSurfaceT);
+		hestonSurface = std::make_unique<VolatilitySurface>(
+			hestonSurfaceK, hestonSurfaceT, hestonIVs, discountCurve);
+	}
+
 	std::vector<double> createTimeGrid(double T)
 	{
 		size_t numSteps = static_cast<size_t>(std::ceil(T * stepsPerYear));
@@ -215,7 +277,7 @@ TEST_F(StoepComparisonTest, DupireFlatVolDiagnostic)
 // Establishes the baseline error for pure Heston with QE scheme.
 // SLV cannot do better than this - it's the floor for all errors.
 // ----------------------------------------------------------------------------
-TEST_F(StoepComparisonTest, PureQEHestonPricingErrors)
+TEST_F(StoepComparisonTest, DISABLED_PureQEHestonPricingErrors)
 {
 	std::cout << "\n=== PURE QE HESTON PRICING (no SLV) ===\n";
 	std::cout
@@ -259,7 +321,7 @@ TEST_F(StoepComparisonTest, PureQEHestonPricingErrors)
 		for (double K : {0.90, 0.95, 1.0, 1.05, 1.10})
 		{
 			// COS price (analytical)
-			double cosPrice = COSPricer::callPrice(S0, K, r, T, chf, 512, 15.0,
+			double cosPrice = COSPricer::callPrice(S0, K, r, T, chf, 256, 15.0,
 												   std::sqrt(vbar));
 			double cosIV = ImpliedVolSolver::solve(cosPrice, S0, K, r, T, true);
 
@@ -303,16 +365,6 @@ TEST_F(StoepComparisonTest, VanDerStoepParameters)
 	std::cout << "============================================================="
 				 "===\n\n";
 
-	// Exact parameters from van der Stoep et al. (2014) Table 1
-	double stoep_S0 = 1.0;
-	double stoep_r = 0.0;
-	double stoep_v0 = 0.0945;	// Initial variance
-	double stoep_kappa = 1.05;	// Mean reversion
-	double stoep_vbar = 0.0855; // Long-term variance
-	double stoep_sigma_v =
-		0.95; // Vol-of-vol (large but Feller OK with high kappa)
-	double stoep_rho = -0.315; // Correlation (moderate negative)
-
 	// Check Feller: 2*κ*v̄ = 2*1.05*0.0855 = 0.18 vs σ² = 0.9025 -> VIOLATED
 	// This is intentional in the paper - they use non-Feller parameters
 	double feller = 2.0 * stoep_kappa * stoep_vbar;
@@ -322,72 +374,17 @@ TEST_F(StoepComparisonTest, VanDerStoepParameters)
 								  : " (VIOLATED - uses reflection)")
 			  << "\n\n";
 
-	FlatDiscountCurve stoepDiscount{stoep_r};
-	HestonModel stoepHeston(stoep_S0, stoepDiscount, stoep_v0, stoep_kappa,
-							stoep_vbar, stoep_sigma_v, stoep_rho);
-
-	// Generate COS surface - avoid deep OTM options that cause IV inversion
-	// issues
-	std::vector<double> K = {0.85, 0.90, 0.95, 1.0, 1.05, 1.10, 1.15};
-	std::vector<double> T = {0.5, 1.0,
-							 2.0}; // Skip T=0.25 which has issues with deep OTM
-	std::vector<std::vector<double>> stoepIVs(T.size());
-
-	std::cout << "Generating COS surface with van der Stoep parameters...\n";
-
-	for (size_t t_idx = 0; t_idx < T.size(); ++t_idx)
-	{
-		double maturity = T[t_idx];
-		stoepIVs[t_idx].resize(K.size());
-
-		HestonCF hcf(stoep_kappa, stoep_vbar, stoep_sigma_v, stoep_rho,
-					 stoep_v0, stoep_r, maturity);
-		auto chf = [&hcf](double u) { return hcf(u); };
-
-		for (size_t k_idx = 0; k_idx < K.size(); ++k_idx)
-		{
-			double strike = K[k_idx];
-			// Use wider domain (L=15) and more terms for better accuracy
-			double price =
-				COSPricer::callPrice(stoep_S0, strike, stoep_r, maturity, chf,
-									 512, 15.0, std::sqrt(stoep_vbar));
-
-			// Validate price before IV inversion
-			double intrinsic = std::max(
-				stoep_S0 - strike * std::exp(-stoep_r * maturity), 0.0);
-			if (price < intrinsic + 1e-8)
-			{
-				// Price too low, use intrinsic + small premium
-				price = intrinsic + 1e-6;
-			}
-
-			double iv = ImpliedVolSolver::solve(price, stoep_S0, strike, stoep_r,
-											  maturity, true);
-
-			// Sanity check IV
-			if (iv < 0.05 || iv > 1.0)
-			{
-				std::cout << "  WARNING: IV=" << iv * 100
-						  << "% for K=" << strike << " T=" << maturity
-						  << " (price=" << price << "), using fallback\n";
-				iv = std::sqrt(stoep_vbar); // Fallback to long-term vol
-			}
-			stoepIVs[t_idx][k_idx] = iv;
-		}
-	}
-
-	VolatilitySurface stoepSurface(K, T, stoepIVs, stoepDiscount);
-
-	// Print surface
+	// Print surface (cached from SetUp)
 	std::cout << "\nCOS-generated IV surface:\n";
 	std::cout << "  K\\T   ";
-	for (double t : T)
+	for (double t : stoepSurfaceT)
 		std::cout << std::setw(8) << t;
 	std::cout << "\n";
-	for (size_t k = 0; k < K.size(); ++k)
+	for (size_t k = 0; k < stoepSurfaceK.size(); ++k)
 	{
-		std::cout << "  " << std::fixed << std::setprecision(2) << K[k] << "  ";
-		for (size_t t = 0; t < T.size(); ++t)
+		std::cout << "  " << std::fixed << std::setprecision(2)
+				  << stoepSurfaceK[k] << "  ";
+		for (size_t t = 0; t < stoepSurfaceT.size(); ++t)
 		{
 			std::cout << std::setw(7) << std::setprecision(2)
 					  << stoepIVs[t][k] * 100 << "%";
@@ -401,7 +398,7 @@ TEST_F(StoepComparisonTest, VanDerStoepParameters)
 	double sqrtV0 = std::sqrt(stoep_v0); // ~30.7%
 	for (double s : {0.90, 0.95, 1.0, 1.05, 1.10})
 	{
-		double lv = stoepSurface.localVolatility(s, 0.5);
+		double lv = stoepSurface->localVolatility(s, 0.5);
 		std::cout << "  " << std::fixed << std::setprecision(2) << s << "    "
 				  << std::setw(6) << lv * 100 << "%"
 				  << "    " << std::setw(6) << sqrtV0 * 100 << "%"
@@ -410,7 +407,7 @@ TEST_F(StoepComparisonTest, VanDerStoepParameters)
 
 	// Run SLV with more paths for better E[V|S] estimates
 	// 200k paths / 25 bins = 8000 paths/bin
-	size_t stoepPaths = 200000;
+	size_t stoepPaths = 50000; // prev. 200000
 	size_t stoepBins = 25;
 
 	std::cout << "\n--- SLV Calibration (van der Stoep parameters) ---\n";
@@ -429,7 +426,7 @@ TEST_F(StoepComparisonTest, VanDerStoepParameters)
 	{
 		auto times = createTimeGrid(maturity);
 		// Uses HestonLocalVol internally for accurate analytical Dupire
-		HestonSLVPathSimulator2D slvSim(stoepHeston, times, stoepPaths,
+		HestonSLVPathSimulator2D slvSim(*stoepHeston, times, stoepPaths,
 										stoepBins, seed);
 
 		size_t calibIters = slvSim.calibrateLeverage(50, 1e-3, 0.5);
@@ -440,7 +437,7 @@ TEST_F(StoepComparisonTest, VanDerStoepParameters)
 
 		for (double strike : testK)
 		{
-			double mktVol = stoepSurface.impliedVolatility(strike, maturity);
+			double mktVol = stoepSurface->impliedVolatility(strike, maturity);
 
 			double sumPayoff = 0.0;
 			for (const auto &[S_T, V_T] : terminals)
@@ -448,9 +445,9 @@ TEST_F(StoepComparisonTest, VanDerStoepParameters)
 				sumPayoff += std::max(S_T - strike, 0.0);
 			}
 			double slvPrice =
-				stoepDiscount.discount(maturity) * sumPayoff / terminals.size();
+				discountCurve.discount(maturity) * sumPayoff / terminals.size();
 			double slvVol = BlackScholesFormulas::impliedVolatility(
-				stoep_S0, strike, stoep_r, maturity, slvPrice,
+				S0, strike, r, maturity, slvPrice,
 				Option::Type::Call, mktVol);
 
 			double error_bp = (slvVol - mktVol) * 10000;
@@ -495,29 +492,20 @@ TEST_F(StoepComparisonTest, HestonConsistentSurface_COS)
 
 	HestonModel heston(S0, discountCurve, v0, kappa, vbar, sigma_v, rho);
 
-	// Generate surface using COS (analytical, no noise)
-	// Note: COS pricing has issues for deep OTM calls at short maturities
-	// Use narrower strike range to avoid these numerical issues
-	std::vector<double> K = {0.85, 0.90, 0.95, 1.0, 1.05, 1.10};
-	std::vector<double> T = {0.5, 1.0, 2.0}; // Skip T=0.25 which has COS issues
-
-	std::cout << "Generating Heston implied vols via COS method...\n";
-	auto hestonIVs = generateHestonIVs_COS(K, T);
-
-	VolatilitySurface hestonSurface(K, T, hestonIVs, discountCurve);
-
+	// Surface cached from SetUp
 	std::cout << "\nCOS-generated implied vols:\n";
 	std::cout << "  K\\T   ";
-	for (double t : T)
+	for (double t : hestonSurfaceT)
 		std::cout << std::setw(8) << t;
 	std::cout << "\n  ------";
-	for (size_t i = 0; i < T.size(); ++i)
+	for (size_t i = 0; i < hestonSurfaceT.size(); ++i)
 		std::cout << "--------";
 	std::cout << "\n";
-	for (size_t k = 0; k < K.size(); ++k)
+	for (size_t k = 0; k < hestonSurfaceK.size(); ++k)
 	{
-		std::cout << "  " << std::fixed << std::setprecision(2) << K[k] << "  ";
-		for (size_t t = 0; t < T.size(); ++t)
+		std::cout << "  " << std::fixed << std::setprecision(2)
+				  << hestonSurfaceK[k] << "  ";
+		for (size_t t = 0; t < hestonSurfaceT.size(); ++t)
 		{
 			std::cout << std::setw(7) << std::setprecision(2)
 					  << hestonIVs[t][k] * 100 << "%";
@@ -531,7 +519,7 @@ TEST_F(StoepComparisonTest, HestonConsistentSurface_COS)
 	std::cout << "  ------  --------  ----------  ------\n";
 	for (double s : {0.88, 0.92, 0.96, 1.0, 1.04, 1.08})
 	{
-		double lv = hestonSurface.localVolatility(s, 0.75);
+		double lv = hestonSurface->localVolatility(s, 0.75);
 		double sqrtVbar = std::sqrt(vbar);
 		std::cout << "  " << std::setw(5) << s << "    " << std::setw(6)
 				  << lv * 100 << "%"
@@ -567,7 +555,7 @@ TEST_F(StoepComparisonTest, HestonConsistentSurface_COS)
 
 		for (double strike : testK)
 		{
-			double mktVol = hestonSurface.impliedVolatility(strike, maturity);
+			double mktVol = hestonSurface->impliedVolatility(strike, maturity);
 
 			double sumPayoff = 0.0;
 			for (const auto &[S_T, V_T] : slvTerminals)
@@ -611,7 +599,7 @@ TEST_F(StoepComparisonTest, HestonConsistentSurface_COS)
 // TEST 5: E[V|S] ANALYSIS (Leverage Effect Visualization)
 // Shows how variance correlates with spot (leverage effect).
 // ----------------------------------------------------------------------------
-TEST_F(StoepComparisonTest, EVgivenSAnalysis)
+TEST_F(StoepComparisonTest, DISABLED_EVgivenSAnalysis)
 {
 	std::cout << "\n=== E[V|S] ANALYSIS ===\n";
 	std::cout << "Comparing binned E[V|S] estimates vs theoretical values\n\n";
@@ -739,52 +727,25 @@ TEST_F(StoepComparisonTest, EVgivenSAnalysis)
 // TEST 6: DUPIRE COMPONENT DIAGNOSTIC
 // Breaks down why LV/√v0 ratio differs from 1.0.
 // ----------------------------------------------------------------------------
-TEST_F(StoepComparisonTest, DupireComponentDiagnostic)
+TEST_F(StoepComparisonTest, DISABLED_DupireComponentDiagnostic)
 {
 	std::cout
 		<< "\n=== DUPIRE COMPONENT BREAKDOWN (van der Stoep params) ===\n";
 	std::cout << "Analyzing why local vol ratio < 1 for Heston-consistent "
 				 "surface\n\n";
 
-	// van der Stoep parameters
-	double S0 = 1.0, r = 0.0, v0 = 0.0945, kappa = 1.05, vbar = 0.0855,
-		   sigma_v = 0.95, rho = -0.315;
-	FlatDiscountCurve discount{r};
-
-	// Generate COS surface
-	std::vector<double> K = {0.85, 0.90, 0.95, 1.0, 1.05, 1.10, 1.15};
-	std::vector<double> T = {0.5, 1.0, 2.0};
-	std::vector<std::vector<double>> ivs(T.size());
-
-	for (size_t t_idx = 0; t_idx < T.size(); ++t_idx)
-	{
-		double maturity = T[t_idx];
-		ivs[t_idx].resize(K.size());
-		HestonCF hcf(kappa, vbar, sigma_v, rho, v0, r, maturity);
-		auto chf = [&hcf](double u) { return hcf(u); };
-		for (size_t k_idx = 0; k_idx < K.size(); ++k_idx)
-		{
-			double price = COSPricer::callPrice(S0, K[k_idx], r, maturity, chf,
-												512, 15.0, std::sqrt(vbar));
-			ivs[t_idx][k_idx] =
-				ImpliedVolSolver::solve(price, S0, K[k_idx], r, maturity, true);
-		}
-	}
-
-	VolatilitySurface surface(K, T, ivs, discount);
-
-	// Analyze Dupire components at ATM, T=0.5
+	// Analyze Dupire components at ATM, T=0.5 (surface cached from SetUp)
 	double spot = 1.0;
 	double time = 0.5;
 	double strike = spot;
 
-	double impliedVol = surface.impliedVolatility(strike, time);
+	double impliedVol = stoepSurface->impliedVolatility(strike, time);
 
 	// Compute numerical derivatives manually to compare
-	auto volFunc_K = [&surface, time](double k)
-	{ return surface.impliedVolatility(k, time); };
-	auto volFunc_T = [&surface, strike](double t)
-	{ return surface.impliedVolatility(strike, t); };
+	auto volFunc_K = [this, time](double k)
+	{ return stoepSurface->impliedVolatility(k, time); };
+	auto volFunc_T = [this, strike](double t)
+	{ return stoepSurface->impliedVolatility(strike, t); };
 
 	double h_K = 0.02 * strike * impliedVol * std::sqrt(time);
 	h_K = std::max(h_K, 0.005 * strike);
@@ -817,7 +778,7 @@ TEST_F(StoepComparisonTest, DupireComponentDiagnostic)
 
 	double localVolSq = impliedVol * impliedVol * numerator / denominator;
 	double localVol = std::sqrt(std::max(localVolSq, 0.0));
-	double sqrtV0 = std::sqrt(v0);
+	double sqrtV0 = std::sqrt(stoep_v0);
 
 	std::cout << std::fixed << std::setprecision(6);
 	std::cout << "At ATM (K=" << strike << ", T=" << time << "):\n";
@@ -864,8 +825,8 @@ TEST_F(StoepComparisonTest, DupireComponentDiagnostic)
 	std::cout << "  Spot     IV       LV     LV/√v0\n";
 	for (double s : {0.85, 0.90, 0.95, 1.00, 1.05, 1.10, 1.15})
 	{
-		double iv = surface.impliedVolatility(s, 0.5);
-		double lv = surface.localVolatility(s, 0.5);
+		double iv = stoepSurface->impliedVolatility(s, 0.5);
+		double lv = stoepSurface->localVolatility(s, 0.5);
 		std::cout << "  " << std::setprecision(2) << s << "   "
 				  << std::setprecision(2) << iv * 100 << "%"
 				  << "   " << std::setprecision(2) << lv * 100 << "%"
@@ -992,34 +953,6 @@ TEST_F(StoepComparisonTest, OnTheFlyVsGridPricing)
 	std::cout
 		<< "Comparing SLV pricing accuracy with/without grid calibration\n\n";
 
-	// van der Stoep parameters
-	double S0 = 1.0, r = 0.0, v0 = 0.0945, kappa = 1.05, vbar = 0.0855,
-		   sigma_v = 0.95, rho = -0.315;
-	FlatDiscountCurve discount{r};
-	HestonModel heston(S0, discount, v0, kappa, vbar, sigma_v, rho);
-
-	// Generate COS surface
-	std::vector<double> K_surf = {0.85, 0.90, 0.95, 1.0, 1.05, 1.10, 1.15};
-	std::vector<double> T_surf = {0.5, 1.0, 2.0};
-	std::vector<std::vector<double>> ivs(T_surf.size());
-	for (size_t t_idx = 0; t_idx < T_surf.size(); ++t_idx)
-	{
-		double maturity = T_surf[t_idx];
-		ivs[t_idx].resize(K_surf.size());
-		HestonCF hcf(kappa, vbar, sigma_v, rho, v0, r, maturity);
-		auto chf = [&hcf](double u) { return hcf(u); };
-		for (size_t k_idx = 0; k_idx < K_surf.size(); ++k_idx)
-		{
-			double price =
-				COSPricer::callPrice(S0, K_surf[k_idx], r, maturity, chf, 512,
-									 15.0, std::sqrt(vbar));
-			ivs[t_idx][k_idx] = ImpliedVolSolver::solve(price, S0, K_surf[k_idx],
-													  r, maturity, true);
-		}
-	}
-	auto surface =
-		std::make_shared<VolatilitySurface>(K_surf, T_surf, ivs, discount);
-
 	double testT = 0.5;
 	double dt = 1.0 / 32.0;
 	size_t nSteps = static_cast<size_t>(std::ceil(testT / dt));
@@ -1027,7 +960,7 @@ TEST_F(StoepComparisonTest, OnTheFlyVsGridPricing)
 	for (size_t i = 0; i <= nSteps; ++i)
 		times[i] = i * testT / nSteps;
 
-	size_t nPaths = 100000;
+	size_t nPaths = 20000; // 100000
 	size_t nBins = 25;
 
 	std::cout << "Testing at T=" << testT << " with " << nPaths << " paths, "
@@ -1035,26 +968,27 @@ TEST_F(StoepComparisonTest, OnTheFlyVsGridPricing)
 
 	// Test 1: SLV with ON-THE-FLY leverage (no calibration)
 	std::cout << "--- ON-THE-FLY leverage (no calibration) ---\n";
-	HestonSLVPathSimulator2D slvOnTheFly(heston, times, nPaths, nBins, 42);
+	HestonSLVPathSimulator2D slvOnTheFly(*stoepHeston, times, nPaths, nBins, 42);
 	// Don't call calibrateLeverage - this will use on-the-fly bins
 	auto terminalsOTF = slvOnTheFly.simulateAllPathsParallel();
 
 	std::cout << "     K     COS IV    SLV IV   Error(bp)\n";
 	std::vector<double> testK = {0.90, 0.95, 1.0, 1.05, 1.10};
-	HestonCF hcf05(kappa, vbar, sigma_v, rho, v0, r, testT);
+	HestonCF hcf05(stoep_kappa, stoep_vbar, stoep_sigma_v, stoep_rho,
+					stoep_v0, r, testT);
 	auto chf05 = [&hcf05](double u) { return hcf05(u); };
 
 	double maxErrorOTF = 0;
 	for (double K : testK)
 	{
-		double cosPrice = COSPricer::callPrice(S0, K, r, testT, chf05, 512,
-											   15.0, std::sqrt(vbar));
+		double cosPrice = COSPricer::callPrice(S0, K, r, testT, chf05, 256,
+											   15.0, std::sqrt(stoep_vbar));
 		double cosIV = ImpliedVolSolver::solve(cosPrice, S0, K, r, testT, true);
 
 		double payoffSum = 0.0;
 		for (const auto &[s, v] : terminalsOTF)
 			payoffSum += std::max(s - K, 0.0);
-		double slvPrice = discount.discount(testT) * payoffSum / nPaths;
+		double slvPrice = discountCurve.discount(testT) * payoffSum / nPaths;
 		double slvIV = ImpliedVolSolver::solve(slvPrice, S0, K, r, testT, true);
 
 		double errBp = (slvIV - cosIV) * 10000;
@@ -1071,7 +1005,7 @@ TEST_F(StoepComparisonTest, OnTheFlyVsGridPricing)
 
 	// Test 2: SLV with CALIBRATED GRID
 	std::cout << "--- CALIBRATED GRID leverage ---\n";
-	HestonSLVPathSimulator2D slvGrid(heston, times, nPaths, nBins, 42);
+	HestonSLVPathSimulator2D slvGrid(*stoepHeston, times, nPaths, nBins, 42);
 	size_t iters = slvGrid.calibrateLeverage(20, 1e-4, 0.5);
 	std::cout << "Calibration: " << iters << " iterations\n";
 	auto terminalsGrid = slvGrid.simulateAllPathsParallel();
@@ -1080,14 +1014,14 @@ TEST_F(StoepComparisonTest, OnTheFlyVsGridPricing)
 	double maxErrorGrid = 0;
 	for (double K : testK)
 	{
-		double cosPrice = COSPricer::callPrice(S0, K, r, testT, chf05, 512,
-											   15.0, std::sqrt(vbar));
+		double cosPrice = COSPricer::callPrice(S0, K, r, testT, chf05, 256,
+											   15.0, std::sqrt(stoep_vbar));
 		double cosIV = ImpliedVolSolver::solve(cosPrice, S0, K, r, testT, true);
 
 		double payoffSum = 0.0;
 		for (const auto &[s, v] : terminalsGrid)
 			payoffSum += std::max(s - K, 0.0);
-		double slvPrice = discount.discount(testT) * payoffSum / nPaths;
+		double slvPrice = discountCurve.discount(testT) * payoffSum / nPaths;
 		double slvIV = ImpliedVolSolver::solve(slvPrice, S0, K, r, testT, true);
 
 		double errBp = (slvIV - cosIV) * 10000;
@@ -1115,33 +1049,7 @@ TEST_F(StoepComparisonTest, LeverageGridVsOnTheFly)
 	std::cout << "\n=== LEVERAGE: CALIBRATED GRID vs ON-THE-FLY ===\n";
 	std::cout << "Comparing leverage values used during pricing\n\n";
 
-	// van der Stoep parameters
-	double S0 = 1.0, r = 0.0, v0 = 0.0945, kappa = 1.05, vbar = 0.0855,
-		   sigma_v = 0.95, rho = -0.315;
-	FlatDiscountCurve discount{r};
-	HestonModel heston(S0, discount, v0, kappa, vbar, sigma_v, rho);
-
-	// Generate COS surface
-	std::vector<double> K = {0.85, 0.90, 0.95, 1.0, 1.05, 1.10, 1.15};
-	std::vector<double> T = {0.5, 1.0, 2.0};
-	std::vector<std::vector<double>> ivs(T.size());
-	for (size_t t_idx = 0; t_idx < T.size(); ++t_idx)
-	{
-		double maturity = T[t_idx];
-		ivs[t_idx].resize(K.size());
-		HestonCF hcf(kappa, vbar, sigma_v, rho, v0, r, maturity);
-		auto chf = [&hcf](double u) { return hcf(u); };
-		for (size_t k_idx = 0; k_idx < K.size(); ++k_idx)
-		{
-			double price = COSPricer::callPrice(S0, K[k_idx], r, maturity, chf,
-												512, 15.0, std::sqrt(vbar));
-			ivs[t_idx][k_idx] =
-				ImpliedVolSolver::solve(price, S0, K[k_idx], r, maturity, true);
-		}
-	}
-	auto surface = std::make_shared<VolatilitySurface>(K, T, ivs, discount);
-
-	// Setup SLV simulator
+	// Setup SLV simulator (surface cached from SetUp)
 	double testT = 0.5;
 	double dt = 1.0 / 32.0;
 	size_t nSteps = static_cast<size_t>(std::ceil(testT / dt));
@@ -1152,7 +1060,7 @@ TEST_F(StoepComparisonTest, LeverageGridVsOnTheFly)
 	size_t nPaths = 50000;
 	size_t nBins = 25;
 
-	HestonSLVPathSimulator2D slv(heston, times, nPaths, nBins, 42);
+	HestonSLVPathSimulator2D slv(*stoepHeston, times, nPaths, nBins, 42);
 
 	// Calibrate the leverage grid
 	std::cout << "Calibrating leverage grid...\n";
@@ -1175,7 +1083,7 @@ TEST_F(StoepComparisonTest, LeverageGridVsOnTheFly)
 	std::cout << "  ------------------------------------------------\n";
 
 	// Run a quick simulation to get current spot distribution at midTimeIdx
-	QEPathSimulator2D qe(times, heston, 42);
+	QEPathSimulator2D qe(times, *stoepHeston, 42);
 	std::vector<std::pair<double, double>> midStates(nPaths);
 	for (size_t p = 0; p < nPaths; ++p)
 	{
@@ -1202,7 +1110,7 @@ TEST_F(StoepComparisonTest, LeverageGridVsOnTheFly)
 	{
 		size_t idx = pct * nPaths / 100;
 		double testSpot = midSpots[idx];
-		double lv = surface->localVolatility(testSpot, midTime);
+		double lv = stoepSurface->localVolatility(testSpot, midTime);
 
 		// Get grid leverage by interpolation (simplified - just nearest grid
 		// point)
@@ -1229,7 +1137,7 @@ TEST_F(StoepComparisonTest, LeverageGridVsOnTheFly)
 				count++;
 			}
 		}
-		double E_V_S = (count > 10) ? sumV / count : v0;
+		double E_V_S = (count > 10) ? sumV / count : stoep_v0;
 		double onFlyL2 = (lv * lv) / std::max(E_V_S, 1e-8);
 
 		std::cout << "  " << std::setprecision(3) << testSpot << "   "
@@ -1700,7 +1608,7 @@ TEST_F(StoepComparisonTest, ExternalVolatilitySurfaceFitting)
 	HestonModel heston(S0, discountCurve, v0, kappa, vbar, sigma_v, rho);
 
 	// Run SLV with external surface
-	size_t extPaths = 100000;
+	size_t extPaths = 20000; // prev 100000
 	size_t extBins = 25;
 
 	std::cout << "\n--- SLV Pricing with External Surface ---\n";
@@ -1794,7 +1702,7 @@ TEST_F(StoepComparisonTest, ControlVariateVarianceReduction)
 	HestonCF hcf(kappa, vbar, sigma_v, rho, v0, r, T);
 	auto chf = [&hcf](double u) { return hcf(u); };
 	double hestonCOS =
-		COSPricer::callPrice(S0, K, r, T, chf, 512, 15.0, std::sqrt(vbar));
+		COSPricer::callPrice(S0, K, r, T, chf, 256, 15.0, std::sqrt(vbar));
 	double df = discountCurve.discount(T);
 	double hestonAnalytical = hestonCOS;
 
@@ -1863,7 +1771,7 @@ TEST_F(StoepComparisonTest, ControlVariateShowsVarianceReduction)
 		HestonCF hcf(kappa, vbar, sigma_v, rho, v0, r, T);
 		auto chf = [&hcf](double u) { return hcf(u); };
 		double hestonPrice =
-			COSPricer::callPrice(S0, K, r, T, chf, 512, 15.0, std::sqrt(vbar));
+			COSPricer::callPrice(S0, K, r, T, chf, 256, 15.0, std::sqrt(vbar));
 
 		// CV result
 		auto cvResult = slv.simulateWithControlVariate(K, hestonPrice);

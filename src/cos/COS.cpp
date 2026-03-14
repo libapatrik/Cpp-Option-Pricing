@@ -4,7 +4,6 @@
 #include <cppfm/cos/COS.h>
 #include <numbers>
 
-constexpr double PI = std::numbers::pi;
 
 // ============================================================================
 // COS Method Implementation
@@ -46,7 +45,7 @@ Transforms::Coefficients Transforms::precomputeCoefficients(double a, double b, 
 
 	for (size_t k = 0; k < N; ++k)
 	{
-		coeffs.omega[k] = k * PI / (b - a);
+		coeffs.omega[k] = k * std::numbers::pi / (b - a);
 
 		std::complex<double> chf_val = chf(coeffs.omega[k]);
 		std::complex<double> exp_term = std::exp(std::complex<double>(0.0, -coeffs.omega[k] * a));
@@ -253,7 +252,7 @@ std::complex<double> ChFIntegratedVariance::modifiedBesselI(double nu, std::comp
 			a *= -(mu - odd * odd) * iz / (8.0 * (k + 1));
 			s += a;
 		}
-		return std::exp(z) / std::sqrt(2.0 * PI * z) * s;
+		return std::exp(z) / std::sqrt(2.0 * std::numbers::pi * z) * s;
 	}
 
 	// power series: I_nu(z) = sum (z/2)^(2k+nu) / (k! * Gamma(k+nu+1))

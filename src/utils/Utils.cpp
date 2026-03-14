@@ -8,7 +8,6 @@
 // * Statistics
 // ============================================================================
 
-constexpr double PI = std::numbers::pi; // C++ 20 pi
 
 // Standard normal CDF
 double Utils::stdNormCdf(double x)
@@ -19,7 +18,7 @@ double Utils::stdNormCdf(double x)
 double Utils::stdNormPdf(double x)
 {
 	// PDF of standard normal distribution: φ(x) = (1/√(2π)) * exp(-x²/2)
-	return (1.0 / std::sqrt(2.0 * PI)) * std::exp(-0.5 * x * x);
+	return (1.0 / std::sqrt(2.0 * std::numbers::pi)) * std::exp(-0.5 * x * x);
 }
 
 std::complex<double> Utils::stdNormChF(double omega)

@@ -25,7 +25,7 @@ namespace {
      * φ(x) = (1/sqrt(2*π)) * e^(-x²/2)
      */
     double normPdf(double x) {
-        return (1.0 / std::sqrt(2.0 * M_PI)) * std::exp(-0.5 * x * x);
+        return Utils::stdNormPdf(x);
     }
 }
 
@@ -487,36 +487,11 @@ double BlackScholesFormulas::impliedVolatility(double spot, double strike, const
                                                double maturity, double marketPrice, Option::Type optionType,
                                                double initialGuess, size_t maxIter, double tol)
 {
-    if (maturity <= 0.0) {
+    if (maturity <= 0.0)
         return 0.0;
-    }
 
-    double sigma = initialGuess;
-    const double minVol = 1e-6;
-    const double maxVol = 5.0;
-
-    for (size_t i = 0; i < maxIter; ++i) {
-        double bsPrice = price(spot, strike, discountCurve, sigma, maturity, optionType);
-        double vegaVal = vega(spot, strike, discountCurve, sigma, maturity);
-
-        double diff = bsPrice - marketPrice;
-
-        if (std::abs(diff) < tol) {
-            return sigma;
-        }
-
-        if (std::abs(vegaVal) < 1e-12) {
-            if (diff > 0) {
-                sigma *= 0.5;
-            } else {
-                sigma *= 1.5;
-            }
-        } else {
-            sigma -= diff / vegaVal;
-        }
-
-        sigma = std::max(minVol, std::min(sigma, maxVol));
-    }
-
-    return sigma;
+    // equivalent flat rate — exact because d1 uses -log(B(T)) = r*T
+    double r = -std::log(discountCurve.discount(maturity)) / maturity;
+    bool isCall = (optionType == Option::Type::Call);
+    return ImpliedVolSolver::solve(marketPrice, spot, strike, r, maturity, isCall, tol, maxIter);
 }

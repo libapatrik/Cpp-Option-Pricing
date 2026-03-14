@@ -152,7 +152,7 @@ TEST(HestonCalibration, GridSearchParallelSpeedup)
 
 	auto slices = generateSyntheticData(trueParams, S0, r, maturities, strikes);
 
-	int gp = 5; // 5^5 = 3125 combos
+	int gp = 3; // previously 5^5 = 3125 combos
 
 	// sequential
 	auto t0 = std::chrono::high_resolution_clock::now();

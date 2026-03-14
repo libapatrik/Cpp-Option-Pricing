@@ -10,6 +10,85 @@
 #include <vector>
 
 // ============================================================================
+// File-local helpers
+// ============================================================================
+
+static std::vector<double> linspace(double lo, double hi, int n)
+{
+	std::vector<double> v(n);
+	if (n == 1)
+	{
+		v[0] = 0.5 * (lo + hi);
+		return v;
+	}
+	for (int i = 0; i < n; ++i)
+		v[i] = lo + i * (hi - lo) / (n - 1);
+	return v;
+}
+
+static void validateSlices(const std::vector<HestonSliceData> &slices, const char *caller)
+{
+	if (slices.empty())
+		throw std::invalid_argument(std::string(caller) + ": no slices");
+	for (auto &s : slices)
+	{
+		if (s.strikes.size() != s.marketIVs.size())
+			throw std::invalid_argument(std::string(caller) + ": strikes/IVs size mismatch");
+		if (s.strikes.empty())
+			throw std::invalid_argument(std::string(caller) + ": empty slice");
+	}
+}
+
+struct PrecomputedMarket
+{
+	std::vector<std::vector<double>> prices;
+	std::vector<std::vector<double>> vegas;
+};
+
+// vega-weighted price residual: (C_model - C_mkt) / vega ≈ sigma_model - sigma_mkt
+// avoids IV inversion inside LM → smooth Jacobian for all 5 params
+static PrecomputedMarket precomputeMarketData(const std::vector<HestonSliceData> &slices,
+											  double S0, double r)
+{
+	PrecomputedMarket mkt;
+	mkt.prices.resize(slices.size());
+	mkt.vegas.resize(slices.size());
+	for (size_t s = 0; s < slices.size(); ++s)
+	{
+		auto &slice = slices[s];
+		mkt.prices[s].resize(slice.strikes.size());
+		mkt.vegas[s].resize(slice.strikes.size());
+		for (size_t i = 0; i < slice.strikes.size(); ++i)
+		{
+			double iv = slice.marketIVs[i];
+			mkt.prices[s][i] = BlackScholesFormulas::callPrice(S0, slice.strikes[i], r, iv, slice.T);
+			mkt.vegas[s][i] = BlackScholesFormulas::vega(S0, slice.strikes[i], r, iv, slice.T);
+			// floor vega so deep OTM doesn't blow up
+			if (mkt.vegas[s][i] < 1e-6)
+				mkt.vegas[s][i] = 1e-6;
+		}
+	}
+	return mkt;
+}
+
+struct HestonGrid
+{
+	std::vector<double> v0, kappa, vbar, sig, rho;
+};
+
+// grid ranges biased for equity
+static HestonGrid makeDefaultGrid(int gridPoints)
+{
+	HestonGrid g;
+	g.v0 = linspace(0.01, 0.15, gridPoints);
+	g.kappa = linspace(0.5, 5.0, gridPoints);
+	g.vbar = linspace(0.01, 0.15, gridPoints);
+	g.sig = linspace(0.1, 1.0, gridPoints);
+	g.rho = linspace(-0.9, -0.1, gridPoints);
+	return g;
+}
+
+// ============================================================================
 // HestonParams
 // ============================================================================
 
@@ -63,39 +142,13 @@ HestonCalibrationResult calibrateHeston(
 	const HestonParams &guess,
 	const LMOptions &opts)
 {
-	if (slices.empty())
-		throw std::invalid_argument("calibrateHeston: no slices");
+	validateSlices(slices, "calibrateHeston");
 
 	size_t totalResiduals = 0;
 	for (auto &s : slices)
-	{
-		if (s.strikes.size() != s.marketIVs.size())
-			throw std::invalid_argument("calibrateHeston: strikes/IVs size mismatch");
-		if (s.strikes.empty())
-			throw std::invalid_argument("calibrateHeston: empty slice");
 		totalResiduals += s.strikes.size();
-	}
 
-	// precompute market prices and vegas from market IVs (constant during LM)
-	// vega-weighted price residual: (C_model - C_mkt) / vega ≈ sigma_model - sigma_mkt
-	// avoids IV inversion inside LM → smooth Jacobian for all 5 params
-	std::vector<std::vector<double>> mktPrices(slices.size());
-	std::vector<std::vector<double>> vegas(slices.size());
-	for (size_t s = 0; s < slices.size(); ++s)
-	{
-		auto &slice = slices[s];
-		mktPrices[s].resize(slice.strikes.size());
-		vegas[s].resize(slice.strikes.size());
-		for (size_t i = 0; i < slice.strikes.size(); ++i)
-		{
-			double iv = slice.marketIVs[i];
-			mktPrices[s][i] = BlackScholesFormulas::callPrice(S0, slice.strikes[i], r, iv, slice.T);
-			vegas[s][i] = BlackScholesFormulas::vega(S0, slice.strikes[i], r, iv, slice.T);
-			// floor vega so deep OTM doesn't blow up
-			if (vegas[s][i] < 1e-6)
-				vegas[s][i] = 1e-6;
-		}
-	}
+	auto mkt = precomputeMarketData(slices, S0, r);
 
 	auto residualFn = [&](const std::vector<double> &x) -> std::vector<double>
 	{
@@ -116,7 +169,7 @@ HestonCalibrationResult calibrateHeston(
 												cum.c1, cum.c2, cum.c4);
 
 			for (size_t i = 0; i < slice.strikes.size(); ++i)
-				res.push_back((prices[i] - mktPrices[s][i]) / vegas[s][i]);
+				res.push_back((prices[i] - mkt.prices[s][i]) / mkt.vegas[s][i]);
 		}
 		return res;
 	};
@@ -150,7 +203,7 @@ HestonCalibrationResult calibrateHeston(
 		for (size_t i = 0; i < slice.strikes.size(); ++i)
 		{
 			double modelIV = ImpliedVolSolver::solve(prices[i], S0, slice.strikes[i],
-												   r, slice.T, true);
+													 r, slice.T, true);
 			double diff = modelIV - slice.marketIVs[i];
 			sliceSumSq += diff * diff;
 			sumSq += diff * diff;
@@ -171,63 +224,19 @@ HestonParams hestonGridSearch(
 	double S0, double r,
 	int gridPoints)
 {
-	if (slices.empty())
-		throw std::invalid_argument("hestonGridSearch: no slices");
-	for (auto &s : slices)
-	{
-		if (s.strikes.size() != s.marketIVs.size())
-			throw std::invalid_argument("hestonGridSearch: strikes/IVs size mismatch");
-		if (s.strikes.empty())
-			throw std::invalid_argument("hestonGridSearch: empty slice");
-	}
+	validateSlices(slices, "hestonGridSearch");
 
-	auto linspace = [](double lo, double hi, int n) -> std::vector<double>
-	{
-		std::vector<double> v(n);
-		if (n == 1)
-		{
-			v[0] = 0.5 * (lo + hi);
-			return v;
-		}
-		for (int i = 0; i < n; ++i)
-			v[i] = lo + i * (hi - lo) / (n - 1);
-		return v;
-	};
-
-	// grid ranges biased for equity
-	auto v0Grid = linspace(0.01, 0.15, gridPoints);
-	auto kappaGrid = linspace(0.5, 5.0, gridPoints);
-	auto vbarGrid = linspace(0.01, 0.15, gridPoints);
-	auto sigGrid = linspace(0.1, 1.0, gridPoints);
-	auto rhoGrid = linspace(-0.9, -0.1, gridPoints);
-
-	// precompute market prices and vegas (same as calibrateHeston)
-	std::vector<std::vector<double>> mktPrices(slices.size());
-	std::vector<std::vector<double>> vegas(slices.size());
-	for (size_t s = 0; s < slices.size(); ++s)
-	{
-		auto &slice = slices[s];
-		mktPrices[s].resize(slice.strikes.size());
-		vegas[s].resize(slice.strikes.size());
-		for (size_t i = 0; i < slice.strikes.size(); ++i)
-		{
-			double iv = slice.marketIVs[i];
-			mktPrices[s][i] = BlackScholesFormulas::callPrice(S0, slice.strikes[i], r, iv, slice.T);
-			vegas[s][i] = BlackScholesFormulas::vega(S0, slice.strikes[i], r, iv, slice.T);
-			if (vegas[s][i] < 1e-6)
-				vegas[s][i] = 1e-6;
-		}
-	}
+	auto grid = makeDefaultGrid(gridPoints);
+	auto mkt = precomputeMarketData(slices, S0, r);
 
 	double bestSSE = std::numeric_limits<double>::max();
 	HestonParams best;
 	// brute force grid search
-	// TODO: Parallelize it?
-	for (double v0 : v0Grid)
-		for (double kappa : kappaGrid)
-			for (double vbar : vbarGrid)
-				for (double sig : sigGrid)
-					for (double rho : rhoGrid)
+	for (double v0 : grid.v0)
+		for (double kappa : grid.kappa)
+			for (double vbar : grid.vbar)
+				for (double sig : grid.sig)
+					for (double rho : grid.rho)
 					{
 						double sse = 0;
 
@@ -245,7 +254,7 @@ HestonParams hestonGridSearch(
 
 							for (size_t i = 0; i < slice.strikes.size(); ++i)
 							{
-								double diff = (prices[i] - mktPrices[s][i]) / vegas[s][i];
+								double diff = (prices[i] - mkt.prices[s][i]) / mkt.vegas[s][i];
 								sse += diff * diff;
 							}
 						}
@@ -260,62 +269,19 @@ HestonParams hestonGridSearch(
 	return best;
 }
 
-// Parallel version:
-// NOTE: to be called by the use either prove own guess or grid-search first for params
+// parallel grid search
 HestonParams hestonGridSearchParallel(
 	const std::vector<HestonSliceData> &slices,
 	double S0, double r,
 	int gridPoints)
 {
-	if (slices.empty())
-		throw std::invalid_argument("hestonGridSearch: no slices");
-	for (auto &s : slices)
-	{
-		if (s.strikes.size() != s.marketIVs.size())
-			throw std::invalid_argument("hestonGridSearch: strikes/IVs size mismatch");
-		if (s.strikes.empty())
-			throw std::invalid_argument("hestonGridSearch: empty slice");
-	}
+	validateSlices(slices, "hestonGridSearchParallel");
 
-	auto linspace = [](double lo, double hi, int n) -> std::vector<double>
-	{
-		std::vector<double> v(n);
-		if (n == 1)
-		{
-			v[0] = 0.5 * (lo + hi);
-			return v;
-		}
-		for (int i = 0; i < n; ++i)
-			v[i] = lo + i * (hi - lo) / (n - 1);
-		return v;
-	};
+	auto grid = makeDefaultGrid(gridPoints);
+	auto mkt = precomputeMarketData(slices, S0, r);
 
-	// grid ranges biased for equity
-	auto v0Grid = linspace(0.01, 0.15, gridPoints);
-	auto kappaGrid = linspace(0.5, 5.0, gridPoints);
-	auto vbarGrid = linspace(0.01, 0.15, gridPoints);
-	auto sigGrid = linspace(0.1, 1.0, gridPoints);
-	auto rhoGrid = linspace(-0.9, -0.1, gridPoints);
-
-	// precompute market prices and vegas (same as calibrateHeston)
-	std::vector<std::vector<double>> mktPrices(slices.size());
-	std::vector<std::vector<double>> vegas(slices.size());
-	for (size_t s = 0; s < slices.size(); ++s)
-	{
-		auto &slice = slices[s];
-		mktPrices[s].resize(slice.strikes.size());
-		vegas[s].resize(slice.strikes.size());
-		for (size_t i = 0; i < slice.strikes.size(); ++i)
-		{
-			double iv = slice.marketIVs[i];
-			mktPrices[s][i] = BlackScholesFormulas::callPrice(S0, slice.strikes[i], r, iv, slice.T);
-			vegas[s][i] = BlackScholesFormulas::vega(S0, slice.strikes[i], r, iv, slice.T);
-			if (vegas[s][i] < 1e-6)
-				vegas[s][i] = 1e-6;
-		}
-	}
-
-	size_t n0 = v0Grid.size(), n1 = kappaGrid.size(), n2 = vbarGrid.size(), n3 = sigGrid.size(), n4 = rhoGrid.size();
+	size_t n0 = grid.v0.size(), n1 = grid.kappa.size(), n2 = grid.vbar.size(),
+		   n3 = grid.sig.size(), n4 = grid.rho.size();
 	size_t total = n0 * n1 * n2 * n3 * n4;
 
 	unsigned nThreads = std::thread::hardware_concurrency();
@@ -336,7 +302,7 @@ HestonParams hestonGridSearchParallel(
 
 		for (size_t idx = tid; idx < total; idx += nThreads)
 		{
-			// decod flat index
+			// decode flat index
 			size_t rem = idx;
 			size_t i4 = rem % n4;
 			rem /= n4;
@@ -348,11 +314,11 @@ HestonParams hestonGridSearchParallel(
 			rem /= n1;
 			size_t i0 = rem;
 
-			double v0 = v0Grid[i0];
-			double kappa = kappaGrid[i1];
-			double vbar = vbarGrid[i2];
-			double sig = sigGrid[i3];
-			double rho = rhoGrid[i4];
+			double v0 = grid.v0[i0];
+			double kappa = grid.kappa[i1];
+			double vbar = grid.vbar[i2];
+			double sig = grid.sig[i3];
+			double rho = grid.rho[i4];
 
 			double sse = 0;
 
@@ -368,7 +334,7 @@ HestonParams hestonGridSearchParallel(
 
 				for (size_t i = 0; i < slice.strikes.size(); ++i)
 				{
-					double diff = (prices[i] - mktPrices[s][i]) / vegas[s][i];
+					double diff = (prices[i] - mkt.prices[s][i]) / mkt.vegas[s][i];
 					sse += diff * diff;
 				}
 			}
@@ -400,4 +366,4 @@ HestonParams hestonGridSearchParallel(
 		}
 	}
 	return best;
-};
+}

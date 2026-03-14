@@ -4,8 +4,6 @@
 #include <limits>
 #include <numbers>
 
-constexpr double PI = std::numbers::pi;
-
 // ============================================================================
 // COS Option Pricer — payoff coefficients
 // ============================================================================
@@ -20,7 +18,7 @@ double COSPricer::chi(size_t k, double a, double b, double c, double d)
 		return std::exp(d) - std::exp(c);
 	}
 
-	double w = k * PI / bma;
+	double w = k * std::numbers::pi / bma;
 	double w2 = w * w;
 
 	double d_shifted = d - a;
@@ -43,7 +41,7 @@ double COSPricer::psi(size_t k, double a, double b, double c, double d)
 		return d - c;
 	}
 
-	double w = k * PI / bma;
+	double w = k * std::numbers::pi / bma;
 	double d_shifted = d - a;
 	double c_shifted = c - a;
 
@@ -75,7 +73,7 @@ double COSPricer::priceWithBounds(double S0, double K, double r, double T,
 
 	for (size_t k = 0; k < N; ++k)
 	{
-		double w = k * PI / bma;
+		double w = k * std::numbers::pi / bma;
 
 		std::complex<double> phi_k = chf(w);
 		std::complex<double> H_k = phi_k * std::exp(std::complex<double>(0.0, w * (x0 - a)));
@@ -144,7 +142,7 @@ std::vector<double> COSPricer::pricesWithBounds(double S0, const std::vector<dou
 	std::vector<std::complex<double>> phi_vals(N);
 	for (size_t k = 0; k < N; ++k)
 	{
-		double w = k * PI / bma;
+		double w = k * std::numbers::pi / bma;
 		phi_vals[k] = chf(w);
 	}
 
@@ -173,7 +171,7 @@ std::vector<double> COSPricer::pricesWithBounds(double S0, const std::vector<dou
 		double sum = 0.0;
 		for (size_t k = 0; k < N; ++k)
 		{
-			double w = k * PI / bma;
+			double w = k * std::numbers::pi / bma;
 
 			std::complex<double> H_k = phi_vals[k] *
 									   std::exp(std::complex<double>(0.0, w * (x0 - a)));
