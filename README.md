@@ -145,14 +145,82 @@ docs/                        ONBOARDING.md - further details about the codebase
 ## Tests
 
 ```bash
+cd build && ctest            # all 22 test suites
 ./build/test_heston_scheme   # scheme convergence
+./build/test_heston_slv      # SLV calibration + control variate
 ./build/test_cos_method      # Fourier pricing accuracy
-./build/test_pde_solver      # FD stability and Greeks
-./build/test_heston_slv      # SLV calibration
-./build/test_linear_algebra  # decompositions, least-squares
-./build/test_optimizer       # LM, L-BFGS convergence
-./build/test_svi_calibration # SVI/SSVI smile fitting
+./build/test_pde_greeks      # full Greeks suite vs analytical
+./build/test_svi_calibration # SVI/SSVI smile fitting + arb checks
 ```
+
+### Heston MC Discretization Schemes
+
+7 schemes from Andersen (2008), compared head-to-head on 50k paths.
+
+| Scheme | Variance Discretization | Log-Price | Bias vs BK Exact | Feller Robust |
+|--------|------------------------|-----------|-------------------|---------------|
+| Euler (full truncation) | Eq. 6-7 | Euler | ~25-30% | no |
+| Truncated Gaussian | Eq. 13 | Eq. 33 | ~5-10% | partial |
+| Quadratic-Exponential | Eq. 23/26 | Eq. 33 | <1% | yes |
+| BK/TG | CIR exact | Eq. 11 (COS) | <1% | yes |
+| BK/QE | CIR exact | Eq. 11 (COS) | <1% | yes |
+| BK Exact | CIR exact + Newton CDF | Eq. 11 (COS) | reference | yes |
+| SLV (van der Stoep) | QE + leverage L(S,t) | adjusted drift | N/A | yes |
+
+Feller condition test runs 4 parameter regimes (violated, satisfied, boundary, equality) across all schemes - QE stays stable where Euler blows up.
+
+### Heston Stochastic-Local Volatility
+
+Full SLV pipeline validated against van der Stoep et al. (2013).
+
+| Test | Description | Result |
+|------|-------------|--------|
+| Van der Stoep Table 1 params | COS surface -> Dupire -> leverage calibration -> MC repricing | Max error 39 bp |
+| Heston-consistent surface | Market = Heston IVs, so L(S,t) should be ~1 | Max error 20 bp |
+| Control variate (Heston as CV) | Same Brownians, COS analytical baseline | **120x variance reduction** |
+| CV across strikes (K=0.90-1.10) | Per-strike SE reduction | 80x-135x, avg 110x |
+| External surface fitting | U-shaped smile (non-Heston) via leverage | Fits arbitrary smiles |
+| Mixing factor eta | eta=0 (pure LV) to eta=1 (full SLV) | eta=1 within 44 bp of Heston |
+
+### Calibration
+
+| Test | Method | Result |
+|------|--------|--------|
+| SVI round-trip | 5 params -> 9 strikes -> LM -> recovery | RMSE < 1e-6, all params within 1e-6 |
+| SSVI round-trip | 3 global params -> 4 maturities x 9 strikes -> LM | RMSE < 1e-4 (sub-bp) |
+| SSVI butterfly arb | g(k) >= 0 across 41 points (Gatheral & Jacquier 2014) | arb-free verified |
+| SSVI calendar arb | total variance non-decreasing in theta | monotonicity enforced (PAVA) |
+| SSVI analytical Jacobian | dw/d{rho,eta,gamma} vs finite differences | all within 1e-4 |
+| Heston round-trip | 4 mat x 7 strikes -> LM (tol=1e-10) -> recovery | RMSE < 1e-4 (sub-bp) |
+| Heston grid search | 3^5 = 243 starting points -> parallel -> LM refinement | >1.5x speedup, same optimum |
+
+### COS Method & Cumulants
+
+| Test | Description | Result |
+|------|-------------|--------|
+| PDF recovery vs N | Replicates F&O 2008 Table 1, N={4..256} | Exponential convergence |
+| Heston cumulants | Le Floc'h (2018) analytical vs numerical FD | c1, c2 within 1e-6 |
+| Cumulant-based bounds | Auto [a,b] from c1, c2, c4 (F&O Eq. 23) | Matches sigma-hint pricing within 0.02 |
+| CDF inversion benchmark | Newton iterations + timing for N={64..512} | Coefficient caching + bisection init |
+
+### PDE Solver & Greeks
+
+| Test | Description | Result |
+|------|-------------|--------|
+| 8 Greeks vs BS analytical | delta, gamma, vega, theta, rho, vanna, volga (call + put) | All 16 within 1e-3 |
+| Crank-Nicolson convergence | L2 error ratio on grid doubling | >3.0 (second-order) |
+| Heat equation (3 schemes) | Explicit, Implicit, CN vs analytical | CN error < 0.001 |
+| BS European call (PDE vs formula) | Price + delta accuracy | <0.5% relative error |
+
+### Dupire Local Volatility
+
+| Test | Description | Result |
+|------|-------------|--------|
+| Flat vol = BS (FD + MC) | Dupire with constant surface vs BS analytical | FD < 0.10, MC < 0.30 |
+| Smile affects prices | Non-flat surface diverges from BS | verified for OTM puts |
+| FD grid convergence | Error shrinks with refinement (100->200->400) | second-order convergence |
+| Put-call parity | C - P = S - Ke^{-rT} via FD and MC | FD < 0.10, MC < 0.30 |
+| Milstein vs Euler MC | Both 1D discretizations agree | within 0.50 |
 
 ## Papers
 
